@@ -56,7 +56,12 @@ class PracticeSession {
   int get totalRounds => variations.length;
 
   /// Base 1, pour l'affichage "Tour 4 / 10".
-  int get currentRoundNumber => _currentRound + 1;
+  ///
+  /// Plafonne a [totalRounds] : une fois la session finie `_currentRound` vaut
+  /// deja `variations.length`, et un compteur nu annoncerait "Tour 11 / 10".
+  /// Un objectif fini qui se termine au-dela de sa propre borne, c'est
+  /// exactement ce que le projet cherche a eviter.
+  int get currentRoundNumber => isFinished ? totalRounds : _currentRound + 1;
 
   bool get isFinished => _currentRound >= variations.length;
 

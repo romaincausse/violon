@@ -35,75 +35,85 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.passage.title)),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(
-                  'Tour ${_session.currentRoundNumber} / ${_session.totalRounds}',
-                  style: theme.textTheme.titleMedium,
+      // Sans SafeArea, le bas de la colonne passe sous la barre de navigation
+      // Android : "Celle-la je n'aime pas" devient difficile a viser et
+      // "Recommencer", seule action du bilan, se retrouve coupee en deux.
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              // Sur le bilan, ni le numero de tour ni le tempo ne veulent plus
+              // rien dire : la regle d'ergonomie de cet ecran est une seule
+              // chose a la fois, et les pastilles resument deja la session.
+              if (!finished) ...<Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    Text(
+                      'Tour ${_session.currentRoundNumber} / ${_session.totalRounds}',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    Text(
+                      '${_session.currentTempoBpm} bpm',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 12),
+              ],
+              RoundDots(outcomes: _session.outcomes),
+              const Spacer(),
+              if (finished) ...<Widget>[
                 Text(
-                  '${_session.currentTempoBpm} bpm',
+                  'Termine.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${_session.cleanRounds} tours propres sur ${_session.totalRounds}.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ] else ...<Widget>[
+                Text(
+                  _session.currentVariation.label,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.displaySmall,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _session.currentVariation.instruction,
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.titleMedium,
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            RoundDots(outcomes: _session.outcomes),
-            const Spacer(),
-            if (finished) ...<Widget>[
-              Text(
-                'Termine.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${_session.cleanRounds} tours propres sur ${_session.totalRounds}.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge,
-              ),
-            ] else ...<Widget>[
-              Text(
-                _session.currentVariation.label,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.displaySmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _session.currentVariation.instruction,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium,
-              ),
+              const Spacer(),
+              if (finished)
+                FilledButton(
+                  onPressed: _restart,
+                  child: const Text('Recommencer'),
+                )
+              else ...<Widget>[
+                FilledButton(
+                  onPressed: () => _complete(RoundOutcome.clean),
+                  child: const Text('C\'etait propre'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: () => _complete(RoundOutcome.shaky),
+                  child: const Text('Pas terrible'),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => setState(_session.skipVariation),
+                  child: const Text('Celle-la je n\'aime pas'),
+                ),
+              ],
             ],
-            const Spacer(),
-            if (finished)
-              FilledButton(
-                onPressed: _restart,
-                child: const Text('Recommencer'),
-              )
-            else ...<Widget>[
-              FilledButton(
-                onPressed: () => _complete(RoundOutcome.clean),
-                child: const Text('C\'etait propre'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () => _complete(RoundOutcome.shaky),
-                child: const Text('Pas terrible'),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => setState(_session.skipVariation),
-                child: const Text('Celle-la je n\'aime pas'),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

@@ -72,6 +72,16 @@ void main() {
       expect(s.currentTempoBpm, buildDemoPassage().writtenTempoBpm);
     });
 
+    test('le compteur de tours ne depasse jamais le total', () {
+      final PracticeSession s = session(rounds: 3);
+      for (int i = 0; i < 3; i++) {
+        s.completeRound(RoundOutcome.clean);
+      }
+      expect(s.isFinished, isTrue);
+      // Sans plafond, l'ecran de bilan annoncait "Tour 4 / 3".
+      expect(s.currentRoundNumber, 3);
+    });
+
     test('se termine apres le dernier tour', () {
       final PracticeSession s = session(rounds: 3);
       for (int i = 0; i < 3; i++) {
