@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Une seule execution par branche : un push qui suit de pres un autre annule
+# le premier au lieu de faire la queue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Le nom de ce job est le status check exige par la protection de `main`.
+  # Le renommer casse la regle cote GitHub : voir CONTRIBUTING.md.
+  qualite:
+    name: qualite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version epinglee : une montee de Flutter doit etre un commit visible,
+      # pas une CI qui change de comportement toute seule un matin.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      - name: Dependances
+        run: flutter pub get
+
+      - name: Formatage
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyse
+        run: flutter analyze --fatal-infos
+
+      - name: Tests
+        run: flutter test
+
+      # Regle d'architecture n°1 de CLAUDE.md : la logique metier reste du
+      # Dart pur, donc testable sans pumpWidget et portable hors Flutter.
+      - name: lib/core/ reste du Dart pur
+        run: |
+          if grep -rn "package:flutter/" lib/core/; then
+            echo "::error::lib/core/ ne doit pas importer Flutter"
+            exit 1
+          fi
+          echo "OK : lib/core/ est du Dart pur"

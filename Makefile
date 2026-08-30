@@ -1,4 +1,4 @@
-.PHONY: setup format analyze test check run apk clean scores
+.PHONY: setup format analyze test check core-pur run apk clean scores
 
 setup:
 	flutter pub get
@@ -12,10 +12,15 @@ analyze:
 test:
 	flutter test
 
-check: format analyze test
-	@grep -rn "package:flutter/" lib/core/ && \
-		(echo "ERREUR : lib/core/ ne doit pas importer Flutter" && exit 1) || \
-		echo "OK : lib/core/ est du Dart pur"
+check: format analyze test core-pur
+
+# Regle d'architecture n1 : lib/core/ reste du Dart pur.
+core-pur:
+	@if grep -rn "package:flutter/" lib/core/; then \
+		echo "ERREUR : lib/core/ ne doit pas importer Flutter"; \
+		exit 1; \
+	fi; \
+	echo "OK : lib/core/ est du Dart pur"
 
 run:
 	flutter run
