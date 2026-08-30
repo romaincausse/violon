@@ -12,15 +12,16 @@ Projet personnel, utilisateur unique, 100 % hors ligne.
 ```bash
 git clone https://github.com/romaincausse/violon.git
 cd violon
-flutter create --platforms=android --org com.romaincausse .   # une seule fois
 flutter pub get
-dart format .        # avant le premier commit, la CI verifie le formatage
 flutter test
 flutter run
 ```
 
-`flutter create` sur un dossier existant ne touche pas a `lib/`, `test/` ni
-au `pubspec.yaml` : il ajoute uniquement les dossiers de plateforme.
+Le dossier `android/` est versionne : il n'y a plus de `flutter create` a
+passer. L'identifiant d'application est `com.romaincausse.violon`, et
+l'activite est verrouillee en portrait (telephone pose sur un pupitre).
+
+`make check` avant chaque push : c'est exactement ce que rejoue la CI.
 
 ## Structure
 
