@@ -133,6 +133,16 @@ void main() {
         lessThanOrEqualTo(780 - 48),
       );
 
+      // Le clavier ne doit pas manger l'ecran : a trois touches par ligne il
+      // occupait six lignes et les deux tiers de la hauteur, ne laissant plus
+      // voir ni les reglages ni les notes deja saisies. Ne pas deborder ne
+      // suffit pas, encore faut-il laisser de la place au reste.
+      expect(
+        tester.getSize(find.byType(NoteKeyboard)).height,
+        lessThan(780 / 2),
+        reason: 'le clavier doit tenir dans la moitie basse',
+      );
+
       // Et la saisie reste utilisable a cette taille.
       await taperNote(tester, 'Sol4');
       expect(find.textContaining('1 notes'), findsOneWidget);

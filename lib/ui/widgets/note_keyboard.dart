@@ -42,20 +42,46 @@ class NoteKeyboard extends StatelessWidget {
     return pitchClass != 4 && pitchClass != 11;
   }
 
+  /// Espacement entre deux touches.
+  static const double _spacing = 8;
+
+  /// Largeur minimale d'une touche. En dessous de 56 dp la cible devient trop
+  /// petite pour un appareil pose sur un pupitre et lu a 70 cm.
+  static const double _minKeyWidth = 56;
+
+  /// Sept colonnes suffisent : c'est deja une octave par ligne.
+  static const int _maxColumns = 7;
+
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: <Widget>[
-        for (final int midi in naturals)
-          _NoteButton(
-            midi: midi,
-            sharp: sharp,
-            onSelected: onNoteSelected,
-          ),
-      ],
+    // Largeur calculee plutot que figee : a 360 dp on tient cinq touches par
+    // ligne, donc quatre lignes au lieu de six. Une largeur en dur donnait
+    // trois touches par ligne, et le clavier occupait les deux tiers de
+    // l'ecran sans plus laisser voir les notes deja saisies.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final int columns =
+            ((constraints.maxWidth + _spacing) / (_minKeyWidth + _spacing))
+                .floor()
+                .clamp(3, _maxColumns);
+        final double keyWidth =
+            (constraints.maxWidth - _spacing * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: _spacing,
+          runSpacing: _spacing,
+          alignment: WrapAlignment.center,
+          children: <Widget>[
+            for (final int midi in naturals)
+              _NoteButton(
+                midi: midi,
+                sharp: sharp,
+                width: keyWidth,
+                onSelected: onNoteSelected,
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -64,11 +90,13 @@ class _NoteButton extends StatelessWidget {
   const _NoteButton({
     required this.midi,
     required this.sharp,
+    required this.width,
     required this.onSelected,
   });
 
   final int midi;
   final bool sharp;
+  final double width;
   final ValueChanged<int> onSelected;
 
   @override
@@ -78,15 +106,17 @@ class _NoteButton extends StatelessWidget {
     final int produced = altered ? midi + 1 : midi;
 
     return SizedBox(
-      width: 78,
+      width: width,
       child: OutlinedButton(
         onPressed: enabled ? () => onSelected(produced) : null,
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(0, 48),
         ),
         child: Text(
           PitchUtils.noteName(produced),
-          style: const TextStyle(fontSize: 16),
+          maxLines: 1,
+          style: const TextStyle(fontSize: 15),
         ),
       ),
     );
