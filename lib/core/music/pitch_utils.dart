@@ -7,7 +7,16 @@ import 'dart:math' as math;
 class PitchUtils {
   const PitchUtils._();
 
-  /// Diapason par defaut. Beaucoup d'orchestres francais accordent a 442 Hz.
+  /// Diapason par defaut, en Hz.
+  ///
+  /// 440 est la reference internationale, mais beaucoup de conservatoires et
+  /// d'orchestres francais accordent a 442 : l'ecart vaut environ 8 cents,
+  /// soit largement de quoi declarer faux un enfant parfaitement juste.
+  ///
+  /// D'ou le parametre nomme `a4` sur toutes les fonctions de ce fichier :
+  /// cette constante n'est qu'un repli, la valeur qui compte est celle de
+  /// l'accord reel de l'instrument (voir la regle de justesse relative dans
+  /// CLAUDE.md).
   static const double defaultA4 = 440.0;
 
   static const List<String> _noteNames = <String>[
@@ -54,7 +63,10 @@ class PitchUtils {
   }
 
   /// Ecart en cents par rapport a la note temperee la plus proche.
-  /// Toujours dans l'intervalle ]-50, 50].
+  ///
+  /// Toujours dans l'intervalle [-50, 50[ : `round()` arrondit la moitie a
+  /// l'oppose de zero, donc le point pile entre deux notes bascule sur la
+  /// note du dessus et rend -50, jamais +50.
   static double centsOffset(double frequencyHz, {double a4 = defaultA4}) {
     final double exact = frequencyToMidi(frequencyHz, a4: a4);
     return (exact - exact.round()) * 100;
