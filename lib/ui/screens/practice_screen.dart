@@ -9,9 +9,16 @@ import '../widgets/round_dots.dart';
 /// Regle d'ergonomie : une seule chose a l'ecran a la fois. La variation en
 /// cours, en grand. Le reste est secondaire.
 class PracticeScreen extends StatefulWidget {
-  const PracticeScreen({required this.passage, super.key});
+  const PracticeScreen({
+    required this.passage,
+    required this.onChangePassage,
+    super.key,
+  });
 
   final Passage passage;
+
+  /// Ouvre la saisie d'un autre passage.
+  final VoidCallback onChangePassage;
 
   @override
   State<PracticeScreen> createState() => _PracticeScreenState();
@@ -29,12 +36,31 @@ class _PracticeScreenState extends State<PracticeScreen> {
   }
 
   @override
+  void didUpdateWidget(PracticeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // On vient de changer de passage : la session en cours portait sur l'autre,
+    // la garder afficherait des variations calculees pour d'autres notes.
+    if (widget.passage != oldWidget.passage) {
+      _session = PracticeSession.forPassage(widget.passage);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final bool finished = _session.isFinished;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.passage.title)),
+      appBar: AppBar(
+        title: Text(widget.passage.title),
+        actions: <Widget>[
+          IconButton(
+            onPressed: widget.onChangePassage,
+            icon: const Icon(Icons.edit_note),
+            tooltip: 'Changer de passage',
+          ),
+        ],
+      ),
       // Sans SafeArea, le bas de la colonne passe sous la barre de navigation
       // Android : "Celle-la je n'aime pas" devient difficile a viser et
       // "Recommencer", seule action du bilan, se retrouve coupee en deux.
