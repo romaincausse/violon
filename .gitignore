@@ -37,6 +37,9 @@ build/
 **/android/local.properties
 **/android/key.properties
 *.jks
+# Regenere a chaque build. android/.gitignore l'exclut deja, mais pas depuis
+# une branche qui ne contient pas android/ : il a fuite une fois par la.
+**/android/**/GeneratedPluginRegistrant.java
 
 # iOS / macOS
 **/ios/Flutter/.last_build_id
