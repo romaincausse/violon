@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/audio_capture.dart';
 import 'package:violon/core/audio/microphone_pitch_source.dart';
+import 'package:violon/core/audio/pitch_analyzer.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 
 /// Micro scripte. Permet de tester toute la chaine -- octets, trames, YIN --
@@ -44,6 +45,45 @@ class FakeCapture implements AudioCapture {
 
   @override
   Future<void> stop() async => arrets++;
+
+  @override
+  Future<void> dispose() async => liberations++;
+}
+
+/// Analyseur dont le test decide quand il repond.
+///
+/// Sert a mettre la chaine sous pression sans dependre de la vitesse reelle
+/// de YIN : c'est le seul moyen de tester ce qui arrive quand l'analyse ne
+/// suit plus.
+class AnalyseurPilote implements PitchAnalyzer {
+  final List<int> recues = <int>[];
+  final List<Completer<PitchEstimate?>> _attente =
+      <Completer<PitchEstimate?>>[];
+  int liberations = 0;
+
+  @override
+  Future<PitchEstimate?> analyze(
+    Float32List samples, {
+    required int timestampMs,
+  }) {
+    recues.add(timestampMs);
+    final Completer<PitchEstimate?> c = Completer<PitchEstimate?>();
+    _attente.add(c);
+    return c.future;
+  }
+
+  /// Repond a la plus ancienne analyse en attente.
+  Future<void> repondre({double frequencyHz = 440}) async {
+    final Completer<PitchEstimate?> c = _attente.removeAt(0);
+    c.complete(
+      PitchEstimate(
+        frequencyHz: frequencyHz,
+        confidence: 1,
+        timestampMs: recues[recues.length - _attente.length - 1],
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+  }
 
   @override
   Future<void> dispose() async => liberations++;
@@ -159,10 +199,16 @@ void main() {
       source.pitches.listen(recues.add);
       await source.start();
 
+      // Trois trames de silence, puis une note. Attendre la note prouve que
+      // le silence a bien eu le temps d'etre analyse : sans elle, le test
+      // passerait aussi longtemps que rien n'a encore ete analyse.
+      final Future<PitchEstimate> note = source.pitches.first;
       micro.controleur.add(Uint8List(2048 * 2 * 3));
-      await Future<void>.delayed(Duration.zero);
+      micro.controleur.add(sinus(440, 2048));
+      await note;
 
-      expect(recues, isEmpty);
+      expect(recues, hasLength(1));
+      expect(recues.single.nearestMidi, 69); // la4
     });
 
     test('arreter ferme le micro, liberer ferme tout', () async {
@@ -193,6 +239,113 @@ void main() {
       micro.controleur.add(sinus(440, 2048));
 
       expect((await apres).timestampMs, 0);
+    });
+  });
+
+  group('MicrophonePitchSource sous pression', () {
+    /// Envoie [combien] trames de suite, dans un seul paquet.
+    Future<void> envoyer(FakeCapture micro, int combien) async {
+      micro.controleur.add(sinus(440, 2048 * combien));
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    test('une seule analyse est en vol a la fois', () async {
+      // C'est ce qui garantit l'ordre des hauteurs. Les lancer en parallele
+      // irait plus vite et rendrait le resultat inutilisable.
+      final FakeCapture micro = FakeCapture();
+      final AnalyseurPilote analyseur = AnalyseurPilote();
+      final MicrophonePitchSource source =
+          MicrophonePitchSource(micro, analyzer: analyseur);
+      await source.start();
+
+      await envoyer(micro, 3);
+      expect(analyseur.recues, hasLength(1));
+
+      await analyseur.repondre();
+      expect(analyseur.recues, hasLength(2));
+    });
+
+    test('les hauteurs sortent dans l ordre des trames', () async {
+      final FakeCapture micro = FakeCapture();
+      final AnalyseurPilote analyseur = AnalyseurPilote();
+      final MicrophonePitchSource source =
+          MicrophonePitchSource(micro, analyzer: analyseur);
+      final List<int> sorties = <int>[];
+      source.pitches.listen((PitchEstimate e) => sorties.add(e.timestampMs));
+      await source.start();
+
+      await envoyer(micro, 3);
+      await analyseur.repondre();
+      await analyseur.repondre();
+      await analyseur.repondre();
+
+      expect(sorties, <int>[
+        0,
+        2048 * 1000 ~/ 44100,
+        2 * 2048 * 1000 ~/ 44100,
+      ]);
+    });
+
+    test(
+        'quand l analyse ne suit plus, ce sont les vieilles trames qui sautent',
+        () async {
+      // En temps reel, une hauteur en retard ne sert a rien : mieux vaut un
+      // trou dans le retour visuel qu'un retour juste mais decale.
+      final FakeCapture micro = FakeCapture();
+      final AnalyseurPilote analyseur = AnalyseurPilote();
+      final MicrophonePitchSource source =
+          MicrophonePitchSource(micro, analyzer: analyseur);
+      await source.start();
+
+      await envoyer(micro, 10);
+
+      // Une en vol, quatre en attente, cinq jetees.
+      expect(source.droppedFrames, 5);
+
+      // Les quatre gardees sont les plus recentes.
+      for (int i = 0; i < 5; i++) {
+        await analyseur.repondre();
+      }
+      // Multiplier puis diviser, jamais l'inverse : arrondir la duree d'une
+      // trame puis la multiplier par neuf donnerait 414 ms au lieu de 417.
+      int debutDe(int trame) => trame * 2048 * 1000 ~/ 44100;
+      expect(analyseur.recues, <int>[
+        debutDe(0),
+        debutDe(6),
+        debutDe(7),
+        debutDe(8),
+        debutDe(9),
+      ]);
+    });
+
+    test('rien n est jete quand l analyse suit', () async {
+      final FakeCapture micro = FakeCapture();
+      final AnalyseurPilote analyseur = AnalyseurPilote();
+      final MicrophonePitchSource source =
+          MicrophonePitchSource(micro, analyzer: analyseur);
+      await source.start();
+
+      await envoyer(micro, 4);
+      expect(source.droppedFrames, 0);
+    });
+
+    test('redemarrer repart d une file vide et d un compteur a zero', () async {
+      final FakeCapture micro = FakeCapture();
+      final AnalyseurPilote analyseur = AnalyseurPilote();
+      final MicrophonePitchSource source =
+          MicrophonePitchSource(micro, analyzer: analyseur);
+      await source.start();
+      await envoyer(micro, 10);
+      expect(source.droppedFrames, greaterThan(0));
+
+      await source.start();
+      expect(source.droppedFrames, 0);
+    });
+
+    test('liberer la source libere l analyseur', () async {
+      final AnalyseurPilote analyseur = AnalyseurPilote();
+      await MicrophonePitchSource(FakeCapture(), analyzer: analyseur).dispose();
+      expect(analyseur.liberations, 1);
     });
   });
 }

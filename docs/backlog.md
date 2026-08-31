@@ -22,7 +22,7 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 | G3 | Hampes, crochets, ligatures | P0 | 2 | G2 | Sens de hampe a la 3e ligne, ligatures par groupe de temps. |
 | G4 | Widget de partition et coloration par note | P0 | 2 | G3 | `CustomPainter`. Une couleur par note, pilotee de l'exterieur. |
 | ~~A1~~ | ~~Capture micro Android en `UNPROCESSED`~~ | P0 | 2 | - | **Fait.** `record` l'expose, pas de canal de plateforme a ecrire. Repli `VOICE_RECOGNITION` teste. |
-| A2 | YIN dans un isolate | P0 | 1 | A1 | Buffers 2048, `Float32List` transferables. Le detecteur existe deja. |
+| ~~A2~~ | ~~YIN dans un isolate~~ | P0 | 1 | A1 | **Fait.** Buffers transferes, pas copies. File bornee a 4 trames : sous pression, ce sont les plus vieilles qui sautent. |
 | M1 | Metronome visuel | P0 | 1 | - | Pulsation en bord d'ecran. Le seul metronome autorise en mode notation. |
 | F1 | Curseur pilote au tempo | P0 | 2 | G4, M1 | Avance sur l'horloge, pas sur ce qui est joue. Le suivi adaptatif est en V4. |
 | F2 | Coloration en direct de la justesse | P0 | 2 | F1, A2 | Vert, bas, haut. Aucun chiffre a ce stade, juste la couleur. |
