@@ -15,9 +15,9 @@ incomplet : l'application doit servir a quelqu'un des le premier.
 
 **Objectif :** le depot ne contient plus que ce qui sert au nouveau plan.
 
-- [ ] Supprimer `lib/core/practice/` : variations, session, auto-evaluation
-- [ ] Supprimer `PracticeScreen` et `RoundDots`
-- [ ] L'application s'ouvre sur le passage, sans ecran de cartes
+- [x] Supprimer `lib/core/practice/` : variations, session, auto-evaluation
+- [x] Supprimer `PracticeScreen` et `RoundDots`
+- [x] L'application s'ouvre sur le passage, sans ecran de cartes
 
 `lib/core/audio/` et `lib/core/music/` sont conserves entiers : ils
 deviennent plus centraux qu'avant. L'editeur de passage aussi, il devient la
@@ -35,18 +35,23 @@ avec lui pendant qu'il joue.
 C'est le jalon qui coute le plus cher, et c'est assume : sans partition
 affichee, rien du reste n'a de sens.
 
-- [ ] Police Bravura et metriques SMuFL
-- [ ] Mise en page d'une portee monodique (positions, alterations, barres)
-- [ ] Hampes, crochets, ligatures
-- [ ] Widget de partition, coloration par note
-- [ ] Capture micro reelle sur Android (`UNPROCESSED`)
+- [ ] Police Bravura et metriques SMuFL **<- bloque : dependance a valider**
+- [x] Mise en page d'une portee monodique (positions, alterations, barres)
+- [x] Hampes, crochets, ligatures
+- [x] Widget de partition, coloration par note (glyphes en attente de G1)
+- [ ] Capture micro reelle sur Android (`UNPROCESSED`) **<- bloque : dependance a valider**
 - [ ] YIN dans un isolate
-- [ ] Metronome visuel
-- [ ] Curseur pilote au tempo
+- [x] Metronome visuel
+- [x] Curseur pilote au tempo
 - [ ] Coloration en direct : juste, bas, haut
 
 **Critere de sortie :** il joue ses deux mesures, les notes passent au vert ou
 au rouge sous ses yeux, sans qu'il ait a toucher l'ecran.
+
+**Ou on en est.** La partition s'affiche, le curseur avance au tempo, le
+metronome visuel bat. Il manque les glyphes (cle de sol, vraies tetes) et tout
+ce qui vient du micro. Les deux lots restants attendent chacun une dependance
+a valider, listees en bas de `docs/backlog.md`.
 
 ---
 
