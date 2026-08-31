@@ -28,6 +28,16 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Bravura, la police de reference SMuFL, sous licence SIL OFL.
+  # Livree telle quelle : la licence lui attache un "Reserved Font Name",
+  # donc toute version modifiee -- un sous-ensemble de glyphes, par exemple --
+  # devrait changer de nom. Les 870 ko passent avant cette complication.
+  fonts:
+    - family: Bravura
+      fonts:
+        - asset: assets/fonts/Bravura.otf
+
   # A decommenter quand la premiere partition sera gravee (make scores) :
   # un dossier d'assets vide fait echouer le build.
   # assets:

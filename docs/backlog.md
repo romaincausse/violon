@@ -17,7 +17,7 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
-| G1 | Police Bravura et metriques SMuFL | P0 | 1 | - | Asset sous licence SIL OFL, versionnable. Table des glyphes utiles seulement. |
+| ~~G1~~ | ~~Police Bravura et metriques SMuFL~~ | P0 | 1 | - | **Fait.** Asset sous licence SIL OFL, livre non modifie (Reserved Font Name). Une dizaine de glyphes declares dans `Smufl`. |
 | G2 | Mise en page d'une portee monodique | P0 | 3 | G1 | Positions verticales, lignes supplementaires, alterations, barres de mesure. Dart pur, teste sans widget. |
 | G3 | Hampes, crochets, ligatures | P0 | 2 | G2 | Sens de hampe a la 3e ligne, ligatures par groupe de temps. |
 | G4 | Widget de partition et coloration par note | P0 | 2 | G3 | `CustomPainter`. Une couleur par note, pilotee de l'exterieur. |
@@ -67,7 +67,7 @@ Aucune n'est ajoutee sans accord explicite.
 
 | Paquet | Pour | Jalon |
 |--------|------|-------|
-| Bravura (asset, SIL OFL) | G1, le rendu de partition | V1 |
+| ~~Bravura (asset, SIL OFL)~~ | ~~G1, le rendu de partition~~ | **ajoutee** |
 | `record` | A1, la capture micro | V1 |
 | moteur audio bas niveau | J1, l'accompagnement pre-planifie | V3 |
 | stockage local | H1, la persistance | V4 |

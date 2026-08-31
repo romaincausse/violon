@@ -35,10 +35,10 @@ avec lui pendant qu'il joue.
 C'est le jalon qui coute le plus cher, et c'est assume : sans partition
 affichee, rien du reste n'a de sens.
 
-- [ ] Police Bravura et metriques SMuFL **<- bloque : dependance a valider**
+- [x] Police Bravura et metriques SMuFL
 - [x] Mise en page d'une portee monodique (positions, alterations, barres)
 - [x] Hampes, crochets, ligatures
-- [x] Widget de partition, coloration par note (glyphes en attente de G1)
+- [x] Widget de partition, coloration par note
 - [ ] Capture micro reelle sur Android (`UNPROCESSED`) **<- bloque : dependance a valider**
 - [ ] YIN dans un isolate
 - [x] Metronome visuel
@@ -48,10 +48,9 @@ affichee, rien du reste n'a de sens.
 **Critere de sortie :** il joue ses deux mesures, les notes passent au vert ou
 au rouge sous ses yeux, sans qu'il ait a toucher l'ecran.
 
-**Ou on en est.** La partition s'affiche, le curseur avance au tempo, le
-metronome visuel bat. Il manque les glyphes (cle de sol, vraies tetes) et tout
-ce qui vient du micro. Les deux lots restants attendent chacun une dependance
-a valider, listees en bas de `docs/backlog.md`.
+**Ou on en est.** La partition se grave avec les glyphes de Bravura -- cle de
+sol, tetes, alterations, crochets, points -- le curseur avance au tempo et le
+metronome visuel bat. Il ne manque plus que ce qui vient du micro.
 
 ---
 

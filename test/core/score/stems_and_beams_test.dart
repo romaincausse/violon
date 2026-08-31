@@ -246,4 +246,42 @@ void main() {
       expect(b.endXSpaces, greaterThan(b.startXSpaces));
     });
   });
+
+  group('point d allongement', () {
+    const int tpb = 480;
+
+    test('une figure simple n est jamais pointee', () {
+      for (final NoteValue v in NoteValue.values) {
+        expect(
+          StemsAndBeams.isDotted(v.ticksIn(tpb), tpb),
+          isFalse,
+          reason: v.label,
+        );
+      }
+    });
+
+    test('chaque figure pointee est reconnue', () {
+      for (final NoteValue v in NoteValue.values) {
+        expect(
+          StemsAndBeams.isDotted(v.ticksIn(tpb, dotted: true), tpb),
+          isTrue,
+          reason: v.label,
+        );
+      }
+    });
+
+    test('une duree quelconque n est pas prise pour une pointee', () {
+      // Deux temps et demi ne sont pas une figure pointee : c'est une blanche
+      // liee a une croche, et l'ecrire avec un point serait faux.
+      expect(StemsAndBeams.isDotted(tpb * 5 ~/ 2, tpb), isFalse);
+      expect(StemsAndBeams.isDotted(tpb * 3, tpb), isTrue); // blanche pointee
+      expect(StemsAndBeams.isDotted(tpb * 7 ~/ 2, tpb), isFalse);
+    });
+
+    test('la tete d une noire pointee reste une tete de noire', () {
+      final int ticks = NoteValue.quarter.ticksIn(tpb, dotted: true);
+      expect(StemsAndBeams.headFor(ticks, tpb), NoteHead.filled);
+      expect(StemsAndBeams.flagsFor(ticks, tpb), 0);
+    });
+  });
 }
