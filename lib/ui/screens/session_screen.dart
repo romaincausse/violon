@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
+import '../widgets/metronome_bar.dart';
 
 /// Ecran de travail : le passage, et ce qu'on en fait.
 ///
 /// C'est le squelette du jalon V1. La zone centrale accueillera la portee
 /// gravee et son curseur ; elle affiche pour l'instant la suite des notes,
 /// ce qui suffit a verifier qu'un passage saisi arrive bien jusqu'ici.
-class SessionScreen extends StatelessWidget {
+class SessionScreen extends StatefulWidget {
   const SessionScreen({
     required this.passage,
     required this.onChangePassage,
@@ -22,15 +23,33 @@ class SessionScreen extends StatelessWidget {
   final VoidCallback onChangePassage;
 
   @override
+  State<SessionScreen> createState() => _SessionScreenState();
+}
+
+class _SessionScreenState extends State<SessionScreen> {
+  bool _metronomeRunning = false;
+
+  @override
+  void didUpdateWidget(SessionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Changer de passage arrete la pulsation : le tempo n'est plus le meme,
+    // et laisser battre l'ancien induirait en erreur.
+    if (widget.passage != oldWidget.passage && _metronomeRunning) {
+      setState(() => _metronomeRunning = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final Passage passage = widget.passage;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(passage.title),
         actions: <Widget>[
           IconButton(
-            onPressed: onChangePassage,
+            onPressed: widget.onChangePassage,
             icon: const Icon(Icons.edit_note),
             tooltip: 'Changer de passage',
           ),
@@ -63,6 +82,11 @@ class SessionScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              MetronomeBar(
+                tempoBpm: passage.writtenTempoBpm,
+                running: _metronomeRunning,
+              ),
               Expanded(
                 child: Center(
                   // Emplacement de la portee gravee (lot G4). En attendant,
@@ -82,6 +106,18 @@ class SessionScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
+                onPressed: () => setState(
+                  () => _metronomeRunning = !_metronomeRunning,
+                ),
+                icon: Icon(
+                  _metronomeRunning ? Icons.stop : Icons.play_arrow,
+                ),
+                label: Text(
+                  _metronomeRunning ? 'Arreter' : 'Lancer le metronome',
                 ),
               ),
             ],
