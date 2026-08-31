@@ -4,47 +4,70 @@ Une ligne = une PR. L'estimation est en soirees de travail, pas en heures.
 
 Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 
-## V1
+> Backlog refondu apres l'ADR-006. Les lots audio de l'ancien plan sont
+> conserves a l'identique : ils n'ont jamais dependu du boucleur.
+
+## Jalon 0 - Faire de la place
 
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
-| A1 | Capture micro Android en `UNPROCESSED` | P0 | 2 | - | Canal de plateforme si le paquet ne l'expose pas. Repli `VOICE_RECOGNITION`. |
-| A2 | YIN dans un isolate | P0 | 1 | A1 | Buffers 2048, `Float32List` transferables. |
-| A3 | Accordeur sol-re-la-bas-mi | P0 | 2 | A2 | Aiguille + cents. Premier ecran vraiment utile. |
-| A4 | Calibration de latence | P1 | 1 | A1 | Emission de clics, reecoute, offset stocke. |
-| A5 | Lissage et tolerance vibrato | P1 | 2 | A2 | Mediane glissante + detection d'oscillation periodique. |
-| M1 | Metronome visuel | P0 | 1 | - | Pulsation en bord d'ecran. Prioritaire sur telephone. |
-| M2 | Metronome sonore pre-planifie | P1 | 2 | M1 | Jamais de `Timer` Dart. |
-| M3 | Gating du detecteur pendant les clics | P2 | 1 | M2, A2 | Le clic entre dans le micro a 10 cm. |
-| P1 | Saisie manuelle d'un passage | P0 | 2 | - | Clavier de notes simple, sans MusicXML. |
-| P2 | Ecran de session complet | P0 | 3 | P1, M1 | Une seule chose a l'ecran a la fois. |
-| P3 | Detection automatique de reussite d'un tour | P1 | 3 | A2, P2 | Comparaison jeu / passage attendu. |
-| P4 | Persistance du dernier passage travaille | P2 | 1 | P1 | Reprendre en 10 secondes. |
+| Z1 | Supprimer le boucleur a cartes | P0 | 1 | - | `lib/core/practice/`, `PracticeScreen`, `RoundDots` et leurs tests. L'app s'ouvre sur le passage. |
 
-## V2
+## V1 - La partition vivante
 
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
-| S1 | Script Verovio MusicXML -> SVG + timemap | P0 | 2 | - | Node, hors application. |
-| S2 | Format de catalogue local | P0 | 1 | S1 | JSON par morceau. |
-| S3 | Affichage SVG, systemes de 2 mesures | P0 | 3 | S2 | Portee ~10 mm de haut. |
-| S4 | Curseur et defilement par saut | P0 | 2 | S3 | Jamais de defilement continu. |
-| S5 | Selection de boucle par tap | P0 | 2 | S3 | Deux mesures tapees. |
-| S6 | Overlay de coloration par note | P1 | 2 | S3, A2 | Vert / bas / haut / retard. |
-| R1 | Enregistrement des tentatives | P0 | 2 | A1 | Fichier local + metadonnees. |
-| R2 | Comparaison avec une tentative anterieure | P0 | 2 | R1 | Fort effet motivationnel, cout technique faible. |
-| R3 | Replay synchronise sur la partition | P1 | 2 | R1, S4 | |
+| G1 | Police Bravura et metriques SMuFL | P0 | 1 | - | Asset sous licence SIL OFL, versionnable. Table des glyphes utiles seulement. |
+| G2 | Mise en page d'une portee monodique | P0 | 3 | G1 | Positions verticales, lignes supplementaires, alterations, barres de mesure. Dart pur, teste sans widget. |
+| G3 | Hampes, crochets, ligatures | P0 | 2 | G2 | Sens de hampe a la 3e ligne, ligatures par groupe de temps. |
+| G4 | Widget de partition et coloration par note | P0 | 2 | G3 | `CustomPainter`. Une couleur par note, pilotee de l'exterieur. |
+| A1 | Capture micro Android en `UNPROCESSED` | P0 | 2 | - | Canal de plateforme si le paquet ne l'expose pas. Repli `VOICE_RECOGNITION`. **Dependance `record`.** |
+| A2 | YIN dans un isolate | P0 | 1 | A1 | Buffers 2048, `Float32List` transferables. Le detecteur existe deja. |
+| M1 | Metronome visuel | P0 | 1 | - | Pulsation en bord d'ecran. Le seul metronome autorise en mode notation. |
+| F1 | Curseur pilote au tempo | P0 | 2 | G4, M1 | Avance sur l'horloge, pas sur ce qui est joue. Le suivi adaptatif est en V4. |
+| F2 | Coloration en direct de la justesse | P0 | 2 | F1, A2 | Vert, bas, haut. Aucun chiffre a ce stade, juste la couleur. |
 
-## V3
+## V2 - La note
 
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
-| H1 | Base locale des sessions | P0 | 2 | - | Drift ou sqflite. |
-| H2 | Heatmap cumulee | P0 | 3 | H1, S3 | Le differenciateur principal. |
-| H3 | Diagnostic actionnable | P1 | 3 | H1 | "Mesure 12, bas sur le do#". |
-| H4 | Courbes de progression | P1 | 2 | H1 | Des donnees, pas des mascottes. |
-| H5 | Timer de seance | P2 | 1 | - | Arret suggere sur une reussite. |
-| E1 | Drone / bourdon | P1 | 1 | - | Meilleur rapport valeur / effort de la liste. |
-| E2 | Gammes et arpeges notes | P1 | 3 | A2 | Score par degre. |
-| E3 | Note tenue | P2 | 1 | A3 | |
-| X1 | Export pour le professeur | P2 | 2 | R1, H2 | Inscrit l'outil dans le circuit pedagogique. |
+| A3 | Detecteur d'attaques | P0 | 3 | A1 | Flux spectral. Necessaire pour le rythme : YIN ne voit pas une note repetee a la meme hauteur. |
+| A4 | Calibration de latence | P0 | 2 | A1 | Emission de clics, reecoute, offset stocke. Sans elle, le score de rythme ne veut rien dire. |
+| A5 | Lissage et tolerance vibrato | P0 | 2 | A2 | Mediane glissante, detection d'oscillation periodique. |
+| N1 | Score de justesse par note | P0 | 2 | A5, F2 | Cents medians sur la partie tenue, attaque exclue. |
+| N2 | Score de rythme par note | P0 | 2 | A3, A4 | Ecart d'attaque en ms par rapport a l'onset attendu. |
+| N3 | Bilan de passage | P0 | 1 | N1, N2 | Un score par note, un global. Le cumul ne redescend jamais. |
+| N4 | Boucle sur selection et montee de tempo | P0 | 2 | N3 | **Le lot anti-lassitude.** Deux mesures tapees, boucle, tempo qui monte quand c'est propre. |
+| A6 | Accordeur sol-re-la-mi | P1 | 2 | A2 | Aiguille et cents. Utile seul, avant meme de jouer. |
+
+## V3 - L'accompagnement
+
+| ID | Titre | P | Est. | Depend de | Notes |
+|----|-------|---|------|-----------|-------|
+| J1 | Moteur audio a evenements pre-planifies | P0 | 2 | - | Jamais de `Timer` Dart, la derive est audible. **Dependance a choisir.** |
+| J2 | Metronome sonore | P1 | 1 | J1 | Mode accompagnement uniquement (ADR-008). |
+| J3 | Accompagnement deduit du passage | P0 | 3 | J1 | Basse et accords simples derives des notes. Pas d'arrangement savant. |
+| J4 | Mode play-along | P0 | 1 | J3 | Micro coupe, aucune notation, depart compte. |
+
+## V4 - La memoire et le repertoire
+
+| ID | Titre | P | Est. | Depend de | Notes |
+|----|-------|---|------|-----------|-------|
+| H1 | Persistance des passages et sessions | P0 | 2 | - | **Dependance a choisir.** Reprendre en 10 secondes. |
+| H2 | Courbes de progression | P1 | 2 | H1 | Des donnees, pas des mascottes. |
+| H3 | Heatmap cumulee sur la partition | P1 | 3 | H1, G4 | Le differenciateur principal. |
+| H4 | Diagnostic actionnable | P1 | 3 | H1 | "Mesure 12, bas sur le do#". |
+| F3 | Suivi adaptatif | P1 | 5 | N1, N2 | L'application attend la bonne note. Alignement en ligne, DTW ou HMM. Le lot le plus risque du projet. |
+| S1 | Import MusicXML pre-grave par Verovio | P2 | 3 | G4 | Pour les morceaux entiers. Cohabite avec le rendu natif (ADR-007). |
+| X1 | Export pour le professeur | P2 | 2 | H1 | Inscrit l'outil dans le circuit pedagogique. |
+
+## Dependances a arbitrer
+
+Aucune n'est ajoutee sans accord explicite.
+
+| Paquet | Pour | Jalon |
+|--------|------|-------|
+| Bravura (asset, SIL OFL) | G1, le rendu de partition | V1 |
+| `record` | A1, la capture micro | V1 |
+| moteur audio bas niveau | J1, l'accompagnement pre-planifie | V3 |
+| stockage local | H1, la persistance | V4 |

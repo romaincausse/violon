@@ -8,22 +8,48 @@ Application Flutter d'aide au travail du violon pour un enfant de 11 ans,
 4e annee de conservatoire. Elle ecoute ce qu'il joue, mesure la justesse et
 le rythme, et surtout **rend la repetition supportable**.
 
+## Le coeur de l'application
+
+Le coeur est la **partition dynamique suivie en temps reel**. Elle affiche le
+passage travaille, avance avec ce qui est joue, et rend trois choses :
+
+1. un **retour visuel** note par note, en direct ;
+2. une **notation** de la justesse et du rythme ;
+3. un **accompagnement**, dans un mode separe.
+
+Tout le reste est au service de ca.
+
 ## Le probleme reel a resoudre
 
 L'utilisateur unique de cette application se lasse de rejouer dix fois la
 meme mesure. Ce n'est pas un probleme de justesse, c'est un probleme de
 **monotonie**.
 
-Consequence directe sur toutes les decisions produit :
+Ce constat n'a pas change, et il ne doit pas etre oublie sous pretexte que
+l'application sait maintenant noter. **Une application qui note en
+permanence, sans repondre a la lassitude, aura resolu un probleme que
+personne n'avait.**
 
-- La fonctionnalite centrale n'est pas la notation, c'est le **boucleur a
-  variations** : dix repetitions differentes du meme passage plutot que dix
-  repetitions identiques.
+Comment le coeur actuel y repond :
+
+- **La boucle, pas la carte.** On selectionne deux mesures, on les boucle, et
+  le tempo monte tout seul quand le passage est propre. Meme mecanisme
+  anti-lassitude que l'ancien boucleur, sans l'ecran de cartes.
+- **L'application mesure au lieu de demander.** Plus d'auto-evaluation : un
+  score mesure est plus motivant qu'un bouton sur lequel on appuie soi-meme,
+  et plus honnete.
+- **L'accompagnement est la variete.** C'est lui qui rend une dixieme
+  repetition supportable.
+
+## Les regles produit, qui n'ont pas bouge
+
 - L'application dit **"voila ta prochaine tache"**, jamais "voila tout ce que
-  tu as rate".
-- Un objectif fini et visible des le premier tour.
+  tu as rate". Une partition rouge partout est une regression, pas une
+  fonctionnalite.
+- Un objectif fini et visible des le premier passage.
 - Une erreur ne remet **jamais** un compteur a zero.
 - On termine toujours sur une reussite, au tempo ecrit.
+- On montre des **donnees qui montent**, pas des recompenses.
 
 Si une proposition entre en conflit avec ces principes, c'est la proposition
 qui a tort. Signale-le plutot que de l'implementer.
@@ -33,21 +59,29 @@ qui a tort. Signale-le plutot que de l'implementer.
 ```
 lib/
   core/            <- logique pure, testable, sans Flutter
-    audio/         <- detection de hauteur, abstraction du micro
-    music/         <- modele de notes, conversions, passages
-    practice/      <- variations, sessions de travail
+    audio/         <- detection de hauteur, attaques, abstraction du micro
+    music/         <- modele de notes, conversions, passages, saisie
+    score/         <- mise en page d'une portee monodique
+    follow/        <- curseur, appariement joue / attendu
+    scoring/       <- notation de la justesse et du rythme
+    play/          <- metronome et accompagnement pre-planifies
   ui/              <- widgets et ecrans, aucune logique metier
 ```
 
-Trois regles structurantes :
+Quatre regles structurantes :
 
 1. **`lib/core/` ne doit jamais importer `package:flutter/material.dart`.**
    Toute la logique metier est du Dart pur, donc testable sans `pumpWidget`.
+   La mise en page de la portee y vit aussi : elle calcule des coordonnees,
+   elle ne peint pas.
 2. **`PitchSource` est la seule frontiere avec le materiel audio.** C'est la
    seule couche a reecrire pour porter sur iOS, et la seule a remplacer pour
    developper l'interface sous Flutter Web. Rien au-dessus ne connait le micro.
-3. **`ScoreNote` est le modele pivot.** Le rendu de partition (Verovio
-   pre-genere aujourd'hui) est interchangeable ; le modele interne ne l'est pas.
+3. **`ScoreNote` est le modele pivot.** Le rendu de partition et la source des
+   notes sont interchangeables ; le modele interne ne l'est pas.
+4. **Le rendu de partition est natif** (`CustomPainter` + police Bravura), et
+   volontairement limite a une ligne monodique. Voir ADR-007 : ce n'est pas un
+   graveur general, et ca ne doit pas le devenir.
 
 ## Contraintes techniques a ne pas oublier
 
@@ -62,8 +96,14 @@ Trois regles structurantes :
   volontairement. Un detecteur naif le note comme faux.
 - **Justesse relative** : juger par rapport a l'accord reel de l'instrument,
   pas a une reference absolue.
-- **Le metronome rentre dans le micro** (10 cm d'ecart sur un telephone).
-  Privilegier le metronome visuel, et couper le detecteur pendant les clics.
+- **Le metronome rentre dans le micro** (10 cm d'ecart sur un telephone), et
+  l'accompagnement encore plus. En mode notation l'application n'emet **aucun
+  son** : le metronome est visuel. Accompagnement et notation sont deux modes
+  exclusifs (ADR-008).
+- **Le curseur avance sur l'horloge**, pas sur ce qui est joue. Le suivi
+  adaptatif est un lot a part, en V4, et le plus risque du projet.
+- **YIN ne voit pas une note repetee a la meme hauteur.** Noter le rythme
+  demande un detecteur d'attaques distinct.
 - **100 % hors ligne.** Aucun serveur, aucun compte.
 
 ## Conventions de code
@@ -79,8 +119,8 @@ Trois regles structurantes :
 ## Tests
 
 - Toute logique dans `lib/core/` doit etre couverte.
-- Le determinisme est obligatoire : `VariationGenerator` et `PracticeSession`
-  acceptent une graine.
+- Le determinisme est obligatoire : tout ce qui depend du hasard ou de
+  l'horloge accepte une graine ou une horloge injectee.
 - Pour tester l'audio, utiliser `FakePitchSource` ou synthetiser un signal,
   jamais le vrai micro.
 - Lancer : `flutter test`.
@@ -89,7 +129,7 @@ Trois regles structurantes :
 
 - Une branche par sujet, une PR par branche. Jamais de commit direct sur `main`.
 - Nommage : `feat/`, `fix/`, `chore/`, `docs/`, `test/` + description en
-  kebab-case. Exemple : `feat/boucleur-variations`.
+  kebab-case. Exemple : `feat/curseur-au-tempo`.
 - Messages de commit en Conventional Commits : `feat(practice): ...`.
 - La CI doit etre verte avant merge. Squash merge.
 
@@ -101,6 +141,8 @@ Trois regles structurantes :
 - Introduire de la gamification enfantine (mascottes, confettis, badges
   bruyants). L'utilisateur a 11 ans et sait qu'il fait de la musique : on lui
   montre des **donnees** qui montent, pas des recompenses.
+- Transformer le rendu de partition en graveur general. Il grave une ligne
+  monodique, c'est tout ce qu'il doit savoir faire (ADR-007).
 - Ajouter un backend, un compte utilisateur ou de la telemetrie.
 
 ## Etat d'avancement

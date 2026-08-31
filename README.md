@@ -1,9 +1,12 @@
 # Violon
 
-Application d'aide au travail du violon. Elle ecoute ce qui est joue, mesure
-la justesse et le rythme, et surtout **rend la repetition supportable** :
-plutot que dix fois la meme mesure a l'identique, elle propose dix facons
-differentes de la travailler.
+Application d'aide au travail du violon. Elle affiche le passage sur une
+**partition qui suit ce qui est joue**, colore les notes en direct, mesure la
+justesse et le rythme, et sait jouer un accompagnement.
+
+Et surtout elle **rend la repetition supportable** : on boucle deux mesures,
+le tempo monte tout seul quand c'est propre, et une erreur ne remet jamais
+un compteur a zero.
 
 Projet personnel, utilisateur unique, 100 % hors ligne.
 
@@ -28,12 +31,15 @@ l'activite est verrouillee en portrait (telephone pose sur un pupitre).
 ```
 lib/
   core/                logique pure, sans Flutter, entierement testee
-    audio/             YIN, abstraction du micro, source factice
+    audio/             YIN, attaques, abstraction du micro, source factice
     music/             notes, passages, conversions hauteur/frequence/cents
-    practice/          variations de travail, sessions
+    score/             mise en page d'une portee monodique
+    follow/            curseur, appariement joue / attendu
+    scoring/           notation de la justesse et du rythme
+    play/              metronome et accompagnement pre-planifies
   ui/                  ecrans et widgets
 test/                  miroir de lib/
-tool/                  script Verovio (gravure des partitions, hors app)
+tool/                  script Verovio (import de morceaux entiers, hors app)
 docs/                  roadmap, backlog, decisions d'architecture
 ```
 
