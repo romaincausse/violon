@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'core/music/demo_passage.dart';
 import 'core/music/passage.dart';
 import 'ui/screens/passage_editor_screen.dart';
-import 'ui/screens/practice_screen.dart';
+import 'ui/screens/session_screen.dart';
 
 void main() {
   runApp(const ViolonApp());
@@ -47,7 +47,7 @@ class _ViolonAppState extends State<ViolonApp> {
         useMaterial3: true,
       ),
       home: Builder(
-        builder: (BuildContext context) => PracticeScreen(
+        builder: (BuildContext context) => SessionScreen(
           passage: _passage,
           onChangePassage: () => unawaited(_editPassage(context)),
         ),
