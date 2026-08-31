@@ -40,7 +40,7 @@ affichee, rien du reste n'a de sens.
 - [x] Hampes, crochets, ligatures
 - [x] Widget de partition, coloration par note
 - [x] Capture micro reelle sur Android (`UNPROCESSED`)
-- [ ] YIN dans un isolate
+- [x] YIN dans un isolate
 - [x] Metronome visuel
 - [x] Curseur pilote au tempo
 - [ ] Coloration en direct : juste, bas, haut
@@ -50,9 +50,9 @@ au rouge sous ses yeux, sans qu'il ait a toucher l'ecran.
 
 **Ou on en est.** La partition se grave avec les glyphes de Bravura -- cle de
 sol, tetes, alterations, crochets, points -- le curseur avance au tempo et le
-metronome visuel bat. Le micro est capte en `UNPROCESSED` et la chaine rend
-des hauteurs. Restent l'isolate et la coloration en direct, qui la relie
-enfin a la partition.
+metronome visuel bat. Le micro est capte en `UNPROCESSED`, YIN tourne dans
+son isolate, et la chaine rend des hauteurs. Reste la coloration en direct,
+qui relie enfin les deux moities.
 
 ---
 
