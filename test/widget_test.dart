@@ -32,13 +32,13 @@ void main() {
     expect(find.textContaining('bpm'), findsOneWidget);
   });
 
-  testWidgets('le metronome se lance et s arrete depuis l ecran', (
+  testWidgets('la lecture se lance et s arrete depuis l ecran', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
 
-    expect(find.text('Lancer le metronome'), findsOneWidget);
-    await tester.tap(find.text('Lancer le metronome'));
+    expect(find.text('Jouer le passage'), findsOneWidget);
+    await tester.tap(find.text('Jouer le passage'));
     await tester.pump();
     expect(find.text('Arreter'), findsOneWidget);
 
@@ -52,14 +52,14 @@ void main() {
 
     await tester.tap(find.text('Arreter'));
     await tester.pump();
-    expect(find.text('Lancer le metronome'), findsOneWidget);
+    expect(find.text('Jouer le passage'), findsOneWidget);
   });
 
-  testWidgets('changer de passage arrete la pulsation', (
+  testWidgets('changer de passage arrete la lecture', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
-    await tester.tap(find.text('Lancer le metronome'));
+    await tester.tap(find.text('Jouer le passage'));
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('Arreter'), findsOneWidget);
 
@@ -72,7 +72,7 @@ void main() {
 
     // Le tempo du nouveau passage n'est pas celui de l'ancien : laisser
     // battre l'ancien induirait en erreur.
-    expect(find.text('Lancer le metronome'), findsOneWidget);
+    expect(find.text('Jouer le passage'), findsOneWidget);
   });
 
   testWidgets('le contenu reste au-dessus de la barre de navigation', (

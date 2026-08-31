@@ -121,6 +121,27 @@ void main() {
       expect(l.highestStep, StaffGeometry.topLineStep);
     });
 
+    test('un instant quelconque se situe sur la portee', () {
+      final PassageBuilder b = PassageBuilder();
+      b.add(67, NoteValue.quarter);
+      b.add(69, NoteValue.quarter);
+      final StaffLayout l = StaffLayout.of(b.build(), spacesPerBeat: 6);
+
+      // Le curseur avance en continu : il ne tombe pas sur les notes.
+      expect(l.xForTick(0), l.notes[0].xSpaces);
+      expect(l.xForTick(480), l.notes[1].xSpaces);
+      expect(l.xForTick(240), closeTo(l.notes[0].xSpaces + 3, 1e-9));
+    });
+
+    test('le curseur ne prend pas d avance a chaque barre de mesure', () {
+      final StaffLayout l = StaffLayout.of(cinqNoires(), spacesPerBeat: 6);
+      // La 5e noire ouvre la mesure 13 : le curseur doit tomber exactement
+      // dessus, decalage de barre compris.
+      expect(l.xForTick(480 * 4), closeTo(l.notes[4].xSpaces, 1e-9));
+      // Et juste avant la barre, il est encore du cote de la mesure 12.
+      expect(l.xForTick(480 * 4 - 1), lessThan(l.notes[4].xSpaces));
+    });
+
     test('la mise en page ne bouge pas si le passage commence en mesure 1', () {
       final PassageBuilder a = PassageBuilder(firstMeasure: 1);
       final PassageBuilder z = PassageBuilder(firstMeasure: 12);

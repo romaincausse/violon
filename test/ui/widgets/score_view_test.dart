@@ -181,6 +181,31 @@ void main() {
       expect(find.byType(ScoreView), findsOneWidget);
     });
 
+    testWidgets('le curseur ne se dessine qu une fois lance', (
+      WidgetTester tester,
+    ) async {
+      final Passage p = passageDe(<(int, NoteValue)>[
+        (67, NoteValue.quarter),
+        (69, NoteValue.quarter),
+      ]);
+      // Sans curseur puis avec : le rendu doit changer.
+      await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: ScoreView(passage: p))),
+      );
+      final CustomPaint sans = tester.widget<CustomPaint>(
+        find.byType(CustomPaint).last,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: ScoreView(passage: p, cursorTick: 240)),
+        ),
+      );
+      final CustomPaint avec = tester.widget<CustomPaint>(
+        find.byType(CustomPaint).last,
+      );
+      expect(avec.painter!.shouldRepaint(sans.painter!), isTrue);
+    });
+
     testWidgets('la couleur d une note peut etre pilotee de l exterieur', (
       WidgetTester tester,
     ) async {

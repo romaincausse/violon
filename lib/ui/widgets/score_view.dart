@@ -25,6 +25,7 @@ class ScoreView extends StatelessWidget {
   const ScoreView({
     required this.passage,
     this.colorOf,
+    this.cursorTick,
     this.spaceSize,
     super.key,
   });
@@ -40,6 +41,9 @@ class ScoreView extends StatelessWidget {
   /// Rend la couleur d'une note, ou `null` pour la couleur par defaut.
   /// C'est par la que le retour visuel de justesse arrivera (lot F2).
   final NoteColorResolver? colorOf;
+
+  /// Instant courant, en ticks, ou `null` a l'arret. Trace le curseur.
+  final int? cursorTick;
 
   /// Hauteur d'un interligne, en pixels. La portee en fait quatre.
   ///
@@ -97,6 +101,8 @@ class ScoreView extends StatelessWidget {
           topSpaces: topSpaces,
           spaceSize: spaceSize,
           inkColor: scheme.onSurface,
+          cursorColor: scheme.primary,
+          cursorTick: cursorTick,
           colorOf: colorOf,
         ),
       ),
@@ -111,6 +117,8 @@ class _ScorePainter extends CustomPainter {
     required this.topSpaces,
     required this.spaceSize,
     required this.inkColor,
+    required this.cursorColor,
+    required this.cursorTick,
     required this.colorOf,
   });
 
@@ -119,6 +127,8 @@ class _ScorePainter extends CustomPainter {
   final double topSpaces;
   final double spaceSize;
   final Color inkColor;
+  final Color cursorColor;
+  final int? cursorTick;
   final NoteColorResolver? colorOf;
 
   double _x(double spaces) => spaces * spaceSize;
@@ -127,6 +137,9 @@ class _ScorePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Le curseur passe en premier : il glisse derriere les notes plutot que
+    // de les barrer. On veut lire la note, pas le trait.
+    _paintCursor(canvas, size);
     _paintStaff(canvas, size);
     _paintBarlines(canvas);
 
@@ -149,6 +162,21 @@ class _ScorePainter extends CustomPainter {
     for (int i = 0; i < layout.notes.length; i++) {
       _paintNote(canvas, layout.notes[i]);
     }
+  }
+
+  void _paintCursor(Canvas canvas, Size size) {
+    final int? tick = cursorTick;
+    if (tick == null) {
+      return;
+    }
+    final double x = _x(layout.xForTick(tick));
+    final Paint p = Paint()..color = cursorColor.withValues(alpha: 0.22);
+    // Une bande, pas un trait : a 70 cm sur un pupitre, un trait d'un pixel
+    // se perd, et une bande se suit du coin de l'oeil.
+    canvas.drawRect(
+      Rect.fromLTRB(x - spaceSize * 0.6, 0, x + spaceSize * 0.6, size.height),
+      p,
+    );
   }
 
   void _paintStaff(Canvas canvas, Size size) {
@@ -316,5 +344,7 @@ class _ScorePainter extends CustomPainter {
       old.layout != layout ||
       old.spaceSize != spaceSize ||
       old.inkColor != inkColor ||
+      old.cursorTick != cursorTick ||
+      old.cursorColor != cursorColor ||
       old.colorOf != colorOf;
 }

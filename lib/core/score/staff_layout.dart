@@ -46,7 +46,14 @@ class StaffLayout {
     required this.barlineXSpaces,
     required this.widthSpaces,
     required this.ticksPerBeat,
-  });
+    required this.firstOnsetTicks,
+    required this.lastOffsetTicks,
+    required double leadingSpaces,
+    required double spacesPerTick,
+    required List<(int, double)> barlineOffsets,
+  })  : _leadingSpaces = leadingSpaces,
+        _spacesPerTick = spacesPerTick,
+        _barlineOffsets = barlineOffsets;
 
   factory StaffLayout.of(
     Passage passage, {
@@ -61,6 +68,10 @@ class StaffLayout {
 
     final List<PlacedNote> placed = <PlacedNote>[];
     final List<double> barlines = <double>[];
+    // Chaque barre decale tout ce qui la suit. On memorise le cumul a partir
+    // de quel instant il s'applique, pour pouvoir situer n'importe quel
+    // instant sur la portee -- pas seulement les notes.
+    final List<(int, double)> barlineOffsets = <(int, double)>[(0, 0)];
     double offset = 0;
 
     for (int i = 0; i < source.length; i++) {
@@ -72,6 +83,7 @@ class StaffLayout {
             leadingSpaces + (note.onsetTicks - firstOnset) * perTick + offset;
         barlines.add(xAvant + barlineGapSpaces / 2);
         offset += barlineGapSpaces;
+        barlineOffsets.add((note.onsetTicks, offset));
       }
       final int step = StaffGeometry.stepOf(note.midi);
       placed.add(
@@ -98,6 +110,11 @@ class StaffLayout {
       barlineXSpaces: List<double>.unmodifiable(barlines),
       widthSpaces: width,
       ticksPerBeat: passage.ticksPerBeat,
+      firstOnsetTicks: firstOnset,
+      lastOffsetTicks: last.offsetTicks,
+      leadingSpaces: leadingSpaces,
+      spacesPerTick: perTick,
+      barlineOffsets: List<(int, double)>.unmodifiable(barlineOffsets),
     );
   }
 
@@ -112,6 +129,33 @@ class StaffLayout {
   /// les ligatures raisonnent en temps : une croche se ligature avec ses
   /// voisines du meme temps, pas avec ses voisines de l'ecran.
   final int ticksPerBeat;
+
+  /// Instant du debut du passage, en ticks.
+  final int firstOnsetTicks;
+
+  /// Instant de la fin de la derniere note, en ticks.
+  final int lastOffsetTicks;
+
+  final double _leadingSpaces;
+  final double _spacesPerTick;
+  final List<(int, double)> _barlineOffsets;
+
+  /// Abscisse d'un instant quelconque, en espaces de portee.
+  ///
+  /// Sert au curseur, qui avance en continu et ne tombe pas sur les notes.
+  /// Applique le meme decalage de barre de mesure que les notes : sans ca, le
+  /// curseur prendrait de l'avance a chaque barre franchie.
+  double xForTick(int tick) {
+    double offset = 0;
+    for (final (int depuis, double cumul) in _barlineOffsets) {
+      if (tick >= depuis) {
+        offset = cumul;
+      } else {
+        break;
+      }
+    }
+    return _leadingSpaces + (tick - firstOnsetTicks) * _spacesPerTick + offset;
+  }
 
   /// Pas le plus grave atteint, lignes supplementaires comprises. Sert a
   /// dimensionner la zone de dessin sans rogner les notes hors portee.

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+
+import '../../core/follow/score_cursor.dart';
 
 import '../../core/music/passage.dart';
 import '../widgets/metronome_bar.dart';
@@ -25,17 +28,57 @@ class SessionScreen extends StatefulWidget {
   State<SessionScreen> createState() => _SessionScreenState();
 }
 
-class _SessionScreenState extends State<SessionScreen> {
-  bool _metronomeRunning = false;
+class _SessionScreenState extends State<SessionScreen>
+    with SingleTickerProviderStateMixin {
+  late final Ticker _ticker = createTicker(_onTick);
+  bool _running = false;
+  Duration _elapsed = Duration.zero;
+
+  ScoreCursor get _cursor => ScoreCursor(
+        passage: widget.passage,
+        tempoBpm: widget.passage.writtenTempoBpm,
+      );
+
+  void _onTick(Duration elapsed) {
+    // La lecture s'arrete d'elle-meme sur la derniere note : on termine sur
+    // la fin du passage, pas sur un bouton qu'il faudrait penser a presser.
+    if (_cursor.isFinishedAt(elapsed)) {
+      _stop();
+      return;
+    }
+    setState(() => _elapsed = elapsed);
+  }
+
+  void _start() {
+    setState(() {
+      _elapsed = Duration.zero;
+      _running = true;
+    });
+    _ticker.start();
+  }
+
+  void _stop() {
+    _ticker.stop();
+    setState(() {
+      _running = false;
+      _elapsed = Duration.zero;
+    });
+  }
 
   @override
   void didUpdateWidget(SessionScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Changer de passage arrete la pulsation : le tempo n'est plus le meme,
-    // et laisser battre l'ancien induirait en erreur.
-    if (widget.passage != oldWidget.passage && _metronomeRunning) {
-      setState(() => _metronomeRunning = false);
+    // Changer de passage arrete la lecture : ni le tempo ni les notes ne sont
+    // les memes, et laisser courir l'ancienne induirait en erreur.
+    if (widget.passage != oldWidget.passage && _running) {
+      _stop();
     }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
   }
 
   @override
@@ -84,24 +127,21 @@ class _SessionScreenState extends State<SessionScreen> {
               const SizedBox(height: 20),
               MetronomeBar(
                 tempoBpm: passage.writtenTempoBpm,
-                running: _metronomeRunning,
+                running: _running,
               ),
               Expanded(
                 child: Center(
-                  child: ScoreView(passage: passage),
+                  child: ScoreView(
+                    passage: passage,
+                    cursorTick: _running ? _cursor.tickAt(_elapsed) : null,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               FilledButton.tonalIcon(
-                onPressed: () => setState(
-                  () => _metronomeRunning = !_metronomeRunning,
-                ),
-                icon: Icon(
-                  _metronomeRunning ? Icons.stop : Icons.play_arrow,
-                ),
-                label: Text(
-                  _metronomeRunning ? 'Arreter' : 'Lancer le metronome',
-                ),
+                onPressed: _running ? _stop : _start,
+                icon: Icon(_running ? Icons.stop : Icons.play_arrow),
+                label: Text(_running ? 'Arreter' : 'Jouer le passage'),
               ),
             ],
           ),
