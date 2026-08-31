@@ -21,7 +21,7 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 | G2 | Mise en page d'une portee monodique | P0 | 3 | G1 | Positions verticales, lignes supplementaires, alterations, barres de mesure. Dart pur, teste sans widget. |
 | G3 | Hampes, crochets, ligatures | P0 | 2 | G2 | Sens de hampe a la 3e ligne, ligatures par groupe de temps. |
 | G4 | Widget de partition et coloration par note | P0 | 2 | G3 | `CustomPainter`. Une couleur par note, pilotee de l'exterieur. |
-| A1 | Capture micro Android en `UNPROCESSED` | P0 | 2 | - | Canal de plateforme si le paquet ne l'expose pas. Repli `VOICE_RECOGNITION`. **Dependance `record`.** |
+| ~~A1~~ | ~~Capture micro Android en `UNPROCESSED`~~ | P0 | 2 | - | **Fait.** `record` l'expose, pas de canal de plateforme a ecrire. Repli `VOICE_RECOGNITION` teste. |
 | A2 | YIN dans un isolate | P0 | 1 | A1 | Buffers 2048, `Float32List` transferables. Le detecteur existe deja. |
 | M1 | Metronome visuel | P0 | 1 | - | Pulsation en bord d'ecran. Le seul metronome autorise en mode notation. |
 | F1 | Curseur pilote au tempo | P0 | 2 | G4, M1 | Avance sur l'horloge, pas sur ce qui est joue. Le suivi adaptatif est en V4. |
@@ -68,6 +68,6 @@ Aucune n'est ajoutee sans accord explicite.
 | Paquet | Pour | Jalon |
 |--------|------|-------|
 | ~~Bravura (asset, SIL OFL)~~ | ~~G1, le rendu de partition~~ | **ajoutee** |
-| `record` | A1, la capture micro | V1 |
+| ~~`record`~~ | ~~A1, la capture micro~~ | **ajoutee** |
 | moteur audio bas niveau | J1, l'accompagnement pre-planifie | V3 |
 | stockage local | H1, la persistance | V4 |

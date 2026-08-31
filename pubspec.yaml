@@ -10,11 +10,16 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Capture micro en flux PCM brut. Retenu parce qu'il expose la source audio
+  # Android (`AndroidAudioSource.unprocessed`), ce qui est la contrainte
+  # numero un du projet : le mode par defaut applique une reduction de bruit
+  # calibree pour la voix, et un son tenu de violon la fait deraper.
+  record: ^7.1.1
+
   # --- A ajouter au fur et a mesure, via `flutter pub add <paquet>` ---
   # Volontairement absents pour que le squelette compile et que la CI soit
   # verte des le premier commit, sans risque de conflit de versions.
   #
-  # record            : capture micro (flux PCM brut)
   # flutter_svg       : affichage des partitions gravees par Verovio
   # just_audio        : lecture audio / play-along
   # soloud            : moteur audio bas niveau (metronome pre-planifie)

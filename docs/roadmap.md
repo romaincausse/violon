@@ -39,7 +39,7 @@ affichee, rien du reste n'a de sens.
 - [x] Mise en page d'une portee monodique (positions, alterations, barres)
 - [x] Hampes, crochets, ligatures
 - [x] Widget de partition, coloration par note
-- [ ] Capture micro reelle sur Android (`UNPROCESSED`) **<- bloque : dependance a valider**
+- [x] Capture micro reelle sur Android (`UNPROCESSED`)
 - [ ] YIN dans un isolate
 - [x] Metronome visuel
 - [x] Curseur pilote au tempo
@@ -50,7 +50,9 @@ au rouge sous ses yeux, sans qu'il ait a toucher l'ecran.
 
 **Ou on en est.** La partition se grave avec les glyphes de Bravura -- cle de
 sol, tetes, alterations, crochets, points -- le curseur avance au tempo et le
-metronome visuel bat. Il ne manque plus que ce qui vient du micro.
+metronome visuel bat. Le micro est capte en `UNPROCESSED` et la chaine rend
+des hauteurs. Restent l'isolate et la coloration en direct, qui la relie
+enfin a la partition.
 
 ---
 

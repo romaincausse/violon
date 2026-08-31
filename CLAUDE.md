@@ -58,25 +58,31 @@ qui a tort. Signale-le plutot que de l'implementer.
 
 ```
 lib/
-  core/            <- logique pure, testable, sans Flutter
+  core/            <- logique pure, testable, sans aucun paquet
     audio/         <- detection de hauteur, attaques, abstraction du micro
     music/         <- modele de notes, conversions, passages, saisie
     score/         <- mise en page d'une portee monodique
     follow/        <- curseur, appariement joue / attendu
     scoring/       <- notation de la justesse et du rythme
     play/          <- metronome et accompagnement pre-planifies
+  platform/        <- adaptateurs vers les plugins, une classe par frontiere
   ui/              <- widgets et ecrans, aucune logique metier
 ```
 
 Quatre regles structurantes :
 
-1. **`lib/core/` ne doit jamais importer `package:flutter/material.dart`.**
-   Toute la logique metier est du Dart pur, donc testable sans `pumpWidget`.
-   La mise en page de la portee y vit aussi : elle calcule des coordonnees,
-   elle ne peint pas.
-2. **`PitchSource` est la seule frontiere avec le materiel audio.** C'est la
-   seule couche a reecrire pour porter sur iOS, et la seule a remplacer pour
-   developper l'interface sous Flutter Web. Rien au-dessus ne connait le micro.
+1. **`lib/core/` ne doit importer aucun paquet.** Pas Flutter, et pas
+   davantage un plugin : un plugin ne se teste pas sans appareil, ce qui
+   viderait la regle de son sens. Toute la logique metier est donc du Dart
+   pur, testable sans `pumpWidget` et sans telephone. La mise en page de la
+   portee y vit aussi : elle calcule des coordonnees, elle ne peint pas.
+   C'est verifie par la CI et par `make core-pur`.
+2. **`AudioCapture` et `PitchSource` sont les seules frontieres avec le
+   materiel audio.** `AudioCapture` ne connait que des octets et vit dans
+   `lib/platform/` cote implementation ; `PitchSource` rend des hauteurs.
+   Ce sont les seules couches a reecrire pour porter sur iOS, et les seules a
+   remplacer pour developper l'interface sous Flutter Web. Rien au-dessus ne
+   connait le micro.
 3. **`ScoreNote` est le modele pivot.** Le rendu de partition et la source des
    notes sont interchangeables ; le modele interne ne l'est pas.
 4. **Le rendu de partition est natif** (`CustomPainter` + police Bravura), et
@@ -89,6 +95,8 @@ Quatre regles structurantes :
 - **Micro en `AudioSource.UNPROCESSED`**, repli sur `VOICE_RECOGNITION`. Le
   mode `MIC` par defaut applique AGC et reduction de bruit calibrees pour la
   voix : sur un son tenu de violon, la detection devient instable.
+  `UNPROCESSED` existe depuis Android 7 mais reste **facultative** pour les
+  constructeurs : le repli n'est pas theorique.
 - **Jamais de `Timer` Dart pour le metronome.** La derive est audible. Les
   clics doivent etre pre-planifies dans le moteur audio natif.
 - **Le YIN tourne dans un isolate**, sur des buffers de 2048 echantillons.
