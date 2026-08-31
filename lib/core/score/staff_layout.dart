@@ -45,6 +45,7 @@ class StaffLayout {
     required this.notes,
     required this.barlineXSpaces,
     required this.widthSpaces,
+    required this.ticksPerBeat,
   });
 
   factory StaffLayout.of(
@@ -96,6 +97,7 @@ class StaffLayout {
       notes: List<PlacedNote>.unmodifiable(placed),
       barlineXSpaces: List<double>.unmodifiable(barlines),
       widthSpaces: width,
+      ticksPerBeat: passage.ticksPerBeat,
     );
   }
 
@@ -105,6 +107,11 @@ class StaffLayout {
   final List<double> barlineXSpaces;
 
   final double widthSpaces;
+
+  /// Resolution du passage d'origine. Conservee ici parce que les hampes et
+  /// les ligatures raisonnent en temps : une croche se ligature avec ses
+  /// voisines du meme temps, pas avec ses voisines de l'ecran.
+  final int ticksPerBeat;
 
   /// Pas le plus grave atteint, lignes supplementaires comprises. Sert a
   /// dimensionner la zone de dessin sans rogner les notes hors portee.
