@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/music/passage.dart';
 import '../../core/music/score_note.dart';
+import '../../core/score/smufl.dart';
 import '../../core/score/staff_geometry.dart';
 import '../../core/score/staff_layout.dart';
 import '../../core/score/stems_and_beams.dart';
@@ -17,10 +18,12 @@ typedef NoteColorResolver = Color? Function(ScoreNote note);
 /// portee. Ce widget ne fait que convertir en pixels et peindre : il ne
 /// decide d'aucune position.
 ///
-/// **Sans police musicale pour l'instant.** Le lot G1 apportera Bravura, qui
-/// remplacera les tetes dessinees a la main par de vrais glyphes et ajoutera
-/// la cle de sol. En attendant, tout est trace en primitives : c'est lisible
-/// et cela permet de voir la gravure marcher avant d'embarquer un asset.
+/// **Les symboles viennent de Bravura, les traits sont dessines.** Cle, tetes,
+/// alterations, crochets et points sont des glyphes SMuFL : les dessiner a la
+/// main ne donnerait jamais le meme trace. Lignes de portee, lignes
+/// supplementaires, hampes, barres de mesure et ligatures restent des
+/// primitives, parce que ce sont des traits dont la longueur depend de la mise
+/// en page : une police ne peut pas les fournir.
 class ScoreView extends StatelessWidget {
   const ScoreView({
     required this.passage,
@@ -74,7 +77,9 @@ class ScoreView extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
     // Marge d'un espace et demi au-dela de la note la plus extreme, pour ne
-    // rogner ni les lignes supplementaires ni les hampes.
+    // rogner ni les lignes supplementaires ni les hampes. La cle de sol
+    // deborde elle aussi de la portee, mais moins qu'une hampe pleine
+    // longueur : la reserve faite pour les hampes la contient deja.
     final double topSpaces = math.min(
           StaffGeometry.yInSpaces(layout.highestStep),
           -2.0 - StemsAndBeams.standardLengthSpaces,
@@ -131,6 +136,9 @@ class _ScorePainter extends CustomPainter {
   final int? cursorTick;
   final NoteColorResolver? colorOf;
 
+  /// Abscisse du bord gauche de la cle, en espaces.
+  static const double _clefXSpaces = 1;
+
   double _x(double spaces) => spaces * spaceSize;
   double _y(double spaces) => (spaces - topSpaces) * spaceSize;
   double _yOfStep(int step) => _y(StaffGeometry.yInSpaces(step));
@@ -142,6 +150,7 @@ class _ScorePainter extends CustomPainter {
     _paintCursor(canvas, size);
     _paintStaff(canvas, size);
     _paintBarlines(canvas);
+    _paintClef(canvas);
 
     final Map<int, Beam> beamOfNote = <int, Beam>{};
     for (final Beam beam in stems.beams) {
@@ -163,6 +172,52 @@ class _ScorePainter extends CustomPainter {
       _paintNote(canvas, layout.notes[i]);
     }
   }
+
+  // --- Glyphes SMuFL -------------------------------------------------------
+
+  /// Compose un glyphe. La taille de police vaut quatre interlignes : c'est
+  /// la convention SMuFL, et elle suffit a mettre toute la police a l'echelle.
+  TextPainter _glyph(String glyph, Color color) => TextPainter(
+        text: TextSpan(
+          text: glyph,
+          style: TextStyle(
+            color: color,
+            fontFamily: Smufl.fontFamily,
+            fontSize: Smufl.fontSizeForSpace(spaceSize),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+  /// Pose un glyphe a son origine SMuFL : bord gauche a [xSpaces], ligne de
+  /// base a [baselineSpaces]. Toute la table des glyphes se place ainsi, ce
+  /// qui evite un cas particulier par symbole.
+  void _drawGlyph(
+    Canvas canvas,
+    TextPainter tp,
+    double xSpaces,
+    double baselineSpaces,
+  ) {
+    final double baseline =
+        tp.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+    tp.paint(canvas, Offset(_x(xSpaces), _y(baselineSpaces) - baseline));
+  }
+
+  double _widthSpaces(TextPainter tp) => tp.width / spaceSize;
+
+  void _paintClef(Canvas canvas) {
+    final TextPainter tp = _glyph(Smufl.gClef, inkColor);
+    // La boucle de la cle enroule la ligne du sol4 : c'est la ligne de base
+    // du glyphe qui s'y pose, pas son centre.
+    _drawGlyph(
+      canvas,
+      tp,
+      _clefXSpaces,
+      StaffGeometry.yInSpaces(Smufl.gClefLineStep),
+    );
+  }
+
+  // --- Traits --------------------------------------------------------------
 
   void _paintCursor(Canvas canvas, Size size) {
     final int? tick = cursorTick;
@@ -234,36 +289,24 @@ class _ScorePainter extends CustomPainter {
       p,
     );
     if (beam == null && stem.flagCount > 0) {
-      _paintFlags(canvas, stem);
+      _paintFlag(canvas, stem);
     }
   }
 
-  void _paintFlags(Canvas canvas, Stem stem) {
-    final Paint p = Paint()
-      ..color = _colorFor(layout.notes[stem.noteIndex])
-      ..style = PaintingStyle.fill;
-    final double x = _x(stem.xSpaces);
-    final double sens = stem.direction == StemDirection.up ? 1 : -1;
-    for (int i = 0; i < stem.flagCount; i++) {
-      final double y = _y(stem.tipYSpaces) +
-          sens * i * spaceSize * StemsAndBeams.beamSpacingSpaces;
-      final Path path = Path()
-        ..moveTo(x, y)
-        ..quadraticBezierTo(
-          x + spaceSize * 1.1,
-          y + sens * spaceSize * 0.6,
-          x + spaceSize * 0.9,
-          y + sens * spaceSize * 1.7,
-        )
-        ..quadraticBezierTo(
-          x + spaceSize * 0.9,
-          y + sens * spaceSize * 0.8,
-          x,
-          y + sens * spaceSize * 0.55,
-        )
-        ..close();
-      canvas.drawPath(path, p);
+  void _paintFlag(Canvas canvas, Stem stem) {
+    final String? glyph = Smufl.flagFor(stem.flagCount, stem.direction);
+    if (glyph == null) {
+      return;
     }
+    // Un glyphe de crochet porte deja tous les crochets de sa figure : celui
+    // de la double croche en dessine deux. On ne les empile pas, contrairement
+    // aux ligatures. Son origine est le point ou il rejoint la hampe.
+    _drawGlyph(
+      canvas,
+      _glyph(glyph, _colorFor(layout.notes[stem.noteIndex])),
+      stem.xSpaces,
+      stem.tipYSpaces,
+    );
   }
 
   void _paintBeam(Canvas canvas, Beam beam) {
@@ -289,53 +332,66 @@ class _ScorePainter extends CustomPainter {
     }
   }
 
+  // --- Notes ---------------------------------------------------------------
+
   void _paintNote(Canvas canvas, PlacedNote note) {
     final NoteHead head = StemsAndBeams.headFor(
       note.note.durationTicks,
       layout.ticksPerBeat,
     );
     final Color color = _colorFor(note);
-    final double x = _x(note.xSpaces);
-    final double y = _y(note.yInSpaces);
+    final TextPainter tp = _glyph(Smufl.noteheadFor(head), color);
+    final double largeur = _widthSpaces(tp);
 
-    final Paint p = Paint()
-      ..color = color
-      ..style =
-          head == NoteHead.filled ? PaintingStyle.fill : PaintingStyle.stroke
-      ..strokeWidth = math.max(1.2, spaceSize * 0.16);
-
-    // Une tete de note est un ovale incline : c'est ce qui la distingue d'un
-    // point, et ce qui la fait tenir dans un interligne.
-    canvas.save();
-    canvas.translate(x, y);
-    canvas.rotate(-0.34); // environ 20 degres
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: spaceSize * (head == NoteHead.whole ? 1.7 : 1.35),
-        height: spaceSize * 0.95,
-      ),
-      p,
-    );
-    canvas.restore();
+    // La mise en page situe le *centre* de la tete ; le glyphe se pose par son
+    // bord gauche. La hampe, elle, est calee a un demi-espace du centre : elle
+    // mord donc tres legerement dans la tete, ce qui est ce qu'on veut.
+    final double gauche = note.xSpaces - largeur / 2;
+    _drawGlyph(canvas, tp, gauche, note.yInSpaces);
 
     if (note.accidental == Accidental.sharp) {
-      _paintSharp(canvas, x, y, color);
+      _paintAccidental(canvas, note, gauche, color);
+    }
+    if (StemsAndBeams.isDotted(note.note.durationTicks, layout.ticksPerBeat)) {
+      _paintDot(canvas, note, gauche + largeur, color);
     }
   }
 
-  /// Diese provisoire, tire de la police systeme. Bravura fournira le vrai
-  /// glyphe au lot G1.
-  void _paintSharp(Canvas canvas, double x, double y, Color color) {
-    final TextPainter tp = TextPainter(
-      text: TextSpan(
-        text: '♯',
-        style: TextStyle(color: color, fontSize: spaceSize * 2.6),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset(x - spaceSize * 1.1 - tp.width, y - tp.height / 2));
+  void _paintAccidental(
+    Canvas canvas,
+    PlacedNote note,
+    double headLeftSpaces,
+    Color color,
+  ) {
+    final TextPainter tp = _glyph(Smufl.accidentalSharp, color);
+    // L'alteration se colle a gauche de la tete, a la meme hauteur.
+    _drawGlyph(
+      canvas,
+      tp,
+      headLeftSpaces - _accidentalGapSpaces - _widthSpaces(tp),
+      note.yInSpaces,
+    );
   }
+
+  void _paintDot(
+    Canvas canvas,
+    PlacedNote note,
+    double headRightSpaces,
+    Color color,
+  ) {
+    // Un point ne se pose jamais sur une ligne : quand la note est sur une
+    // ligne, il monte dans l'interligne au-dessus.
+    final double y = note.isOnLine ? note.yInSpaces - 0.5 : note.yInSpaces;
+    _drawGlyph(
+      canvas,
+      _glyph(Smufl.augmentationDot, color),
+      headRightSpaces + _dotGapSpaces,
+      y,
+    );
+  }
+
+  static const double _accidentalGapSpaces = 0.25;
+  static const double _dotGapSpaces = 0.3;
 
   Color _colorFor(PlacedNote note) => colorOf?.call(note.note) ?? inkColor;
 

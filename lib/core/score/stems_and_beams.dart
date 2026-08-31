@@ -212,6 +212,27 @@ class StemsAndBeams {
   static int flagsFor(int durationTicks, int ticksPerBeat) =>
       _flagCount(durationTicks, ticksPerBeat);
 
+  /// La note porte-t-elle un point d'allongement ?
+  ///
+  /// Le modele ne stocke qu'une duree en ticks, pas de drapeau : le point se
+  /// retrouve donc par le calcul. Une note est pointee si retirer la moitie
+  /// ajoutee retombe exactement sur une figure simple. Tout se fait en
+  /// entiers, pour ne pas faire dependre une tete de note d'un arrondi.
+  static bool isDotted(int durationTicks, int ticksPerBeat) {
+    if (durationTicks * 2 % 3 != 0) {
+      return false;
+    }
+    return _isPlainValue(durationTicks * 2 ~/ 3, ticksPerBeat);
+  }
+
+  /// Duree d'une figure simple, de la ronde a la double croche.
+  static bool _isPlainValue(int ticks, int ticksPerBeat) =>
+      ticks == ticksPerBeat * 4 ||
+      ticks == ticksPerBeat * 2 ||
+      ticks == ticksPerBeat ||
+      ticks * 2 == ticksPerBeat ||
+      ticks * 4 == ticksPerBeat;
+
   static int _flagCount(int durationTicks, int ticksPerBeat) {
     final double beats = durationTicks / ticksPerBeat;
     if (beats >= 4) {

@@ -227,4 +227,78 @@ void main() {
       expect(demande, isTrue, reason: 'le peintre consulte bien le resolveur');
     });
   });
+
+  group('gravure Bravura', () {
+    /// Compte les glyphes peints. Un glyphe SMuFL est un paragraphe de texte,
+    /// une hampe ou une barre de mesure sont des traits : compter les
+    /// paragraphes revient a compter les symboles issus de la police.
+    Matcher glyphes(int combien) =>
+        paintsExactlyCountTimes(#drawParagraph, combien);
+
+    testWidgets('une note nue vaut deux glyphes : la cle et la tete', (
+      WidgetTester tester,
+    ) async {
+      await poser(
+        tester,
+        passageDe(<(int, NoteValue)>[(69, NoteValue.quarter)]), // la4
+      );
+      expect(find.byType(CustomPaint).last, glyphes(2));
+    });
+
+    testWidgets('un diese ajoute son glyphe devant la tete', (
+      WidgetTester tester,
+    ) async {
+      await poser(
+        tester,
+        passageDe(<(int, NoteValue)>[(66, NoteValue.quarter)]), // fa#4
+      );
+      expect(find.byType(CustomPaint).last, glyphes(3));
+    });
+
+    testWidgets('une note pointee porte son point', (
+      WidgetTester tester,
+    ) async {
+      final PassageBuilder b = PassageBuilder();
+      b.add(69, NoteValue.quarter, dotted: true);
+      await poser(tester, b.build());
+      expect(find.byType(CustomPaint).last, glyphes(3));
+    });
+
+    testWidgets('une croche isolee porte un crochet, une croche ligaturee non',
+        (WidgetTester tester) async {
+      // Une croche seule : cle + tete + crochet.
+      await poser(
+        tester,
+        passageDe(<(int, NoteValue)>[(69, NoteValue.eighth)]),
+      );
+      expect(find.byType(CustomPaint).last, glyphes(3));
+
+      // Deux croches sur le meme temps : la ligature remplace les crochets,
+      // et elle est peinte, pas composee. Cle + deux tetes.
+      await poser(
+        tester,
+        passageDe(<(int, NoteValue)>[
+          (69, NoteValue.eighth),
+          (71, NoteValue.eighth),
+        ]),
+      );
+      expect(find.byType(CustomPaint).last, glyphes(3));
+    });
+
+    testWidgets('la reserve verticale laisse passer la cle de sol', (
+      WidgetTester tester,
+    ) async {
+      // La cle deborde d'environ trois espaces et demi au-dessus de la portee
+      // et de deux et demi en dessous. Si la reserve faite pour les hampes
+      // venait a se reduire, la cle serait rognee sans qu'aucun autre test ne
+      // bronche.
+      const double espace = 9;
+      final Size taille = await poser(
+        tester,
+        passageDe(<(int, NoteValue)>[(71, NoteValue.quarter)]),
+        spaceSize: espace,
+      );
+      expect(taille.height / espace, greaterThanOrEqualTo(10));
+    });
+  });
 }
