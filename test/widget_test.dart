@@ -3,57 +3,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/main.dart';
 
 void main() {
-  testWidgets('l\'ecran de travail affiche le premier tour', (
+  testWidgets('l\'application s\'ouvre sur le passage de demonstration', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
 
-    expect(find.text('Tour 1 / 10'), findsOneWidget);
-    expect(find.text('C\'etait propre'), findsOneWidget);
+    expect(find.text('Demo - mesures 12 a 13'), findsOneWidget);
+    expect(find.text('Mesures 12 a 13'), findsOneWidget);
+    expect(find.byIcon(Icons.edit_note), findsOneWidget);
   });
 
-  testWidgets('valider un tour fait avancer le compteur', (
+  testWidgets('les notes du passage sont affichees dans l\'ordre', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
 
-    await tester.tap(find.text('C\'etait propre'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Tour 2 / 10'), findsOneWidget);
+    // L'emplacement de la portee gravee (lot G4) montre pour l'instant la
+    // suite des notes : c'est ce qui permet de verifier qu'un passage arrive
+    // bien jusqu'a l'ecran de travail.
+    expect(find.text('Sol4'), findsWidgets);
   });
 
-  testWidgets('la session se termine par un ecran de bilan', (
+  testWidgets('le tempo ecrit du passage est affiche', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
 
-    for (int i = 0; i < 10; i++) {
-      await tester.tap(find.text('C\'etait propre'));
-      await tester.pumpAndSettle();
-    }
-
-    expect(find.text('Termine.'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Recommencer'), findsOneWidget);
+    expect(find.textContaining('bpm'), findsOneWidget);
   });
 
-  testWidgets('le bilan n\'affiche plus ni compteur de tours ni tempo', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(const ViolonApp());
-
-    for (int i = 0; i < 10; i++) {
-      await tester.tap(find.text('C\'etait propre'));
-      await tester.pumpAndSettle();
-    }
-
-    // Le compteur affichait "Tour 11 / 10", et le tempo celui d'un tour qui
-    // n'existe plus.
-    expect(find.textContaining('Tour '), findsNothing);
-    expect(find.textContaining(' bpm'), findsNothing);
-  });
-
-  testWidgets('les boutons restent au-dessus de la barre de navigation', (
+  testWidgets('le contenu reste au-dessus de la barre de navigation', (
     WidgetTester tester,
   ) async {
     const double hauteurBarre = 48;
@@ -65,13 +44,11 @@ void main() {
 
     await tester.pumpWidget(const ViolonApp());
 
-    // Sans SafeArea, ce bouton debordait sous la barre systeme et devenait
-    // presque impossible a viser.
-    final double basDuBouton = tester
-        .getBottomLeft(
-          find.widgetWithText(TextButton, 'Celle-la je n\'aime pas'),
-        )
-        .dy;
-    expect(basDuBouton, lessThanOrEqualTo(hauteurEcran - hauteurBarre));
+    // Sans SafeArea, le bas de la colonne debordait sous la barre systeme.
+    // On mesure le contenu et non le SafeArea : ce dernier occupe toute la
+    // hauteur, c'est son enfant qu'il decale.
+    final double basDuContenu =
+        tester.getBottomLeft(find.byKey(const Key('session-content'))).dy;
+    expect(basDuContenu, lessThanOrEqualTo(hauteurEcran - hauteurBarre));
   });
 }

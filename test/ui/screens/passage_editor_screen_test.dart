@@ -163,7 +163,7 @@ void main() {
     });
   });
 
-  testWidgets('le passage saisi remplace la demo dans le boucleur', (
+  testWidgets('le passage saisi remplace la demo sur l\'ecran de travail', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
@@ -186,9 +186,9 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Travailler'));
     await tester.pumpAndSettle();
 
-    // De retour sur le boucleur, avec une session neuve sur le nouveau passage.
-    expect(find.text('Mesure 12'), findsOneWidget);
-    expect(find.text('Tour 1 / 10'), findsOneWidget);
+    // De retour sur l'ecran de travail, sur le nouveau passage.
+    expect(find.text('Mesure 12'), findsNWidgets(2),
+        reason: 'titre et bandeau');
     expect(find.text('Demo - mesures 12 a 13'), findsNothing);
   });
 }
