@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/main.dart';
+import 'package:violon/ui/widgets/score_view.dart';
 
 void main() {
   testWidgets('l\'application s\'ouvre sur le passage de demonstration', (
@@ -13,15 +14,14 @@ void main() {
     expect(find.byIcon(Icons.edit_note), findsOneWidget);
   });
 
-  testWidgets('les notes du passage sont affichees dans l\'ordre', (
+  testWidgets('le passage est grave sur une portee', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ViolonApp());
 
-    // L'emplacement de la portee gravee (lot G4) montre pour l'instant la
-    // suite des notes : c'est ce qui permet de verifier qu'un passage arrive
-    // bien jusqu'a l'ecran de travail.
-    expect(find.text('Sol4'), findsWidgets);
+    expect(find.byType(ScoreView), findsOneWidget);
+    // Les notes ne sont plus du texte : elles sont peintes.
+    expect(find.text('Sol4'), findsNothing);
   });
 
   testWidgets('le tempo ecrit du passage est affiche', (

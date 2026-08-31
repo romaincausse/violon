@@ -3,6 +3,18 @@ import 'staff_layout.dart';
 /// Sens de la hampe.
 enum StemDirection { up, down }
 
+/// Forme de la tete de note.
+enum NoteHead {
+  /// Ronde : ovale evide, plus large, sans hampe.
+  whole,
+
+  /// Blanche : ovale evide.
+  half,
+
+  /// Noire et plus bref : ovale plein.
+  filled,
+}
+
 /// Une hampe, en espaces de portee.
 class Stem {
   const Stem({
@@ -179,12 +191,27 @@ class StemsAndBeams {
   final List<Stem> stems;
   final List<Beam> beams;
 
+  /// Forme de la tete pour une duree donnee.
+  static NoteHead headFor(int durationTicks, int ticksPerBeat) {
+    final double beats = durationTicks / ticksPerBeat;
+    if (beats >= 4) {
+      return NoteHead.whole;
+    }
+    if (beats >= 2) {
+      return NoteHead.half;
+    }
+    return NoteHead.filled;
+  }
+
   /// Crochets d'une duree : -1 pour une ronde, 0 pour blanche et noire,
   /// 1 pour une croche, 2 pour une double.
   ///
   /// Le calcul part du rapport a la noire, ce qui traite les notes pointees
   /// sans cas particulier : une croche pointee vaut 0,75 temps et tombe donc
   /// dans la meme tranche qu'une croche, ce qui est correct.
+  static int flagsFor(int durationTicks, int ticksPerBeat) =>
+      _flagCount(durationTicks, ticksPerBeat);
+
   static int _flagCount(int durationTicks, int ticksPerBeat) {
     final double beats = durationTicks / ticksPerBeat;
     if (beats >= 4) {

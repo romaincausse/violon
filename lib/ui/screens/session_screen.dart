@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/music/passage.dart';
-import '../../core/music/pitch_utils.dart';
-import '../../core/music/score_note.dart';
 import '../widgets/metronome_bar.dart';
+import '../widgets/score_view.dart';
 
 /// Ecran de travail : le passage, et ce qu'on en fait.
 ///
@@ -89,23 +88,7 @@ class _SessionScreenState extends State<SessionScreen> {
               ),
               Expanded(
                 child: Center(
-                  // Emplacement de la portee gravee (lot G4). En attendant,
-                  // la suite des notes, pour verifier qu'un passage saisi
-                  // arrive bien jusqu'a l'ecran de travail.
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      alignment: WrapAlignment.center,
-                      children: <Widget>[
-                        for (final ScoreNote note in passage.notes)
-                          Text(
-                            PitchUtils.noteName(note.midi),
-                            style: theme.textTheme.headlineSmall,
-                          ),
-                      ],
-                    ),
-                  ),
+                  child: ScoreView(passage: passage),
                 ),
               ),
               const SizedBox(height: 16),
