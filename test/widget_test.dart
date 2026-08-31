@@ -32,6 +32,49 @@ void main() {
     expect(find.textContaining('bpm'), findsOneWidget);
   });
 
+  testWidgets('le metronome se lance et s arrete depuis l ecran', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const ViolonApp());
+
+    expect(find.text('Lancer le metronome'), findsOneWidget);
+    await tester.tap(find.text('Lancer le metronome'));
+    await tester.pump();
+    expect(find.text('Arreter'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      tester
+          .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
+          .widthFactor,
+      greaterThan(0),
+    );
+
+    await tester.tap(find.text('Arreter'));
+    await tester.pump();
+    expect(find.text('Lancer le metronome'), findsOneWidget);
+  });
+
+  testWidgets('changer de passage arrete la pulsation', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const ViolonApp());
+    await tester.tap(find.text('Lancer le metronome'));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Arreter'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.edit_note));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Sol4'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(TextButton, 'Travailler'));
+    await tester.pumpAndSettle();
+
+    // Le tempo du nouveau passage n'est pas celui de l'ancien : laisser
+    // battre l'ancien induirait en erreur.
+    expect(find.text('Lancer le metronome'), findsOneWidget);
+  });
+
   testWidgets('le contenu reste au-dessus de la barre de navigation', (
     WidgetTester tester,
   ) async {
