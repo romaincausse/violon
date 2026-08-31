@@ -196,6 +196,29 @@ void main() {
     });
   });
 
+  group('Forme des tetes', () {
+    const int parNoire = 480;
+
+    test('la ronde et la blanche sont evidees, le reste est plein', () {
+      expect(StemsAndBeams.headFor(1920, parNoire), NoteHead.whole);
+      expect(StemsAndBeams.headFor(960, parNoire), NoteHead.half);
+      expect(StemsAndBeams.headFor(480, parNoire), NoteHead.filled);
+      expect(StemsAndBeams.headFor(240, parNoire), NoteHead.filled);
+    });
+
+    test('une blanche pointee reste une blanche', () {
+      // 3 temps : elle ne doit pas passer pour une ronde.
+      expect(StemsAndBeams.headFor(1440, parNoire), NoteHead.half);
+    });
+
+    test('le nombre de crochets suit la figure', () {
+      expect(StemsAndBeams.flagsFor(1920, parNoire), -1, reason: 'ronde');
+      expect(StemsAndBeams.flagsFor(480, parNoire), 0, reason: 'noire');
+      expect(StemsAndBeams.flagsFor(240, parNoire), 1, reason: 'croche');
+      expect(StemsAndBeams.flagsFor(120, parNoire), 2, reason: 'double');
+    });
+  });
+
   group('Position de la ligature', () {
     test('elle se pose a l extremite la plus lointaine du groupe', () {
       // Hampes montantes : la ligature prend le tip le plus haut, donc le
