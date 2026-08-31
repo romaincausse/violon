@@ -1,4 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- La seule permission de l'application. Pas de reseau, pas de stockage :
+         tout reste sur l'appareil (ADR-005). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Un telephone sans micro ne sert a rien ici, mais on ne veut pas non
+         plus que le Play Store masque l'application a une tablette dont le
+         micro est declare facultatif. -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
     <application
         android:label="Violon"
         android:name="${applicationName}"

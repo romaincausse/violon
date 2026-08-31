@@ -44,10 +44,13 @@ jobs:
 
       # Regle d'architecture n°1 de CLAUDE.md : la logique metier reste du
       # Dart pur, donc testable sans pumpWidget et portable hors Flutter.
+      # Tout paquet est interdit, pas seulement Flutter : un plugin ne se
+      # teste pas sans appareil. La couche qui en a besoin vit dans
+      # lib/platform/.
       - name: lib/core/ reste du Dart pur
         run: |
-          if grep -rn "package:flutter/" lib/core/; then
-            echo "::error::lib/core/ ne doit pas importer Flutter"
+          if grep -rn "^import 'package:" lib/core/; then
+            echo "::error::lib/core/ ne doit dependre d'aucun paquet"
             exit 1
           fi
           echo "OK : lib/core/ est du Dart pur"
