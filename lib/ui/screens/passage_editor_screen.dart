@@ -98,135 +98,155 @@ class _PassageEditorScreenState extends State<PassageEditorScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    TextField(
-                      controller: _title,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        labelText: 'Titre',
-                        hintText: builder.suggestedTitle,
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _Stepper(
-                      name: 'Mesure',
-                      label: 'Premiere mesure',
-                      value: _firstMeasure,
-                      min: 1,
-                      max: 999,
-                      onChanged: (int v) => setState(() => _firstMeasure = v),
-                    ),
-                    _Stepper(
-                      name: 'Temps',
-                      label: 'Temps par mesure',
-                      value: _beatsPerMeasure,
-                      min: 1,
-                      max: 12,
-                      onChanged: (int v) =>
-                          setState(() => _beatsPerMeasure = v),
-                    ),
-                    _Stepper(
-                      name: 'Tempo',
-                      label: 'Tempo ecrit',
-                      value: _tempoBpm,
-                      min: 30,
-                      max: 200,
-                      step: 2,
-                      onChanged: (int v) => setState(() => _tempoBpm = v),
-                    ),
-                    const Divider(height: 32),
-                    if (empty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                          'Tape les notes du passage, dans l\'ordre.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                      )
-                    else ...<Widget>[
-                      Text(
-                        '${builder.noteCount} notes  -  '
-                        '${builder.suggestedTitle.toLowerCase()}',
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: <Widget>[
-                          for (int i = 0; i < _entries.length; i++)
-                            _NoteChip(
-                              note: builder.notes[i],
-                              entry: _entries[i],
-                            ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
+        child: MediaQuery.orientationOf(context) == Orientation.landscape
+            ? Row(
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: SegmentedButton<NoteValue>(
-                          segments: <ButtonSegment<NoteValue>>[
-                            for (final NoteValue v in NoteValue.values)
-                              ButtonSegment<NoteValue>(
-                                value: v,
-                                label: Text(v.shortLabel),
-                                tooltip: v.label,
-                              ),
-                          ],
-                          selected: <NoteValue>{_value},
-                          showSelectedIcon: false,
-                          onSelectionChanged: (Set<NoteValue> s) =>
-                              setState(() => _value = s.first),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _Toggle(
-                        label: '.',
-                        tooltip: 'Note pointee',
-                        selected: _dotted,
-                        onChanged: (bool v) => setState(() => _dotted = v),
-                      ),
-                      const SizedBox(width: 4),
-                      _Toggle(
-                        label: '♯',
-                        tooltip: 'Diese',
-                        selected: _sharp,
-                        onChanged: (bool v) => setState(() => _sharp = v),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  NoteKeyboard(sharp: _sharp, onNoteSelected: _addNote),
-                  const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: empty ? null : _undo,
-                    icon: const Icon(Icons.undo),
-                    label: const Text('Annuler la derniere'),
+                  Expanded(child: _reglagesEtNotes(theme, builder, empty)),
+                  const VerticalDivider(width: 1),
+                  // La saisie defile elle aussi : couche, l'ecran n'a que
+                  // 360 pixels de haut, et le clavier plus les reglages de
+                  // figure n'y tiennent pas d'un bloc.
+                  Expanded(
+                    child: SingleChildScrollView(child: _saisie(empty)),
                   ),
                 ],
+              )
+            : Column(
+                children: <Widget>[
+                  Expanded(child: _reglagesEtNotes(theme, builder, empty)),
+                  const Divider(height: 1),
+                  _saisie(empty),
+                ],
               ),
+      ),
+    );
+  }
+
+  /// Titre, reglages du passage, et les notes deja tapees.
+  Widget _reglagesEtNotes(ThemeData theme, PassageBuilder builder, bool empty) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          TextField(
+            controller: _title,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: 'Titre',
+              hintText: builder.suggestedTitle,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _Stepper(
+            name: 'Mesure',
+            label: 'Premiere mesure',
+            value: _firstMeasure,
+            min: 1,
+            max: 999,
+            onChanged: (int v) => setState(() => _firstMeasure = v),
+          ),
+          _Stepper(
+            name: 'Temps',
+            label: 'Temps par mesure',
+            value: _beatsPerMeasure,
+            min: 1,
+            max: 12,
+            onChanged: (int v) => setState(() => _beatsPerMeasure = v),
+          ),
+          _Stepper(
+            name: 'Tempo',
+            label: 'Tempo ecrit',
+            value: _tempoBpm,
+            min: 30,
+            max: 200,
+            step: 2,
+            onChanged: (int v) => setState(() => _tempoBpm = v),
+          ),
+          const Divider(height: 32),
+          if (empty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Tape les notes du passage, dans l\'ordre.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge,
+              ),
+            )
+          else ...<Widget>[
+            Text(
+              '${builder.noteCount} notes  -  '
+              '${builder.suggestedTitle.toLowerCase()}',
+              style: theme.textTheme.labelLarge,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: <Widget>[
+                for (int i = 0; i < _entries.length; i++)
+                  _NoteChip(
+                    note: builder.notes[i],
+                    entry: _entries[i],
+                  ),
+              ],
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  /// Le clavier et ce qui le regle : figure, point, diese, annulation.
+  Widget _saisie(bool empty) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: SegmentedButton<NoteValue>(
+                  segments: <ButtonSegment<NoteValue>>[
+                    for (final NoteValue v in NoteValue.values)
+                      ButtonSegment<NoteValue>(
+                        value: v,
+                        label: Text(v.shortLabel),
+                        tooltip: v.label,
+                      ),
+                  ],
+                  selected: <NoteValue>{_value},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (Set<NoteValue> s) =>
+                      setState(() => _value = s.first),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _Toggle(
+                label: '.',
+                tooltip: 'Note pointee',
+                selected: _dotted,
+                onChanged: (bool v) => setState(() => _dotted = v),
+              ),
+              const SizedBox(width: 4),
+              _Toggle(
+                label: '♯',
+                tooltip: 'Diese',
+                selected: _sharp,
+                onChanged: (bool v) => setState(() => _sharp = v),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          NoteKeyboard(sharp: _sharp, onNoteSelected: _addNote),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: empty ? null : _undo,
+            icon: const Icon(Icons.undo),
+            label: const Text('Annuler la derniere'),
+          ),
+        ],
       ),
     );
   }

@@ -91,7 +91,9 @@ Quatre regles structurantes :
 
 ## Contraintes techniques a ne pas oublier
 
-- **Cible : telephone Android**, en portrait, pose sur un pupitre. iOS plus tard.
+- **Cible : telephone Android**, pose sur un pupitre. iOS plus tard. Les deux
+  orientations sont servies : portrait pour empiler jusqu'a quatre systemes,
+  paysage pour deux systemes larges avec les commandes sur le cote.
 - **Micro en `AudioSource.UNPROCESSED`**, repli sur `VOICE_RECOGNITION`. Le
   mode `MIC` par defaut applique AGC et reduction de bruit calibrees pour la
   voix : sur un son tenu de violon, la detection devient instable.

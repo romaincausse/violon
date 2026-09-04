@@ -110,6 +110,24 @@ void main() {
       expect(find.textContaining('1 notes'), findsOneWidget);
     });
 
+    testWidgets('tient aussi le telephone couche', (
+      WidgetTester tester,
+    ) async {
+      // Le verrou du portrait est leve : l'ecran de saisie peut desormais se
+      // retrouver en paysage, ou il ne reste que 360 pixels de hauteur pour
+      // le clavier, les reglages et les notes deja tapees.
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(780, 360);
+      tester.view.padding = const FakeViewPadding(bottom: 32);
+
+      await pumpEditeur(tester);
+
+      // Un debordement de rendu fait echouer ce test tout seul.
+      expect(tester.takeException(), isNull);
+      expect(find.widgetWithText(OutlinedButton, 'Si5'), findsOneWidget);
+    });
+
     testWidgets('tient sur un vrai telephone, barre systeme comprise', (
       WidgetTester tester,
     ) async {

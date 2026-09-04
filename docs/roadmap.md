@@ -70,7 +70,7 @@ l'ecran du doigt en plein morceau.
 - [x] La partition passe a la ligne (systemes multiples)
 - [x] Choix entre defilement et plusieurs lignes
 - [x] Zoom sur la partition
-- [ ] Mode paysage
+- [x] Mode paysage
 
 **Critere de sortie :** un passage de quatre mesures tient sur trois systemes
 en portrait et deux en paysage, sans defilement horizontal -- et on peut

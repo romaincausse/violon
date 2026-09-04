@@ -22,6 +22,15 @@ typedef PitchSourceFactory = Future<PitchSource> Function();
 /// Ce que le micro a pu faire au dernier demarrage.
 enum _MicState { arrete, ecoute, refuse, indisponible }
 
+/// Nombre de systemes que l'ecran peut porter sans que les notes retrecissent
+/// jusqu'a l'illisible.
+///
+/// En portrait, la hauteur est la ressource abondante : quatre lignes tiennent
+/// largement. En paysage c'est l'inverse -- beaucoup de largeur, peu de
+/// hauteur -- donc deux lignes larges valent mieux que quatre lignes ecrasees.
+int maxSystemsFor(Orientation orientation) =>
+    orientation == Orientation.portrait ? 4 : 2;
+
 /// Ecran de travail : le passage, le curseur, et ce qu'on entend.
 ///
 /// **Mode notation** au sens de l'ADR-008 : le micro est ouvert et
@@ -237,8 +246,9 @@ class _SessionScreenState extends State<SessionScreen>
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final Passage passage = widget.passage;
+    final Orientation orientation = MediaQuery.orientationOf(context);
+    final bool paysage = orientation == Orientation.landscape;
 
     return Scaffold(
       appBar: AppBar(
@@ -268,62 +278,121 @@ class _SessionScreenState extends State<SessionScreen>
           // le SafeArea lui-meme, qui occupe toute la hauteur et dont seul
           // l'enfant est decale.
           key: const Key('session-content'),
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(paysage ? 12 : 24),
+          child: paysage ? _enPaysage(orientation) : _enPortrait(orientation),
+        ),
+      ),
+    );
+  }
+
+  /// En portrait, la hauteur est abondante : tout s'empile.
+  Widget _enPortrait(Orientation orientation) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _entete(),
+        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+        _metronome(),
+        Expanded(child: _partition(orientation)),
+        const SizedBox(height: 8),
+        _BandeauMicro(etat: _mic),
+        const SizedBox(height: 16),
+        _bouton(),
+      ],
+    );
+  }
+
+  /// En paysage, la hauteur est la ressource rare : la partition la prend
+  /// toute, et les commandes passent sur le cote, ou la place ne manque pas.
+  ///
+  /// Empiler comme en portrait ne laisserait pas de quoi afficher deux
+  /// systemes, ce qui est justement l'interet de tourner l'ecran.
+  Widget _enPaysage(Orientation orientation) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Expanded(child: _partition(orientation)),
+        const SizedBox(width: 16),
+        SizedBox(
+          width: _largeurDesCommandes,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Text(
-                    passage.measureCount == 1
-                        ? 'Mesure ${passage.firstMeasure}'
-                        : 'Mesures ${passage.firstMeasure} '
-                            'a ${passage.lastMeasure}',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  Text(
-                    '${passage.writtenTempoBpm} bpm',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const SizedBox(height: 20),
-              MetronomeBar(
-                tempoBpm: passage.writtenTempoBpm,
-                running: _running,
-              ),
-              Expanded(
-                // Des evenements bruts, et non un `GestureDetector`. Un
-                // detecteur de pincement entre dans l'arene des gestes et y
-                // rafle le glissement a un doigt : le mode defilement ne
-                // defilerait plus. Un `Listener` observe sans rien reclamer.
-                child: Listener(
-                  onPointerDown: _doigtPose,
-                  onPointerMove: _doigtBouge,
-                  onPointerUp: _doigtLeve,
-                  onPointerCancel: _doigtLeve,
-                  child: ScoreView(
-                    passage: passage,
-                    cursorTick: _running ? _cursor.tickAt(_elapsed) : null,
-                    colorOf: _couleurDe,
-                    mode: _mode,
-                    zoom: _zoom,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
+              _entete(vertical: true),
+              const SizedBox(height: 16),
+              _metronome(),
+              const SizedBox(height: 16),
               _BandeauMicro(etat: _mic),
               const SizedBox(height: 16),
-              FilledButton.tonalIcon(
-                onPressed: _running ? _stop : _start,
-                icon: Icon(_running ? Icons.stop : Icons.play_arrow),
-                label: Text(_running ? 'Arreter' : 'Jouer le passage'),
-              ),
+              _bouton(),
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  static const double _largeurDesCommandes = 200;
+
+  Widget _entete({bool vertical = false}) {
+    final ThemeData theme = Theme.of(context);
+    final Passage passage = widget.passage;
+    final Text mesures = Text(
+      passage.measureCount == 1
+          ? 'Mesure ${passage.firstMeasure}'
+          : 'Mesures ${passage.firstMeasure} a ${passage.lastMeasure}',
+      style: theme.textTheme.titleMedium,
+      overflow: TextOverflow.ellipsis,
+    );
+    final Text tempo = Text(
+      '${passage.writtenTempoBpm} bpm',
+      style: theme.textTheme.titleMedium,
+    );
+    if (vertical) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[mesures, const SizedBox(height: 4), tempo],
+      );
+    }
+    // Le numero de mesure cede la place au tempo plutot que de deborder :
+    // "Mesures 100 a 104" est plus long que "Mesures 12 a 13", et le tempo
+    // doit rester lisible dans tous les cas.
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[Flexible(child: mesures), tempo],
+    );
+  }
+
+  Widget _metronome() => MetronomeBar(
+        tempoBpm: widget.passage.writtenTempoBpm,
+        running: _running,
+      );
+
+  Widget _bouton() => FilledButton.tonalIcon(
+        onPressed: _running ? _stop : _start,
+        icon: Icon(_running ? Icons.stop : Icons.play_arrow),
+        label: Text(_running ? 'Arreter' : 'Jouer le passage'),
+      );
+
+  Widget _partition(Orientation orientation) {
+    // Des evenements bruts, et non un `GestureDetector`. Un detecteur de
+    // pincement entre dans l'arene des gestes et y rafle le glissement a un
+    // doigt : le mode defilement ne defilerait plus. Un `Listener` observe
+    // sans rien reclamer.
+    return Listener(
+      onPointerDown: _doigtPose,
+      onPointerMove: _doigtBouge,
+      onPointerUp: _doigtLeve,
+      onPointerCancel: _doigtLeve,
+      child: ScoreView(
+        passage: widget.passage,
+        cursorTick: _running ? _cursor.tickAt(_elapsed) : null,
+        colorOf: _couleurDe,
+        mode: _mode,
+        zoom: _zoom,
+        maxSystems: maxSystemsFor(orientation),
       ),
     );
   }
@@ -331,68 +400,75 @@ class _SessionScreenState extends State<SessionScreen>
 
 /// Une ligne discrete sous la portee : la legende des couleurs quand on
 /// ecoute, la raison quand on n'ecoute pas.
+///
+/// Sa hauteur est libre, mais jamais nulle : reserver la place evite que la
+/// partition sursaute quand le micro change d'etat.
 class _BandeauMicro extends StatelessWidget {
   const _BandeauMicro({required this.etat});
 
   final _MicState etat;
 
+  static const double _hauteurMinimale = 20;
+
   @override
   Widget build(BuildContext context) {
     final TextStyle? style = Theme.of(context).textTheme.bodySmall;
-    return switch (etat) {
-      _MicState.arrete => const SizedBox(height: 20),
-      _MicState.ecoute => const _Legende(),
-      _MicState.refuse => SizedBox(
-          height: 20,
-          child: Text(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _hauteurMinimale),
+      child: switch (etat) {
+        _MicState.arrete => const SizedBox.shrink(),
+        _MicState.ecoute => const _Legende(),
+        _MicState.refuse => Text(
             'Micro refuse : le passage defile sans notation.',
             style: style,
             textAlign: TextAlign.center,
           ),
-        ),
-      _MicState.indisponible => SizedBox(
-          height: 20,
-          child: Text(
+        _MicState.indisponible => Text(
             'Micro indisponible : le passage defile sans notation.',
             style: style,
             textAlign: TextAlign.center,
           ),
-        ),
-    };
+      },
+    );
   }
 }
 
 /// Trois couleurs, trois mots. Une seule fois, en petit.
+///
+/// En `Wrap` et non en `Row` : la colonne de commandes du mode paysage ne fait
+/// que deux cents pixels, et une ligne rigide y deborderait.
 class _Legende extends StatelessWidget {
   const _Legende();
 
   @override
   Widget build(BuildContext context) {
     final TextStyle? style = Theme.of(context).textTheme.bodySmall;
-    return SizedBox(
-      height: 20,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          for (final TuningVerdict v in <TuningVerdict>[
-            TuningVerdict.low,
-            TuningVerdict.inTune,
-            TuningVerdict.high,
-          ]) ...<Widget>[
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: TuningColors.of(v),
-                shape: BoxShape.circle,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 12,
+      runSpacing: 4,
+      children: <Widget>[
+        for (final TuningVerdict v in <TuningVerdict>[
+          TuningVerdict.low,
+          TuningVerdict.inTune,
+          TuningVerdict.high,
+        ])
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: TuningColors.of(v),
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Text(TuningColors.label(v), style: style),
-            const SizedBox(width: 16),
-          ],
-        ],
-      ),
+              const SizedBox(width: 6),
+              Text(TuningColors.label(v), style: style),
+            ],
+          ),
+      ],
     );
   }
 }
