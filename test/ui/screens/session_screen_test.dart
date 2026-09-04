@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/microphone_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
+import 'package:violon/core/audio/pitch_source.dart';
 
 import 'package:violon/core/music/demo_passage.dart';
 import 'package:violon/core/music/note_value.dart';
@@ -28,38 +29,44 @@ void main() {
           ),
       ];
 
-  /// Pose l'ecran avec un micro scripte, et rend la source pour pouvoir
+  /// Pose l'ecran avec un micro scripte, et rend la fabrique pour pouvoir
   /// declencher l'emission au bon moment.
-  Future<FakePitchSource> poser(
+  ///
+  /// Pas de `addTearDown` sur les sources : c'est l'ecran qui les possede et
+  /// qui les libere. En liberer une seconde fois bloque le test, parce qu'on
+  /// attendrait la fermeture d'un flux deja ferme alors que plus rien ne fait
+  /// avancer l'horloge.
+  Future<MicroFactice> poser(
     WidgetTester tester,
     List<PitchEstimate> script,
   ) async {
-    // Pas de `addTearDown(source.dispose)` : c'est l'ecran qui possede la
-    // source et qui la libere. La liberer une seconde fois bloque le test,
-    // parce qu'on attendrait la fermeture d'un flux deja ferme alors que
-    // plus rien ne fait avancer l'horloge.
-    final FakePitchSource source = FakePitchSource(script);
+    final MicroFactice micro = MicroFactice(script);
     await tester.pumpWidget(
       MaterialApp(
         home: SessionScreen(
           passage: demo,
           onChangePassage: () {},
           onTune: () {},
-          pitchSourceFactory: () async => source,
+          pitchSourceFactory: micro.creer,
         ),
       ),
     );
-    return source;
+    return micro;
   }
 
-  /// Lance la lecture et laisse le micro s'ouvrir.
+  /// Lance la lecture, laisse le micro s'ouvrir, et passe l'attaque.
   ///
-  /// L'ouverture est volontairement asynchrone dans l'ecran -- le curseur ne
-  /// doit pas attendre une permission -- d'ou les deux images.
+  /// L'ouverture du micro est volontairement asynchrone dans l'ecran -- le
+  /// curseur ne doit pas attendre une permission -- d'ou les deux images.
+  ///
+  /// La derniere avance l'horloge au-dela de l'attaque : les quatre-vingts
+  /// premieres millisecondes de chaque note sont ecartees du jugement, et
+  /// sans ce delai aucune mesure ne serait retenue.
   Future<void> demarrer(WidgetTester tester) async {
     await tester.tap(find.text('Jouer le passage'));
     await tester.pump();
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
   }
 
   /// Arrete la lecture et laisse la liberation du micro se terminer.
@@ -90,13 +97,10 @@ void main() {
     testWidgets('une note jouee juste passe au vert', (
       WidgetTester tester,
     ) async {
-      final FakePitchSource source = await poser(
-        tester,
-        juste(premiere.midi),
-      );
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
       await demarrer(tester);
 
-      source.emitAll();
+      micro.derniere.emitAll();
       await tester.pump();
 
       expect(couleurDe(tester, premiere), TuningColors.inTune);
@@ -108,7 +112,7 @@ void main() {
     ) async {
       // Le projet interdit la partition rouge : bas et haut disent une
       // direction, pas une faute.
-      final FakePitchSource source = await poser(
+      final MicroFactice micro = await poser(
         tester,
         <PitchEstimate>[
           for (int i = 0; i < 4; i++)
@@ -122,7 +126,7 @@ void main() {
       );
       await demarrer(tester);
 
-      source.emitAll();
+      micro.derniere.emitAll();
       await tester.pump();
 
       expect(couleurDe(tester, premiere), TuningColors.low);
@@ -193,12 +197,9 @@ void main() {
     ) async {
       // Une erreur ne doit jamais rester affichee au tour suivant : c'est la
       // regle "une erreur ne remet jamais un compteur a zero" vue a l'envers.
-      final FakePitchSource source = await poser(
-        tester,
-        juste(premiere.midi),
-      );
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
       await demarrer(tester);
-      source.emitAll();
+      micro.derniere.emitAll();
       await tester.pump();
       expect(couleurDe(tester, premiere), isNotNull);
 
@@ -212,14 +213,14 @@ void main() {
     testWidgets('arreter libere vraiment le micro', (
       WidgetTester tester,
     ) async {
-      final FakePitchSource source = await poser(tester, juste(premiere.midi));
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
       await demarrer(tester);
       await arreter(tester);
 
       // Un flux ferme refuse toute nouvelle emission. C'est la preuve que la
       // source a ete liberee et pas seulement oubliee : sur l'appareil, une
       // source oubliee laisserait le micro ouvert apres la seance.
-      expect(source.emitAll, throwsStateError);
+      expect(micro.derniere.emitAll, throwsStateError);
     });
   });
 
@@ -460,4 +461,24 @@ void main() {
       await tester.pump(const Duration(milliseconds: 60));
     });
   });
+}
+
+/// Fabrique de micros scriptes.
+///
+/// Une source **neuve a chaque demarrage**, comme la vraie fabrique : l'ecran
+/// libere la sienne quand on arrete, et lui en rendre une deja fermee ferait
+/// echouer la reprise pour une raison qui n'existe pas sur l'appareil.
+class MicroFactice {
+  MicroFactice(this.script);
+
+  final List<PitchEstimate> script;
+  final List<FakePitchSource> creees = <FakePitchSource>[];
+
+  FakePitchSource get derniere => creees.last;
+
+  Future<PitchSource> creer() async {
+    final FakePitchSource source = FakePitchSource(script);
+    creees.add(source);
+    return source;
+  }
 }
