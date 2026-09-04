@@ -360,4 +360,99 @@ void main() {
       );
     });
   });
+
+  group('mode paysage', () {
+    /// Un telephone couche : beaucoup de largeur, peu de hauteur.
+    const Size paysage = Size(780, 360);
+    const Size portrait = Size(360, 780);
+
+    Future<void> poser(WidgetTester tester, Size ecran) async {
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = ecran;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SessionScreen(
+            passage: demo,
+            onChangePassage: () {},
+            pitchSourceFactory: () async =>
+                FakePitchSource(const <PitchEstimate>[]),
+          ),
+        ),
+      );
+    }
+
+    test('le plafond de systemes depend de l orientation', () {
+      // En portrait la hauteur est abondante ; en paysage c'est la largeur.
+      expect(maxSystemsFor(Orientation.portrait), 4);
+      expect(maxSystemsFor(Orientation.landscape), 2);
+    });
+
+    testWidgets('en paysage, les commandes passent sur le cote', (
+      WidgetTester tester,
+    ) async {
+      // Empilees comme en portrait, elles ne laisseraient pas de quoi
+      // afficher deux systemes -- ce qui est justement l'interet de tourner
+      // l'ecran.
+      await poser(tester, paysage);
+      final double basDeLaPartition =
+          tester.getBottomLeft(find.byType(ScoreView)).dy;
+      final double hautDuBouton =
+          tester.getTopLeft(find.byType(FilledButton)).dy;
+      expect(
+        basDeLaPartition,
+        greaterThan(hautDuBouton),
+        reason: 'la partition descend plus bas que le bouton',
+      );
+    });
+
+    testWidgets('en portrait, les commandes restent sous la partition', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, portrait);
+      final double basDeLaPartition =
+          tester.getBottomLeft(find.byType(ScoreView)).dy;
+      final double hautDuBouton =
+          tester.getTopLeft(find.byType(FilledButton)).dy;
+      expect(basDeLaPartition, lessThanOrEqualTo(hautDuBouton));
+    });
+
+    testWidgets('en paysage, la partition est plus haute qu en portrait', (
+      WidgetTester tester,
+    ) async {
+      // Malgre un ecran deux fois moins haut : c'est le signe que la
+      // disposition en ligne rend bien sa hauteur a la portee.
+      await poser(tester, portrait);
+      final double enPortrait = tester.getSize(find.byType(ScoreView)).height;
+      await poser(tester, paysage);
+      final double enPaysage = tester.getSize(find.byType(ScoreView)).height;
+
+      expect(enPaysage / 360, greaterThan(enPortrait / 780));
+    });
+
+    testWidgets('rien ne deborde en paysage', (WidgetTester tester) async {
+      // Un debordement de rendu fait echouer ce test tout seul.
+      await poser(tester, paysage);
+      expect(tester.takeException(), isNull);
+      final double basDuContenu =
+          tester.getBottomLeft(find.byKey(const Key('session-content'))).dy;
+      expect(basDuContenu, lessThanOrEqualTo(360));
+    });
+
+    testWidgets('rien ne deborde en paysage pendant l ecoute', (
+      WidgetTester tester,
+    ) async {
+      // C'est l'etat le plus charge : la legende s'ajoute aux commandes.
+      await poser(tester, paysage);
+      await tester.tap(find.text('Jouer le passage'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('juste'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('Arreter'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+    });
+  });
 }

@@ -38,7 +38,7 @@ aussi.
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
 | ~~G5~~ | ~~La partition passe a la ligne~~ | P0 | 3 | G4 | **Fait.** Un systeme est une `StaffLayout` posee sur un morceau du passage : la gravure ne change pas, seulement son decoupage. |
-| G6 | Mode paysage | P1 | 1 | G5 | Lever le verrou du manifeste. Portrait : jusqu'a 4 systemes. Paysage : 2. |
+| ~~G6~~ | ~~Mode paysage~~ | P1 | 1 | G5 | **Fait.** Verrou du manifeste leve. Portrait : jusqu'a 4 systemes, tout empile. Paysage : 2 systemes, commandes sur le cote. L'ecran de saisie suit la meme regle. |
 | ~~G7~~ | ~~Choix defilement / plusieurs lignes~~ | P0 | 1 | G5 | **Fait.** Le defilement, c'est `ScoreLayout` avec une largeur infinie. Bouton dans la barre du haut. |
 | ~~G8~~ | ~~Zoom sur la partition~~ | P0 | 1 | G5 | **Fait.** Pincement lu sur les evenements bruts : un detecteur de gestes raflerait le glissement a un doigt. |
 

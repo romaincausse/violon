@@ -14,14 +14,18 @@
         android:label="Violon"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-        <!-- screenOrientation : le telephone est pose sur un pupitre, la
-             rotation n'a aucun sens ici, et une bascule en paysage pendant
-             qu'on joue recreerait l'activite en coupant le flux audio. -->
+        <!-- Pas de screenOrientation : le paysage sert a lire un passage sur
+             deux systemes larges, poses en travers du pupitre.
+
+             Le commentaire precedent verrouillait le portrait en craignant
+             qu'une bascule recree l'activite et coupe le flux audio. C'etait
+             faux : configChanges declare deja orientation et screenSize, donc
+             Android ne recree rien. C'est Flutter qui redispose, sans toucher
+             au micro. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:screenOrientation="portrait"
             android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
