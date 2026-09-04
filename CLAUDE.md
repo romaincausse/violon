@@ -98,7 +98,10 @@ Quatre regles structurantes :
   mode `MIC` par defaut applique AGC et reduction de bruit calibrees pour la
   voix : sur un son tenu de violon, la detection devient instable.
   `UNPROCESSED` existe depuis Android 7 mais reste **facultative** pour les
-  constructeurs : le repli n'est pas theorique.
+  constructeurs : le repli n'est pas theorique. Verifie sur l'appareil cible,
+  un Galaxy S22 : `dumpsys media.audio_flinger` y montre bien
+  `AUDIO_SOURCE_UNPROCESSED` pendant la capture. Le repli sert donc aux autres
+  appareils, pas a celui-la.
 - **Jamais de `Timer` Dart pour le metronome.** La derive est audible. Les
   clics doivent etre pre-planifies dans le moteur audio natif.
 - **Le YIN tourne dans un isolate**, sur des buffers de 2048 echantillons.
