@@ -18,14 +18,29 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
 | ~~G1~~ | ~~Police Bravura et metriques SMuFL~~ | P0 | 1 | - | **Fait.** Asset sous licence SIL OFL, livre non modifie (Reserved Font Name). Une dizaine de glyphes declares dans `Smufl`. |
-| G2 | Mise en page d'une portee monodique | P0 | 3 | G1 | Positions verticales, lignes supplementaires, alterations, barres de mesure. Dart pur, teste sans widget. |
-| G3 | Hampes, crochets, ligatures | P0 | 2 | G2 | Sens de hampe a la 3e ligne, ligatures par groupe de temps. |
-| G4 | Widget de partition et coloration par note | P0 | 2 | G3 | `CustomPainter`. Une couleur par note, pilotee de l'exterieur. |
+| ~~G2~~ | ~~Mise en page d'une portee monodique~~ | P0 | 3 | G1 | Positions verticales, lignes supplementaires, alterations, barres de mesure. Dart pur, teste sans widget. |
+| ~~G3~~ | ~~Hampes, crochets, ligatures~~ | P0 | 2 | G2 | Sens de hampe a la 3e ligne, ligatures par groupe de temps. |
+| ~~G4~~ | ~~Widget de partition et coloration par note~~ | P0 | 2 | G3 | `CustomPainter`. Une couleur par note, pilotee de l'exterieur. |
 | ~~A1~~ | ~~Capture micro Android en `UNPROCESSED`~~ | P0 | 2 | - | **Fait.** `record` l'expose, pas de canal de plateforme a ecrire. Repli `VOICE_RECOGNITION` teste. |
 | ~~A2~~ | ~~YIN dans un isolate~~ | P0 | 1 | A1 | **Fait.** Buffers transferes, pas copies. File bornee a 4 trames : sous pression, ce sont les plus vieilles qui sautent. |
-| M1 | Metronome visuel | P0 | 1 | - | Pulsation en bord d'ecran. Le seul metronome autorise en mode notation. |
-| F1 | Curseur pilote au tempo | P0 | 2 | G4, M1 | Avance sur l'horloge, pas sur ce qui est joue. Le suivi adaptatif est en V4. |
+| ~~M1~~ | ~~Metronome visuel~~ | P0 | 1 | - | Pulsation en bord d'ecran. Le seul metronome autorise en mode notation. |
+| ~~F1~~ | ~~Curseur pilote au tempo~~ | P0 | 2 | G4, M1 | Avance sur l'horloge, pas sur ce qui est joue. Le suivi adaptatif est en V4. |
 | ~~F2~~ | ~~Coloration en direct de la justesse~~ | P0 | 2 | F1, A2 | **Fait.** Vert, bleu, orange -- aucun rouge. Mediane des ecarts a la note attendue, pas a la note la plus proche. |
+
+## V1+ - La partition lisible
+
+Ajoute apres coup, sur demande. La portee tenait sur **une seule ligne** qui
+defilait horizontalement : sur un passage de plus de deux mesures, l'enfant ne
+voyait qu'un bout de ce qu'il jouait, et devait pousser l'ecran du doigt en
+plein morceau. Une partition papier passe a la ligne ; celle-ci doit le faire
+aussi.
+
+| ID | Titre | P | Est. | Depend de | Notes |
+|----|-------|---|------|-----------|-------|
+| ~~G5~~ | ~~La partition passe a la ligne~~ | P0 | 3 | G4 | **Fait.** Un systeme est une `StaffLayout` posee sur un morceau du passage : la gravure ne change pas, seulement son decoupage. |
+| G6 | Mode paysage | P1 | 1 | G5 | Lever le verrou du manifeste. Portrait : jusqu'a 4 systemes. Paysage : 2. |
+| ~~G7~~ | ~~Choix defilement / plusieurs lignes~~ | P0 | 1 | G5 | **Fait.** Le defilement, c'est `ScoreLayout` avec une largeur infinie. Bouton dans la barre du haut. |
+| ~~G8~~ | ~~Zoom sur la partition~~ | P0 | 1 | G5 | **Fait.** Pincement lu sur les evenements bruts : un detecteur de gestes raflerait le glissement a un doigt. |
 
 ## V2 - La note
 

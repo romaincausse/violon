@@ -60,6 +60,26 @@ l'accord reel de l'instrument. C'est le programme du jalon V2.
 
 ---
 
+## V1+ - La partition lisible
+
+**Objectif :** il voit tout son passage d'un coup d'oeil, sans pousser
+l'ecran du doigt en plein morceau.
+
+**Utilisable des :** la portee passe a la ligne toute seule.
+
+- [x] La partition passe a la ligne (systemes multiples)
+- [x] Choix entre defilement et plusieurs lignes
+- [x] Zoom sur la partition
+- [ ] Mode paysage
+
+**Critere de sortie :** un passage de quatre mesures tient sur trois systemes
+en portrait et deux en paysage, sans defilement horizontal -- et on peut
+choisir le defilement si on le prefere, a la taille qu'on veut.
+
+**Pourquoi ce jalon existe.** Il n'etait pas prevu. La portee tenait sur une
+seule ligne qui defilait : une partition papier passe a la ligne, celle-ci
+doit le faire aussi.
+
 ## V2 - La note
 
 **Objectif :** l'application mesure, et le chiffre monte de semaine en semaine.
