@@ -43,7 +43,7 @@ affichee, rien du reste n'a de sens.
 - [x] YIN dans un isolate
 - [x] Metronome visuel
 - [x] Curseur pilote au tempo
-- [ ] Coloration en direct : juste, bas, haut
+- [x] Coloration en direct : juste, bas, haut
 
 **Critere de sortie :** il joue ses deux mesures, les notes passent au vert ou
 au rouge sous ses yeux, sans qu'il ait a toucher l'ecran.
@@ -51,8 +51,12 @@ au rouge sous ses yeux, sans qu'il ait a toucher l'ecran.
 **Ou on en est.** La partition se grave avec les glyphes de Bravura -- cle de
 sol, tetes, alterations, crochets, points -- le curseur avance au tempo et le
 metronome visuel bat. Le micro est capte en `UNPROCESSED`, YIN tourne dans
-son isolate, et la chaine rend des hauteurs. Reste la coloration en direct,
-qui relie enfin les deux moities.
+son isolate, et les notes se colorent pendant qu'on joue. **Le jalon V1 est
+termine.**
+
+Ce qui manque encore pour noter vraiment : la latence n'est pas calibree, donc
+le rythme n'est pas juge, et le diapason est fixe a 440 au lieu de suivre
+l'accord reel de l'instrument. C'est le programme du jalon V2.
 
 ---
 

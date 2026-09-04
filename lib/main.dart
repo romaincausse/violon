@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'core/music/demo_passage.dart';
 import 'core/music/passage.dart';
+import 'platform/audio/default_pitch_source.dart';
 import 'ui/screens/passage_editor_screen.dart';
 import 'ui/screens/session_screen.dart';
 
@@ -12,7 +13,14 @@ void main() {
 }
 
 class ViolonApp extends StatefulWidget {
-  const ViolonApp({super.key});
+  const ViolonApp({this.pitchSourceFactory = defaultPitchSource, super.key});
+
+  /// Fabrique de la source de hauteurs, traversee jusqu'a l'ecran de travail.
+  ///
+  /// Injectable pour la meme raison qu'ailleurs : un test de widget n'a pas
+  /// de micro, et faire tourner la vraie chaine audio a chaque `pumpWidget`
+  /// lancerait un isolate pour rien.
+  final PitchSourceFactory pitchSourceFactory;
 
   @override
   State<ViolonApp> createState() => _ViolonAppState();
@@ -50,6 +58,7 @@ class _ViolonAppState extends State<ViolonApp> {
         builder: (BuildContext context) => SessionScreen(
           passage: _passage,
           onChangePassage: () => unawaited(_editPassage(context)),
+          pitchSourceFactory: widget.pitchSourceFactory,
         ),
       ),
     );
