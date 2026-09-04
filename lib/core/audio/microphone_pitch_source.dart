@@ -6,6 +6,7 @@ import 'audio_capture.dart';
 import 'pcm_framer.dart';
 import 'pitch_analyzer.dart';
 import 'pitch_estimate.dart';
+import 'pitch_smoother.dart';
 import 'pitch_source.dart';
 
 /// Levee quand l'utilisateur refuse l'acces au micro.
@@ -31,8 +32,10 @@ class MicrophonePitchSource implements PitchSource {
     this.sampleRate = 44100,
     int frameSize = 2048,
     PitchAnalyzer? analyzer,
+    PitchSmoother? smoother,
   })  : _framer = PcmFramer(frameSize: frameSize, sampleRate: sampleRate),
-        _analyzer = analyzer ?? InlinePitchAnalyzer(sampleRate: sampleRate);
+        _analyzer = analyzer ?? InlinePitchAnalyzer(sampleRate: sampleRate),
+        _smoother = smoother ?? PitchSmoother();
 
   /// Trames au plus en attente d'analyse.
   ///
@@ -53,11 +56,12 @@ class MicrophonePitchSource implements PitchSource {
 
   final PcmFramer _framer;
   final PitchAnalyzer _analyzer;
+  final PitchSmoother _smoother;
   final Queue<PcmFrame> _attente = Queue<PcmFrame>();
   bool _analyseEnCours = false;
   int _abandonnees = 0;
-  final StreamController<PitchEstimate> _controller =
-      StreamController<PitchEstimate>.broadcast();
+  final StreamController<SmoothedPitch> _controller =
+      StreamController<SmoothedPitch>.broadcast();
 
   StreamSubscription<Uint8List>? _subscription;
   MicSource? _activeSource;
@@ -74,8 +78,15 @@ class MicrophonePitchSource implements PitchSource {
   /// laisser croire a un probleme de jeu.
   MicSource? get activeSource => _activeSource;
 
+  /// Les hauteurs lissees, avec ce qu'on sait de leur stabilite.
+  ///
+  /// Meme flux que [pitches], vu en entier : l'accordeur et la notation ont
+  /// besoin de l'excursion et du vibrato, pas seulement de la hauteur.
+  Stream<SmoothedPitch> get smoothedPitches => _controller.stream;
+
   @override
-  Stream<PitchEstimate> get pitches => _controller.stream;
+  Stream<PitchEstimate> get pitches =>
+      _controller.stream.map((SmoothedPitch p) => p.estimate);
 
   /// Zero tant que la calibration n'a pas eu lieu (lot A4). Tant qu'elle vaut
   /// zero, la notation du rythme n'a pas de sens : celle de la justesse, si.
@@ -89,6 +100,7 @@ class MicrophonePitchSource implements PitchSource {
     }
     await stop();
     _framer.reset();
+    _smoother.reset();
     _attente.clear();
     _abandonnees = 0;
 
@@ -154,7 +166,10 @@ class MicrophonePitchSource implements PitchSource {
           timestampMs: frame.timestampMs,
         );
         if (estimate != null && !_controller.isClosed) {
-          _controller.add(estimate);
+          // Le lissage vient apres l'analyse et avant tout le reste : une
+          // erreur d'octave isolee de YIN ne doit jamais atteindre la
+          // partition.
+          _controller.add(_smoother.add(estimate));
         }
       }
     } finally {
