@@ -25,7 +25,7 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 | ~~A2~~ | ~~YIN dans un isolate~~ | P0 | 1 | A1 | **Fait.** Buffers transferes, pas copies. File bornee a 4 trames : sous pression, ce sont les plus vieilles qui sautent. |
 | M1 | Metronome visuel | P0 | 1 | - | Pulsation en bord d'ecran. Le seul metronome autorise en mode notation. |
 | F1 | Curseur pilote au tempo | P0 | 2 | G4, M1 | Avance sur l'horloge, pas sur ce qui est joue. Le suivi adaptatif est en V4. |
-| F2 | Coloration en direct de la justesse | P0 | 2 | F1, A2 | Vert, bas, haut. Aucun chiffre a ce stade, juste la couleur. |
+| ~~F2~~ | ~~Coloration en direct de la justesse~~ | P0 | 2 | F1, A2 | **Fait.** Vert, bleu, orange -- aucun rouge. Mediane des ecarts a la note attendue, pas a la note la plus proche. |
 
 ## V2 - La note
 
