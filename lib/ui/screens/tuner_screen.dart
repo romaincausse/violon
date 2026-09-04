@@ -6,6 +6,7 @@ import '../../core/audio/microphone_pitch_source.dart';
 import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/music/pitch_utils.dart';
+import '../../core/scoring/a4_estimator.dart';
 import '../../core/scoring/tuner.dart';
 import '../widgets/tuner_gauge.dart';
 import 'session_screen.dart' show PitchSourceFactory;
@@ -43,6 +44,7 @@ class _TunerScreenState extends State<TunerScreen> {
   String? _probleme;
 
   late Tuner _accordeur = Tuner(a4: widget.a4);
+  late A4Estimator _diapason = A4Estimator(tuner: _accordeur);
 
   @override
   void initState() {
@@ -81,7 +83,7 @@ class _TunerScreenState extends State<TunerScreen> {
     }
     setState(() {
       _lecture = _accordeur.read(pitch);
-      _diapasonMesure = _accordeur.measuredA4From(pitch) ?? _diapasonMesure;
+      _diapasonMesure = _diapason.add(pitch) ?? _diapasonMesure;
     });
   }
 
@@ -104,7 +106,11 @@ class _TunerScreenState extends State<TunerScreen> {
       return;
     }
     widget.onA4Changed(mesure);
-    setState(() => _accordeur = Tuner(a4: mesure));
+    setState(() {
+      _accordeur = Tuner(a4: mesure);
+      _diapason = A4Estimator(tuner: _accordeur);
+      _diapasonMesure = null;
+    });
   }
 
   @override

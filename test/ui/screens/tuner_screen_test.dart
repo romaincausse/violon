@@ -38,15 +38,23 @@ void main() {
     return micro;
   }
 
+  /// Joue une hauteur pendant [trames] trames.
+  ///
+  /// **Une trame a la fois.** L'analyse ne garde que quatre trames en attente
+  /// et jette les plus anciennes sous pression : tout envoyer d'un bloc en
+  /// perdrait la majorite, ce qu'un vrai micro ne fait pas puisqu'il les
+  /// livre au fil du temps.
   Future<void> jouer(
     WidgetTester tester,
     FakeCapture micro,
     double frequenceHz, {
     int trames = 6,
   }) async {
-    micro.controleur.add(sinus(frequenceHz, trames).build());
-    await tester.pump();
-    await tester.pump();
+    for (int i = 0; i < trames; i++) {
+      micro.controleur.add(sinus(frequenceHz, 1).build());
+      await tester.pump();
+      await tester.pump();
+    }
   }
 
   group('TunerScreen', () {
@@ -123,7 +131,10 @@ void main() {
         tester,
         onA4Changed: (double v) => adopte = v,
       );
-      await jouer(tester, micro, 442);
+      // Une seule mesure ne suffit plus : le diapason ne se confirme qu'apres
+      // une serie, faute de quoi le bruit d'une piece proposerait d'en
+      // changer. Une corde tenue une seconde donne largement la serie.
+      await jouer(tester, micro, 442, trames: 24);
 
       final Finder bouton = find.textContaining('Adopter');
       expect(bouton, findsOneWidget);
