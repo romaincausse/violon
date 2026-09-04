@@ -53,7 +53,7 @@ aussi.
 | N2 | Score de rythme par note | P0 | 2 | A3, A4 | Ecart d'attaque en ms par rapport a l'onset attendu. **A trancher a ce moment-la :** le detecteur d'attaques a besoin d'un flux sans trou, alors que l'analyse de hauteur jette des trames sous pression. Les deux ne peuvent pas partager la meme file. |
 | N3 | Bilan de passage | P0 | 1 | N1, N2 | Un score par note, un global. Le cumul ne redescend jamais. |
 | N4 | Boucle sur selection et montee de tempo | P0 | 2 | N3 | **Le lot anti-lassitude.** Deux mesures tapees, boucle, tempo qui monte quand c'est propre. |
-| A6 | Accordeur sol-re-la-mi | P1 | 2 | A2 | Aiguille et cents. Utile seul, avant meme de jouer. |
+| ~~A6~~ | ~~Accordeur sol-re-la-mi~~ | P1 | 2 | A2 | **Fait.** Aiguille horizontale et cents. Leve au passage le diapason fige a 440 : le la mesure devient la reference de la justesse. |
 
 ## V3 - L'accompagnement
 

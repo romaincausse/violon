@@ -8,6 +8,7 @@ import '../../core/audio/pitch_estimate.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/follow/score_cursor.dart';
 import '../../core/music/passage.dart';
+import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
 import '../../platform/audio/default_pitch_source.dart';
@@ -39,6 +40,8 @@ class SessionScreen extends StatefulWidget {
   const SessionScreen({
     required this.passage,
     required this.onChangePassage,
+    required this.onTune,
+    this.a4 = PitchUtils.defaultA4,
     this.pitchSourceFactory = defaultPitchSource,
     super.key,
   });
@@ -47,6 +50,15 @@ class SessionScreen extends StatefulWidget {
 
   /// Ouvre la saisie d'un autre passage.
   final VoidCallback onChangePassage;
+
+  /// Ouvre l'accordeur.
+  final VoidCallback onTune;
+
+  /// Diapason de reference, mesure par l'accordeur ou laisse a 440.
+  ///
+  /// C'est lui qui rend la justesse **relative** : juger les doigts contre
+  /// une reference absolue punirait l'enfant pour l'accord de son instrument.
+  final double a4;
 
   final PitchSourceFactory pitchSourceFactory;
 
@@ -60,7 +72,7 @@ class _SessionScreenState extends State<SessionScreen>
   bool _running = false;
   Duration _elapsed = Duration.zero;
 
-  final LiveTuning _tuning = LiveTuning();
+  late LiveTuning _tuning = LiveTuning(a4: widget.a4);
   ScoreDisplayMode _mode = ScoreDisplayMode.systems;
   double _zoom = 1;
 
@@ -184,6 +196,11 @@ class _SessionScreenState extends State<SessionScreen>
     if (widget.passage != oldWidget.passage && _running) {
       _stop();
     }
+    // Un nouveau diapason change tous les verdicts : les couleurs deja
+    // affichees ont ete calculees contre l'ancien.
+    if (widget.a4 != oldWidget.a4) {
+      setState(() => _tuning = LiveTuning(a4: widget.a4));
+    }
   }
 
   @override
@@ -254,6 +271,11 @@ class _SessionScreenState extends State<SessionScreen>
       appBar: AppBar(
         title: Text(passage.title),
         actions: <Widget>[
+          IconButton(
+            onPressed: widget.onTune,
+            icon: const Icon(Icons.tune),
+            tooltip: 'Accorder',
+          ),
           IconButton(
             onPressed: _changerDeMode,
             icon: Icon(

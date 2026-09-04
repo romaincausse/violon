@@ -44,6 +44,7 @@ void main() {
         home: SessionScreen(
           passage: demo,
           onChangePassage: () {},
+          onTune: () {},
           pitchSourceFactory: () async => source,
         ),
       ),
@@ -154,6 +155,7 @@ void main() {
           home: SessionScreen(
             passage: demo,
             onChangePassage: () {},
+            onTune: () {},
             pitchSourceFactory: () async => throw const MicPermissionDenied(),
           ),
         ),
@@ -175,6 +177,7 @@ void main() {
           home: SessionScreen(
             passage: demo,
             onChangePassage: () {},
+            onTune: () {},
             pitchSourceFactory: () async => throw StateError('pas de micro'),
           ),
         ),
@@ -237,6 +240,7 @@ void main() {
           home: SessionScreen(
             passage: passage ?? demo,
             onChangePassage: () {},
+            onTune: () {},
             pitchSourceFactory: () async =>
                 FakePitchSource(const <PitchEstimate>[]),
           ),
@@ -375,6 +379,7 @@ void main() {
           home: SessionScreen(
             passage: demo,
             onChangePassage: () {},
+            onTune: () {},
             pitchSourceFactory: () async =>
                 FakePitchSource(const <PitchEstimate>[]),
           ),

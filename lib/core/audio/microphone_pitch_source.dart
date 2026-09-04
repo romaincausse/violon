@@ -179,8 +179,15 @@ class MicrophonePitchSource implements PitchSource {
 
   @override
   Future<void> stop() async {
-    await _subscription?.cancel();
+    // Annuler sans attendre. Un abonnement cesse de livrer des l'appel ; la
+    // promesse rendue, elle, n'est tenue qu'une fois le flux amont ferme.
+    // L'attendre avant de fermer le micro fait dependre la liberation du
+    // materiel de la fermeture du flux qui en vient : les deux s'attendent.
+    final StreamSubscription<Uint8List>? abonnement = _subscription;
     _subscription = null;
+    if (abonnement != null) {
+      unawaited(abonnement.cancel());
+    }
     if (_activeSource != null) {
       await capture.stop();
       _activeSource = null;
