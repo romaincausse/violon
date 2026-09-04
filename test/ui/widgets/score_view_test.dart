@@ -29,7 +29,7 @@ void main() {
         ),
       ),
     );
-    return tester.getSize(find.byType(CustomPaint).last);
+    return tester.getSize(find.byKey(ScoreView.canvasKey));
   }
 
   group('ScoreView', () {
@@ -118,7 +118,8 @@ void main() {
           ),
         ),
       );
-      final double large = tester.getSize(find.byType(CustomPaint).last).height;
+      final double large =
+          tester.getSize(find.byKey(ScoreView.canvasKey)).height;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -128,21 +129,23 @@ void main() {
         ),
       );
       final double etroit =
-          tester.getSize(find.byType(CustomPaint).last).height;
+          tester.getSize(find.byKey(ScoreView.canvasKey)).height;
 
       expect(large, greaterThan(etroit));
     });
 
-    testWidgets('la portee ne descend jamais sous le lisible', (
+    testWidgets('sur un ecran etroit, la portee passe a la ligne', (
       WidgetTester tester,
     ) async {
-      // Seize croches sur un ecran etroit : plutot que de reduire la portee a
-      // rien, on s'arrete au plancher et on defile.
+      // Seize croches sur 360 pixels, la largeur d'un telephone. Avant, la
+      // portee retrecissait jusqu'au
+      // plancher puis defilait ; maintenant elle passe a la ligne, comme une
+      // partition papier.
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: SizedBox(
-              width: 200,
+              width: 360,
               child: ScoreView(
                 passage: passageDe(<(int, NoteValue)>[
                   for (int i = 0; i < 16; i++) (67, NoteValue.eighth),
@@ -152,33 +155,17 @@ void main() {
           ),
         ),
       );
-      final Size taille = tester.getSize(find.byType(CustomPaint).last);
-      expect(taille.width, greaterThan(200), reason: 'ca defile');
+      final Size taille = tester.getSize(find.byKey(ScoreView.canvasKey));
       expect(
-        taille.height / 14,
-        greaterThanOrEqualTo(ScoreView.minSpaceSize),
-        reason: 'la reserve verticale vaut 14 espaces',
+        taille.width,
+        lessThanOrEqualTo(360.5),
+        reason: 'plus rien a pousser du doigt',
       );
-    });
-
-    testWidgets('un passage long defile au lieu de deborder', (
-      WidgetTester tester,
-    ) async {
-      addTearDown(tester.view.reset);
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(360, 780);
-
-      // Seize croches : bien plus large qu'un telephone.
-      await poser(
-        tester,
-        passageDe(<(int, NoteValue)>[
-          for (int i = 0; i < 16; i++) (67, NoteValue.eighth),
-        ]),
+      expect(
+        taille.height,
+        greaterThan(14 * ScoreView.minSpaceSize),
+        reason: 'plusieurs systemes empiles',
       );
-
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
-      // Un debordement de rendu ferait echouer ce test tout seul.
-      expect(find.byType(ScoreView), findsOneWidget);
     });
 
     testWidgets('le curseur ne se dessine qu une fois lance', (
@@ -192,17 +179,15 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(home: Scaffold(body: ScoreView(passage: p))),
       );
-      final CustomPaint sans = tester.widget<CustomPaint>(
-        find.byType(CustomPaint).last,
-      );
+      final CustomPaint sans =
+          tester.widget<CustomPaint>(find.byKey(ScoreView.canvasKey));
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(body: ScoreView(passage: p, cursorTick: 240)),
         ),
       );
-      final CustomPaint avec = tester.widget<CustomPaint>(
-        find.byType(CustomPaint).last,
-      );
+      final CustomPaint avec =
+          tester.widget<CustomPaint>(find.byKey(ScoreView.canvasKey));
       expect(avec.painter!.shouldRepaint(sans.painter!), isTrue);
     });
 
@@ -242,7 +227,7 @@ void main() {
         tester,
         passageDe(<(int, NoteValue)>[(69, NoteValue.quarter)]), // la4
       );
-      expect(find.byType(CustomPaint).last, glyphes(2));
+      expect(find.byKey(ScoreView.canvasKey), glyphes(2));
     });
 
     testWidgets('un diese ajoute son glyphe devant la tete', (
@@ -252,7 +237,7 @@ void main() {
         tester,
         passageDe(<(int, NoteValue)>[(66, NoteValue.quarter)]), // fa#4
       );
-      expect(find.byType(CustomPaint).last, glyphes(3));
+      expect(find.byKey(ScoreView.canvasKey), glyphes(3));
     });
 
     testWidgets('une note pointee porte son point', (
@@ -261,7 +246,7 @@ void main() {
       final PassageBuilder b = PassageBuilder();
       b.add(69, NoteValue.quarter, dotted: true);
       await poser(tester, b.build());
-      expect(find.byType(CustomPaint).last, glyphes(3));
+      expect(find.byKey(ScoreView.canvasKey), glyphes(3));
     });
 
     testWidgets('une croche isolee porte un crochet, une croche ligaturee non',
@@ -271,7 +256,7 @@ void main() {
         tester,
         passageDe(<(int, NoteValue)>[(69, NoteValue.eighth)]),
       );
-      expect(find.byType(CustomPaint).last, glyphes(3));
+      expect(find.byKey(ScoreView.canvasKey), glyphes(3));
 
       // Deux croches sur le meme temps : la ligature remplace les crochets,
       // et elle est peinte, pas composee. Cle + deux tetes.
@@ -282,7 +267,7 @@ void main() {
           (71, NoteValue.eighth),
         ]),
       );
-      expect(find.byType(CustomPaint).last, glyphes(3));
+      expect(find.byKey(ScoreView.canvasKey), glyphes(3));
     });
 
     testWidgets('la reserve verticale laisse passer la cle de sol', (
@@ -299,6 +284,123 @@ void main() {
         spaceSize: espace,
       );
       expect(taille.height / espace, greaterThanOrEqualTo(10));
+    });
+  });
+
+  group('mode d affichage et zoom', () {
+    /// Huit mesures a deux temps, une noire par temps. Des mesures courtes,
+    /// pour que le decoupage ait de quoi jouer.
+    Passage huitMesures() {
+      final PassageBuilder b = PassageBuilder(beatsPerMeasure: 2);
+      for (int i = 0; i < 16; i++) {
+        b.add(67, NoteValue.quarter);
+      }
+      return b.build();
+    }
+
+    /// Taille d'un telephone en portrait, zone de partition comprise.
+    const Size telephone = Size(360, 400);
+
+    /// Une fenetre large, ou le decoupage a de la marge.
+    const Size large = Size(900, 900);
+
+    Future<Size> poserAvec(
+      WidgetTester tester, {
+      ScoreDisplayMode mode = ScoreDisplayMode.systems,
+      double zoom = 1,
+      Size boite = large,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: boite.width,
+              height: boite.height,
+              child: ScoreView(
+                passage: huitMesures(),
+                mode: mode,
+                zoom: zoom,
+              ),
+            ),
+          ),
+        ),
+      );
+      return tester.getSize(find.byKey(ScoreView.canvasKey));
+    }
+
+    testWidgets('en plusieurs lignes, rien ne depasse a droite', (
+      WidgetTester tester,
+    ) async {
+      final Size taille = await poserAvec(tester);
+      expect(taille.width, lessThanOrEqualTo(large.width + 0.5));
+    });
+
+    testWidgets('en defilement, tout tient sur une ligne qui depasse', (
+      WidgetTester tester,
+    ) async {
+      final Size taille = await poserAvec(
+        tester,
+        mode: ScoreDisplayMode.scrolling,
+      );
+      expect(taille.width, greaterThan(large.width), reason: 'ca defile');
+    });
+
+    testWidgets('sur un telephone, le defilement fait des notes plus grandes', (
+      WidgetTester tester,
+    ) async {
+      // C'est tout l'interet du mode : une seule ligne, donc toute la hauteur
+      // pour elle. C'est aussi son defaut, on ne voit qu'un bout a la fois.
+      // Une portee mesure toujours quatre interlignes : comparer les hauteurs
+      // d'un systeme revient donc a comparer la taille des notes.
+      final Size lignes = await poserAvec(tester, boite: telephone);
+      final Size defilement = await poserAvec(
+        tester,
+        mode: ScoreDisplayMode.scrolling,
+        boite: telephone,
+      );
+      expect(defilement.height, greaterThan(lignes.height / 2));
+    });
+
+    testWidgets('zoomer decoupe en plus de lignes tant que ca rentre', (
+      WidgetTester tester,
+    ) async {
+      // Agrandir les notes veut dire moins de mesures par ligne, donc plus de
+      // lignes -- et non une image etiree. La largeur ne bouge pas : c'est la
+      // hauteur qui encaisse.
+      final Size normal = await poserAvec(tester);
+      final Size zoome = await poserAvec(tester, zoom: 2);
+      expect(zoome.width, lessThanOrEqualTo(large.width + 0.5));
+      expect(zoome.height, greaterThan(normal.height));
+    });
+
+    testWidgets('zoome au-dela de ce qui rentre, la partition defile', (
+      WidgetTester tester,
+    ) async {
+      // Une mesure ne se coupe jamais. Passe une certaine taille, elle ne
+      // tient plus dans la largeur : on defile plutot que de la rogner.
+      final Size zoome = await poserAvec(tester, zoom: 3, boite: telephone);
+      expect(zoome.width, greaterThan(telephone.width));
+      expect(find.byType(SingleChildScrollView), findsWidgets);
+    });
+
+    testWidgets('dezoomer resserre la portee', (WidgetTester tester) async {
+      final Size normal = await poserAvec(tester);
+      final Size petit = await poserAvec(tester, zoom: 0.5);
+      expect(petit.height, lessThan(normal.height));
+    });
+
+    testWidgets('le zoom est borne des deux cotes', (
+      WidgetTester tester,
+    ) async {
+      // Une valeur aberrante ne doit pas rendre la partition invisible ni
+      // remplir l'ecran d'une seule tete de note.
+      final Size mini = await poserAvec(tester, zoom: 0.01);
+      final Size plancher = await poserAvec(tester, zoom: ScoreView.minZoom);
+      expect(mini.height, plancher.height);
+
+      final Size maxi = await poserAvec(tester, zoom: 99);
+      final Size plafond = await poserAvec(tester, zoom: ScoreView.maxZoom);
+      expect(maxi.height, plafond.height);
     });
   });
 }

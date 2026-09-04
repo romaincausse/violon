@@ -5,7 +5,9 @@ import 'package:violon/core/audio/microphone_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 
 import 'package:violon/core/music/demo_passage.dart';
+import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
+import 'package:violon/core/music/passage_builder.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/ui/screens/session_screen.dart';
@@ -215,6 +217,147 @@ void main() {
       // source a ete liberee et pas seulement oubliee : sur l'appareil, une
       // source oubliee laisserait le micro ouvert apres la seance.
       expect(source.emitAll, throwsStateError);
+    });
+  });
+
+  group('SessionScreen, affichage de la partition', () {
+    /// Huit mesures : de quoi deborder l'ecran en mode defilement. Le passage
+    /// de demonstration, lui, n'en fait que deux et tient tout entier.
+    Passage passageLong() {
+      final PassageBuilder b = PassageBuilder(beatsPerMeasure: 2);
+      for (int i = 0; i < 16; i++) {
+        b.add(67, NoteValue.quarter);
+      }
+      return b.build();
+    }
+
+    Future<void> poserEcran(WidgetTester tester, {Passage? passage}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SessionScreen(
+            passage: passage ?? demo,
+            onChangePassage: () {},
+            pitchSourceFactory: () async =>
+                FakePitchSource(const <PitchEstimate>[]),
+          ),
+        ),
+      );
+    }
+
+    ScoreView vue(WidgetTester tester) =>
+        tester.widget<ScoreView>(find.byType(ScoreView));
+
+    testWidgets('la partition passe a la ligne par defaut', (
+      WidgetTester tester,
+    ) async {
+      await poserEcran(tester);
+      expect(vue(tester).mode, ScoreDisplayMode.systems);
+      expect(vue(tester).zoom, 1);
+    });
+
+    testWidgets('un bouton bascule vers le defilement et revient', (
+      WidgetTester tester,
+    ) async {
+      await poserEcran(tester);
+      await tester.tap(find.byTooltip('Passer au defilement'));
+      await tester.pump();
+      expect(vue(tester).mode, ScoreDisplayMode.scrolling);
+
+      await tester.tap(find.byTooltip('Passer a plusieurs lignes'));
+      await tester.pump();
+      expect(vue(tester).mode, ScoreDisplayMode.systems);
+    });
+
+    testWidgets('pincer agrandit la partition', (WidgetTester tester) async {
+      await poserEcran(tester);
+      final Offset centre = tester.getCenter(find.byType(ScoreView));
+
+      final TestGesture doigt1 =
+          await tester.startGesture(centre - const Offset(20, 0));
+      final TestGesture doigt2 =
+          await tester.startGesture(centre + const Offset(20, 0));
+      await doigt1.moveBy(const Offset(-40, 0));
+      await doigt2.moveBy(const Offset(40, 0));
+      await tester.pump();
+      await doigt1.up();
+      await doigt2.up();
+      await tester.pump();
+
+      expect(vue(tester).zoom, greaterThan(1));
+    });
+
+    testWidgets('pincer a l envers reduit la partition', (
+      WidgetTester tester,
+    ) async {
+      await poserEcran(tester);
+      final Offset centre = tester.getCenter(find.byType(ScoreView));
+
+      final TestGesture doigt1 =
+          await tester.startGesture(centre - const Offset(60, 0));
+      final TestGesture doigt2 =
+          await tester.startGesture(centre + const Offset(60, 0));
+      await doigt1.moveBy(const Offset(40, 0));
+      await doigt2.moveBy(const Offset(-40, 0));
+      await tester.pump();
+      await doigt1.up();
+      await doigt2.up();
+      await tester.pump();
+
+      expect(vue(tester).zoom, lessThan(1));
+    });
+
+    testWidgets('deux pincements de suite s enchainent sans exploser', (
+      WidgetTester tester,
+    ) async {
+      // Le piege : repartir de 1 a chaque image multiplierait le zoom par le
+      // facteur du geste a chaque trame, et la partition disparaitrait.
+      await poserEcran(tester);
+      final Offset centre = tester.getCenter(find.byType(ScoreView));
+
+      for (int i = 0; i < 2; i++) {
+        final TestGesture d1 =
+            await tester.startGesture(centre - const Offset(20, 0));
+        final TestGesture d2 =
+            await tester.startGesture(centre + const Offset(20, 0));
+        await d1.moveBy(const Offset(-10, 0));
+        await d2.moveBy(const Offset(10, 0));
+        await tester.pump();
+        await d1.up();
+        await d2.up();
+        await tester.pump();
+      }
+
+      expect(vue(tester).zoom, greaterThan(1));
+      expect(vue(tester).zoom, lessThanOrEqualTo(ScoreView.maxZoom));
+    });
+
+    testWidgets('en defilement, un doigt fait toujours glisser la partition', (
+      WidgetTester tester,
+    ) async {
+      // Le zoom ne doit pas confisquer le geste a un doigt : sans defilement,
+      // le mode defilement ne servirait a rien.
+      await poserEcran(tester, passage: passageLong());
+      await tester.tap(find.byTooltip('Passer au defilement'));
+      await tester.pump();
+
+      // La partition est doublement defilante : la premiere glissiere est la
+      // verticale, qui enveloppe l'horizontale. C'est la seconde qu'on veut.
+      final Finder glissiere = find
+          .descendant(
+            of: find.byType(ScoreView),
+            matching: find.byType(Scrollable),
+          )
+          .last;
+      final ScrollableState avant = tester.state<ScrollableState>(glissiere);
+      final double depart = avant.position.pixels;
+
+      await tester.drag(find.byType(ScoreView), const Offset(-120, 0));
+      await tester.pump();
+
+      expect(
+        tester.state<ScrollableState>(glissiere).position.pixels,
+        greaterThan(depart),
+      );
     });
   });
 }

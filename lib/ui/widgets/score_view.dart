@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/music/passage.dart';
 import '../../core/music/score_note.dart';
+import '../../core/score/score_layout.dart';
 import '../../core/score/smufl.dart';
 import '../../core/score/staff_geometry.dart';
 import '../../core/score/staff_layout.dart';
@@ -12,7 +13,20 @@ import '../../core/score/stems_and_beams.dart';
 /// Couleur d'une note, pour le retour visuel en direct.
 typedef NoteColorResolver = Color? Function(ScoreNote note);
 
-/// La portee gravee.
+/// Deux facons de lire un passage.
+enum ScoreDisplayMode {
+  /// La partition passe a la ligne, comme sur du papier. Tout est visible
+  /// d'un coup d'oeil, les notes sont plus petites.
+  systems,
+
+  /// Une seule ligne qu'on pousse du doigt. Les notes restent grandes, mais
+  /// on ne voit qu'un bout du passage.
+  ///
+  /// C'est [ScoreLayout] avec une largeur infinie : un seul systeme.
+  scrolling,
+}
+
+/// La partition gravee, sur un ou plusieurs systemes.
 ///
 /// Tout le placement vient de `lib/core/score/`, qui raisonne en espaces de
 /// portee. Ce widget ne fait que convertir en pixels et peindre : il ne
@@ -30,19 +44,29 @@ class ScoreView extends StatelessWidget {
     this.colorOf,
     this.cursorTick,
     this.spaceSize,
+    this.maxSystems,
+    this.mode = ScoreDisplayMode.systems,
+    this.zoom = 1,
     super.key,
   });
+
+  /// Bornes du zoom. En dessous d'un demi la portee redevient illisible, et
+  /// au-dela de trois une seule mesure remplit l'ecran.
+  static const double minZoom = 0.5;
+  static const double maxZoom = 3;
+
+  /// Cle de la zone peinte. Sert aux tests a mesurer la partition elle-meme.
+  static const Key canvasKey = Key('score-canvas');
 
   /// En dessous, la portee devient illisible a 70 cm sur un pupitre.
   static const double minSpaceSize = 7;
 
-  /// Au-dela, un passage de deux notes s'etalerait sur tout l'ecran.
+  /// Au-dela, une portee de deux mesures s'etalerait sur tout l'ecran.
   static const double maxSpaceSize = 16;
 
   final Passage passage;
 
   /// Rend la couleur d'une note, ou `null` pour la couleur par defaut.
-  /// C'est par la que le retour visuel de justesse arrivera (lot F2).
   final NoteColorResolver? colorOf;
 
   /// Instant courant, en ticks, ou `null` a l'arret. Trace le curseur.
@@ -50,65 +74,134 @@ class ScoreView extends StatelessWidget {
 
   /// Hauteur d'un interligne, en pixels. La portee en fait quatre.
   ///
-  /// `null` laisse le widget la deduire de la largeur disponible : un passage
-  /// de deux mesures doit se voir en entier, sans defiler. Un passage trop
-  /// long retombe sur [minSpaceSize] et defile horizontalement.
+  /// `null` laisse le widget la deduire de la place disponible.
   final double? spaceSize;
+
+  /// Nombre maximal de systemes. `null` laisse la geometrie decider.
+  ///
+  /// C'est par la que le mode paysage se distinguera du portrait : moins de
+  /// hauteur, donc moins de lignes.
+  final int? maxSystems;
+
+  final ScoreDisplayMode mode;
+
+  /// Grossissement demande par l'utilisateur, autour de la taille choisie
+  /// automatiquement.
+  ///
+  /// **Le zoom refait la mise en page, il n'etire pas une image.** Agrandir
+  /// veut dire moins de mesures par ligne et donc plus de lignes, exactement
+  /// comme si on relisait la partition sur un plus petit format de papier.
+  final double zoom;
 
   @override
   Widget build(BuildContext context) {
-    if (spaceSize != null) {
-      return _build(context, spaceSize!);
-    }
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final double largeurEspaces = StaffLayout.of(passage).widthSpaces;
-        final double ajuste = constraints.maxWidth.isFinite
-            ? constraints.maxWidth / largeurEspaces
-            : maxSpaceSize;
-        return _build(context, ajuste.clamp(minSpaceSize, maxSpaceSize));
+        final double base = spaceSize ?? _choisirEspace(constraints);
+        final double espace = base * zoom.clamp(minZoom, maxZoom);
+        return _build(context, espace, constraints);
       },
     );
   }
 
-  Widget _build(BuildContext context, double spaceSize) {
-    final StaffLayout layout = StaffLayout.of(passage);
-    final StemsAndBeams stems = StemsAndBeams.of(layout);
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+  /// Cherche le plus grand interligne qui laisse tout tenir dans la boite.
+  ///
+  /// On balaie du plus grand au plus petit et on garde le premier qui passe.
+  /// Un interligne plus grand veut dire moins de mesures par ligne, donc plus
+  /// de lignes, donc plus de hauteur : la premiere taille qui tient est bien
+  /// la meilleure.
+  double _choisirEspace(BoxConstraints constraints) {
+    if (!constraints.hasBoundedWidth) {
+      return maxSpaceSize;
+    }
+    for (double taille = maxSpaceSize; taille > minSpaceSize; taille -= 0.5) {
+      if (_tientDans(constraints, taille)) {
+        return taille;
+      }
+    }
+    return minSpaceSize;
+  }
 
-    // Marge d'un espace et demi au-dela de la note la plus extreme, pour ne
-    // rogner ni les lignes supplementaires ni les hampes. La cle de sol
-    // deborde elle aussi de la portee, mais moins qu'une hampe pleine
-    // longueur : la reserve faite pour les hampes la contient deja.
-    final double topSpaces = math.min(
-          StaffGeometry.yInSpaces(layout.highestStep),
-          -2.0 - StemsAndBeams.standardLengthSpaces,
-        ) -
-        1.5;
-    final double bottomSpaces = math.max(
-          StaffGeometry.yInSpaces(layout.lowestStep),
-          2.0 + StemsAndBeams.standardLengthSpaces,
-        ) +
-        1.5;
+  bool _tientDans(BoxConstraints constraints, double taille) {
+    final ScoreLayout layout = _layoutPour(constraints.maxWidth / taille);
+    final SystemMetrics metrics = SystemMetrics.of(layout);
+    // En defilement, deborder en largeur est le principe meme : seule la
+    // hauteur contraint la taille des notes.
+    if (mode == ScoreDisplayMode.systems &&
+        layout.widthSpaces * taille > constraints.maxWidth + 0.01) {
+      return false;
+    }
+    if (!constraints.hasBoundedHeight) {
+      return true;
+    }
+    final double hauteur =
+        metrics.stackHeightSpaces(layout.systemCount) * taille;
+    return hauteur <= constraints.maxHeight;
+  }
+
+  ScoreLayout _layoutPour(double largeurEspaces) => ScoreLayout.of(
+        passage,
+        // En defilement, aucune largeur ne borne la ligne : tout tient sur un
+        // seul systeme, et c'est le doigt qui parcourt la partition.
+        maxWidthSpaces: mode == ScoreDisplayMode.scrolling
+            ? double.infinity
+            : largeurEspaces,
+        maxSystems: mode == ScoreDisplayMode.scrolling ? 1 : maxSystems,
+      );
+
+  Widget _build(
+    BuildContext context,
+    double spaceSize,
+    BoxConstraints constraints,
+  ) {
+    final double largeurDisponible = constraints.hasBoundedWidth
+        ? constraints.maxWidth
+        : ScoreLayout.of(passage, maxWidthSpaces: double.infinity).widthSpaces *
+            spaceSize;
+    final ScoreLayout layout = _layoutPour(largeurDisponible / spaceSize);
+    final SystemMetrics metrics = SystemMetrics.of(layout);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
     final Size size = Size(
       layout.widthSpaces * spaceSize,
-      (bottomSpaces - topSpaces) * spaceSize,
+      metrics.stackHeightSpaces(layout.systemCount) * spaceSize,
     );
 
+    // Une mesure trop dense peut deborder en largeur, et un passage trop long
+    // en hauteur : dans les deux cas on defile plutot que de rogner.
+    //
+    // La contrainte de hauteur minimale centre la partition quand elle tient
+    // dans la zone, sans empecher le defilement quand elle n'y tient pas : un
+    // `Center` seul collerait le contenu en haut des qu'il deborde.
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: CustomPaint(
-        size: size,
-        painter: _ScorePainter(
-          layout: layout,
-          stems: stems,
-          topSpaces: topSpaces,
-          spaceSize: spaceSize,
-          inkColor: scheme.onSurface,
-          cursorColor: scheme.primary,
-          cursorTick: cursorTick,
-          colorOf: colorOf,
+      scrollDirection: Axis.vertical,
+      child: ConstrainedBox(
+        // La hauteur minimale centre la partition quand elle tient dans la
+        // zone, sans empecher le defilement quand elle n'y tient pas : un
+        // `Center` seul collerait le contenu en haut des qu'il deborde.
+        constraints: BoxConstraints(
+          minHeight: constraints.hasBoundedHeight ? constraints.maxHeight : 0,
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: CustomPaint(
+              // Cle explicite : les barres de defilement peignent elles aussi,
+              // et un test qui prendrait "le dernier CustomPaint" mesurerait
+              // l'une d'elles sans s'en apercevoir.
+              key: canvasKey,
+              size: size,
+              painter: _ScorePainter(
+                layout: layout,
+                metrics: metrics,
+                spaceSize: spaceSize,
+                inkColor: scheme.onSurface,
+                cursorColor: scheme.primary,
+                cursorTick: cursorTick,
+                colorOf: colorOf,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -118,8 +211,7 @@ class ScoreView extends StatelessWidget {
 class _ScorePainter extends CustomPainter {
   _ScorePainter({
     required this.layout,
-    required this.stems,
-    required this.topSpaces,
+    required this.metrics,
     required this.spaceSize,
     required this.inkColor,
     required this.cursorColor,
@@ -127,9 +219,8 @@ class _ScorePainter extends CustomPainter {
     required this.colorOf,
   });
 
-  final StaffLayout layout;
-  final StemsAndBeams stems;
-  final double topSpaces;
+  final ScoreLayout layout;
+  final SystemMetrics metrics;
   final double spaceSize;
   final Color inkColor;
   final Color cursorColor;
@@ -139,17 +230,55 @@ class _ScorePainter extends CustomPainter {
   /// Abscisse du bord gauche de la cle, en espaces.
   static const double _clefXSpaces = 1;
 
+  static const double _accidentalGapSpaces = 0.25;
+  static const double _dotGapSpaces = 0.3;
+
   double _x(double spaces) => spaces * spaceSize;
-  double _y(double spaces) => (spaces - topSpaces) * spaceSize;
+
+  /// Ordonnee **dans le systeme courant** : la ligne du milieu est a zero.
+  double _y(double spaces) => spaces * spaceSize;
   double _yOfStep(int step) => _y(StaffGeometry.yInSpaces(step));
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Le curseur passe en premier : il glisse derriere les notes plutot que
-    // de les barrer. On veut lire la note, pas le trait.
-    _paintCursor(canvas, size);
-    _paintStaff(canvas, size);
-    _paintBarlines(canvas);
+    final (int systemeDuCurseur, double xCurseur) =
+        cursorTick == null ? (-1, 0.0) : layout.positionOfTick(cursorTick!);
+
+    for (final StaffSystem system in layout.systems) {
+      canvas.save();
+      // Chaque systeme est peint dans son propre repere, la ligne du milieu
+      // a l'ordonnee zero. Tout le code de dessin ignore ainsi qu'il existe
+      // plusieurs lignes.
+      canvas.translate(0, metrics.originOfSystem(system.index) * spaceSize);
+      _paintSystem(
+        canvas,
+        system,
+        size.width,
+        cursorX: system.index == systemeDuCurseur ? xCurseur : null,
+      );
+      canvas.restore();
+    }
+  }
+
+  void _paintSystem(
+    Canvas canvas,
+    StaffSystem system,
+    double largeur, {
+    required double? cursorX,
+  }) {
+    final StaffLayout staff = system.layout;
+    // Les ligatures ne franchissent jamais une barre de mesure, et on ne coupe
+    // qu'aux barres : ligaturer systeme par systeme donne donc exactement le
+    // meme resultat que sur une ligne unique.
+    final StemsAndBeams stems = StemsAndBeams.of(staff);
+
+    if (cursorX != null) {
+      // Le curseur passe en premier : il glisse derriere les notes plutot que
+      // de les barrer. On veut lire la note, pas le trait.
+      _paintCursor(canvas, cursorX);
+    }
+    _paintStaff(canvas, system.widthSpaces);
+    _paintBarlines(canvas, staff);
     _paintClef(canvas);
 
     final Map<int, Beam> beamOfNote = <int, Beam>{};
@@ -159,17 +288,17 @@ class _ScorePainter extends CustomPainter {
       }
     }
 
-    for (int i = 0; i < layout.notes.length; i++) {
-      _paintLedgers(canvas, layout.notes[i]);
+    for (final PlacedNote note in staff.notes) {
+      _paintLedgers(canvas, note);
     }
     for (final Stem stem in stems.stems) {
-      _paintStem(canvas, stem, beamOfNote[stem.noteIndex]);
+      _paintStem(canvas, staff, stem, beamOfNote[stem.noteIndex]);
     }
     for (final Beam beam in stems.beams) {
-      _paintBeam(canvas, beam);
+      _paintBeam(canvas, staff, beam);
     }
-    for (int i = 0; i < layout.notes.length; i++) {
-      _paintNote(canvas, layout.notes[i]);
+    for (final PlacedNote note in staff.notes) {
+      _paintNote(canvas, staff, note);
     }
   }
 
@@ -190,8 +319,7 @@ class _ScorePainter extends CustomPainter {
       )..layout();
 
   /// Pose un glyphe a son origine SMuFL : bord gauche a [xSpaces], ligne de
-  /// base a [baselineSpaces]. Toute la table des glyphes se place ainsi, ce
-  /// qui evite un cas particulier par symbole.
+  /// base a [baselineSpaces].
   void _drawGlyph(
     Canvas canvas,
     TextPainter tp,
@@ -206,9 +334,8 @@ class _ScorePainter extends CustomPainter {
   double _widthSpaces(TextPainter tp) => tp.width / spaceSize;
 
   void _paintClef(Canvas canvas) {
+    // Chaque systeme reprend la cle : une portee sans cle ne se lit pas.
     final TextPainter tp = _glyph(Smufl.gClef, inkColor);
-    // La boucle de la cle enroule la ligne du sol4 : c'est la ligne de base
-    // du glyphe qui s'y pose, pas son centre.
     _drawGlyph(
       canvas,
       tp,
@@ -219,40 +346,42 @@ class _ScorePainter extends CustomPainter {
 
   // --- Traits --------------------------------------------------------------
 
-  void _paintCursor(Canvas canvas, Size size) {
-    final int? tick = cursorTick;
-    if (tick == null) {
-      return;
-    }
-    final double x = _x(layout.xForTick(tick));
+  void _paintCursor(Canvas canvas, double xSpaces) {
     final Paint p = Paint()..color = cursorColor.withValues(alpha: 0.22);
     // Une bande, pas un trait : a 70 cm sur un pupitre, un trait d'un pixel
     // se perd, et une bande se suit du coin de l'oeil.
+    final double x = _x(xSpaces);
     canvas.drawRect(
-      Rect.fromLTRB(x - spaceSize * 0.6, 0, x + spaceSize * 0.6, size.height),
+      Rect.fromLTRB(
+        x - spaceSize * 0.6,
+        _y(metrics.topSpaces),
+        x + spaceSize * 0.6,
+        _y(metrics.bottomSpaces),
+      ),
       p,
     );
   }
 
-  void _paintStaff(Canvas canvas, Size size) {
+  void _paintStaff(Canvas canvas, double largeurSpaces) {
     final Paint p = Paint()
       ..color = inkColor.withValues(alpha: 0.55)
       ..strokeWidth = math.max(1, spaceSize * 0.11);
+    final double largeur = _x(largeurSpaces);
     for (int step = StaffGeometry.bottomLineStep;
         step <= StaffGeometry.topLineStep;
         step += 2) {
       final double y = _yOfStep(step);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), p);
+      canvas.drawLine(Offset(0, y), Offset(largeur, y), p);
     }
   }
 
-  void _paintBarlines(Canvas canvas) {
+  void _paintBarlines(Canvas canvas, StaffLayout staff) {
     final Paint p = Paint()
       ..color = inkColor.withValues(alpha: 0.55)
       ..strokeWidth = math.max(1, spaceSize * 0.13);
     final double haut = _yOfStep(StaffGeometry.topLineStep);
     final double bas = _yOfStep(StaffGeometry.bottomLineStep);
-    for (final double xSpaces in layout.barlineXSpaces) {
+    for (final double xSpaces in staff.barlineXSpaces) {
       final double x = _x(xSpaces);
       canvas.drawLine(Offset(x, haut), Offset(x, bas), p);
     }
@@ -275,8 +404,8 @@ class _ScorePainter extends CustomPainter {
     }
   }
 
-  void _paintStem(Canvas canvas, Stem stem, Beam? beam) {
-    final PlacedNote note = layout.notes[stem.noteIndex];
+  void _paintStem(Canvas canvas, StaffLayout staff, Stem stem, Beam? beam) {
+    final PlacedNote note = staff.notes[stem.noteIndex];
     final Paint p = Paint()
       ..color = _colorFor(note)
       ..strokeWidth = math.max(1, spaceSize * 0.12);
@@ -289,11 +418,11 @@ class _ScorePainter extends CustomPainter {
       p,
     );
     if (beam == null && stem.flagCount > 0) {
-      _paintFlag(canvas, stem);
+      _paintFlag(canvas, staff, stem);
     }
   }
 
-  void _paintFlag(Canvas canvas, Stem stem) {
+  void _paintFlag(Canvas canvas, StaffLayout staff, Stem stem) {
     final String? glyph = Smufl.flagFor(stem.flagCount, stem.direction);
     if (glyph == null) {
       return;
@@ -303,15 +432,15 @@ class _ScorePainter extends CustomPainter {
     // aux ligatures. Son origine est le point ou il rejoint la hampe.
     _drawGlyph(
       canvas,
-      _glyph(glyph, _colorFor(layout.notes[stem.noteIndex])),
+      _glyph(glyph, _colorFor(staff.notes[stem.noteIndex])),
       stem.xSpaces,
       stem.tipYSpaces,
     );
   }
 
-  void _paintBeam(Canvas canvas, Beam beam) {
+  void _paintBeam(Canvas canvas, StaffLayout staff, Beam beam) {
     final Paint p = Paint()
-      ..color = _colorFor(layout.notes[beam.noteIndices.first])
+      ..color = _colorFor(staff.notes[beam.noteIndices.first])
       ..style = PaintingStyle.fill;
     final double epaisseur = spaceSize * 0.5;
     // Les ligatures supplementaires s'empilent vers les tetes, jamais vers
@@ -334,10 +463,10 @@ class _ScorePainter extends CustomPainter {
 
   // --- Notes ---------------------------------------------------------------
 
-  void _paintNote(Canvas canvas, PlacedNote note) {
+  void _paintNote(Canvas canvas, StaffLayout staff, PlacedNote note) {
     final NoteHead head = StemsAndBeams.headFor(
       note.note.durationTicks,
-      layout.ticksPerBeat,
+      staff.ticksPerBeat,
     );
     final Color color = _colorFor(note);
     final TextPainter tp = _glyph(Smufl.noteheadFor(head), color);
@@ -352,7 +481,7 @@ class _ScorePainter extends CustomPainter {
     if (note.accidental == Accidental.sharp) {
       _paintAccidental(canvas, note, gauche, color);
     }
-    if (StemsAndBeams.isDotted(note.note.durationTicks, layout.ticksPerBeat)) {
+    if (StemsAndBeams.isDotted(note.note.durationTicks, staff.ticksPerBeat)) {
       _paintDot(canvas, note, gauche + largeur, color);
     }
   }
@@ -389,9 +518,6 @@ class _ScorePainter extends CustomPainter {
       y,
     );
   }
-
-  static const double _accidentalGapSpaces = 0.25;
-  static const double _dotGapSpaces = 0.3;
 
   Color _colorFor(PlacedNote note) => colorOf?.call(note.note) ?? inkColor;
 

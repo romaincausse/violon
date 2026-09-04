@@ -52,6 +52,17 @@ class _SessionScreenState extends State<SessionScreen>
   Duration _elapsed = Duration.zero;
 
   final LiveTuning _tuning = LiveTuning();
+  ScoreDisplayMode _mode = ScoreDisplayMode.systems;
+  double _zoom = 1;
+
+  /// Doigts poses sur la partition, par identifiant de pointeur.
+  final Map<int, Offset> _doigts = <int, Offset>{};
+
+  /// Ecart entre les deux doigts au debut du pincement, et zoom a cet
+  /// instant. On repart de la valeur d'avant le geste : multiplier le zoom
+  /// courant a chaque image le ferait exploser des le premier mouvement.
+  double? _ecartInitial;
+  double _zoomAuDebutDuGeste = 1;
   PitchSource? _source;
   StreamSubscription<PitchEstimate>? _abonnement;
   _MicState _mic = _MicState.arrete;
@@ -176,6 +187,54 @@ class _SessionScreenState extends State<SessionScreen>
   Color? _couleurDe(ScoreNote note) =>
       TuningColors.of(_tuning.verdictFor(note.id));
 
+  void _changerDeMode() {
+    setState(() {
+      _mode = _mode == ScoreDisplayMode.systems
+          ? ScoreDisplayMode.scrolling
+          : ScoreDisplayMode.systems;
+    });
+  }
+
+  void _doigtPose(PointerDownEvent event) {
+    _doigts[event.pointer] = event.position;
+    _ouvrirLePincement();
+  }
+
+  void _doigtBouge(PointerMoveEvent event) {
+    if (!_doigts.containsKey(event.pointer)) {
+      return;
+    }
+    _doigts[event.pointer] = event.position;
+    final double? initial = _ecartInitial;
+    if (_doigts.length < 2 || initial == null || initial <= 0) {
+      return; // Un seul doigt fait defiler, il ne zoome pas.
+    }
+    setState(() {
+      _zoom = (_zoomAuDebutDuGeste * _ecartCourant() / initial)
+          .clamp(ScoreView.minZoom, ScoreView.maxZoom);
+    });
+  }
+
+  void _doigtLeve(PointerEvent event) {
+    _doigts.remove(event.pointer);
+    // Le pincement recommencera a zero si un deuxieme doigt revient : sans
+    // ca, l'ecart de reference serait celui d'un geste deja termine.
+    _ecartInitial = null;
+  }
+
+  void _ouvrirLePincement() {
+    if (_doigts.length != 2) {
+      return;
+    }
+    _ecartInitial = _ecartCourant();
+    _zoomAuDebutDuGeste = _zoom;
+  }
+
+  double _ecartCourant() {
+    final List<Offset> deux = _doigts.values.take(2).toList();
+    return (deux[0] - deux[1]).distance;
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -185,6 +244,17 @@ class _SessionScreenState extends State<SessionScreen>
       appBar: AppBar(
         title: Text(passage.title),
         actions: <Widget>[
+          IconButton(
+            onPressed: _changerDeMode,
+            icon: Icon(
+              _mode == ScoreDisplayMode.systems
+                  ? Icons.view_headline
+                  : Icons.swap_horiz,
+            ),
+            tooltip: _mode == ScoreDisplayMode.systems
+                ? 'Passer au defilement'
+                : 'Passer a plusieurs lignes',
+          ),
           IconButton(
             onPressed: widget.onChangePassage,
             icon: const Icon(Icons.edit_note),
@@ -225,11 +295,21 @@ class _SessionScreenState extends State<SessionScreen>
                 running: _running,
               ),
               Expanded(
-                child: Center(
+                // Des evenements bruts, et non un `GestureDetector`. Un
+                // detecteur de pincement entre dans l'arene des gestes et y
+                // rafle le glissement a un doigt : le mode defilement ne
+                // defilerait plus. Un `Listener` observe sans rien reclamer.
+                child: Listener(
+                  onPointerDown: _doigtPose,
+                  onPointerMove: _doigtBouge,
+                  onPointerUp: _doigtLeve,
+                  onPointerCancel: _doigtLeve,
                   child: ScoreView(
                     passage: passage,
                     cursorTick: _running ? _cursor.tickAt(_elapsed) : null,
                     colorOf: _couleurDe,
+                    mode: _mode,
+                    zoom: _zoom,
                   ),
                 ),
               ),
