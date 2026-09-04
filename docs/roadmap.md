@@ -86,17 +86,27 @@ doit le faire aussi.
 
 **Utilisable des :** un score de justesse s'affiche apres un passage.
 
-- [ ] Detecteur d'attaques (spectral flux)
-- [ ] Calibration de latence au premier lancement
-- [ ] Lissage et tolerance au vibrato
-- [ ] Score de justesse par note, en cents
-- [ ] Score de rythme par note, en millisecondes
+- [x] Detecteur d'attaques (spectral flux)
+- [ ] Calibration de latence au premier lancement **<- bloque : moteur audio a choisir**
+- [x] Lissage et tolerance au vibrato
+- [x] Score de justesse par note, en cents
+- [ ] Score de rythme par note, en millisecondes **<- bloque par la calibration**
 - [ ] Bilan de passage, et le total cumule qui ne redescend jamais
 - [ ] Boucle sur une selection, avec montee de tempo automatique
-- [ ] Accordeur sol-re-la-mi
+- [x] Accordeur sol-re-la-mi
 
 **Critere de sortie :** il fait dix passages d'affilee sans s'ennuyer, le
 tempo monte tout seul, et il termine au tempo ecrit.
+
+**Ou on en est.** Le "utilisable des" est atteint : un score de justesse
+s'affiche apres chaque passage, avec une seule mesure designee a retravailler.
+Le micro, le lissage, l'exclusion de l'attaque et l'accordeur sont en place,
+et le detecteur d'attaques attend son consommateur.
+
+Tout ce qui reste part de la calibration de latence, qui doit emettre des
+clics et les reecouter : il faut donc choisir un moteur audio de sortie. Sans
+ce choix, ni le score de rythme, ni le bilan complet, ni la boucle a tempo
+montant ne peuvent exister.
 
 C'est ici que le projet repond a la lassitude. Si ce jalon sort et qu'il se
 lasse quand meme, c'est le plan qu'il faut revoir, pas la fonctionnalite

@@ -179,6 +179,27 @@ class LiveTuning {
   Iterable<String> get heardNoteIds =>
       _ecarts.keys.where((String id) => scoreFor(id) != null);
 
+  /// La note la moins bien reussie, ou `null` si rien n'a ete entendu.
+  ///
+  /// **C'est la prochaine tache, pas la liste des echecs.** Le projet dit que
+  /// l'application montre ce qu'il y a a travailler, pas tout ce qui a rate :
+  /// une seule note designee vaut mieux qu'un bilan qui accable.
+  ///
+  /// En cas d'egalite, la premiere dans l'ordre d'ecoute : on travaille le
+  /// passage dans le sens ou on le joue.
+  String? get weakestNoteId {
+    String? pire;
+    int meilleurScore = 101;
+    for (final String id in heardNoteIds) {
+      final int score = scoreFor(id)!;
+      if (score < meilleurScore) {
+        meilleurScore = score;
+        pire = id;
+      }
+    }
+    return pire;
+  }
+
   /// Oublie tout : a appeler a chaque nouveau passage sur le morceau.
   void reset() => _ecarts.clear();
 }

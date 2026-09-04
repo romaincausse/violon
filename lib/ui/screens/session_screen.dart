@@ -231,6 +231,25 @@ class _SessionScreenState extends State<SessionScreen>
   Color? _couleurDe(ScoreNote note) =>
       TuningColors.of(_tuning.verdictFor(note.id));
 
+  /// Ce qu'il y a a dire une fois le passage termine.
+  ///
+  /// Rien pendant la lecture : un chiffre qui bouge pendant qu'on joue
+  /// detournerait le regard de la partition, et changerait a chaque note.
+  _Bilan? _bilan() {
+    if (_running) {
+      return null;
+    }
+    final int? score = _tuning.overallScore;
+    if (score == null) {
+      return null;
+    }
+    final String? pire = _tuning.weakestNoteId;
+    final ScoreNote? aTravailler = pire == null
+        ? null
+        : widget.passage.notes.where((ScoreNote n) => n.id == pire).firstOrNull;
+    return _Bilan(score: score, aTravailler: aTravailler);
+  }
+
   void _changerDeMode() {
     setState(() {
       _mode = _mode == ScoreDisplayMode.systems
@@ -336,7 +355,7 @@ class _SessionScreenState extends State<SessionScreen>
         _metronome(),
         Expanded(child: _partition(orientation)),
         const SizedBox(height: 8),
-        _BandeauMicro(etat: _mic),
+        _Bandeau(etat: _mic, bilan: _bilan()),
         const SizedBox(height: 16),
         _bouton(),
       ],
@@ -364,7 +383,7 @@ class _SessionScreenState extends State<SessionScreen>
               const SizedBox(height: 16),
               _metronome(),
               const SizedBox(height: 16),
-              _BandeauMicro(etat: _mic),
+              _Bandeau(etat: _mic, bilan: _bilan()),
               const SizedBox(height: 16),
               _bouton(),
             ],
@@ -438,37 +457,85 @@ class _SessionScreenState extends State<SessionScreen>
   }
 }
 
-/// Une ligne discrete sous la portee : la legende des couleurs quand on
-/// ecoute, la raison quand on n'ecoute pas.
+/// Ce qu'on a mesure sur le dernier passage.
+class _Bilan {
+  const _Bilan({required this.score, required this.aTravailler});
+
+  final int score;
+  final ScoreNote? aTravailler;
+}
+
+/// Une ligne discrete sous la portee : le bilan quand le passage est fini, la
+/// legende des couleurs pendant qu'on joue, la raison quand le micro manque.
 ///
 /// Sa hauteur est libre, mais jamais nulle : reserver la place evite que la
-/// partition sursaute quand le micro change d'etat.
-class _BandeauMicro extends StatelessWidget {
-  const _BandeauMicro({required this.etat});
+/// partition sursaute quand l'etat change.
+class _Bandeau extends StatelessWidget {
+  const _Bandeau({required this.etat, required this.bilan});
 
   final _MicState etat;
+  final _Bilan? bilan;
 
   static const double _hauteurMinimale = 20;
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle? style = Theme.of(context).textTheme.bodySmall;
+    final ThemeData theme = Theme.of(context);
+    final TextStyle? style = theme.textTheme.bodySmall;
+    final _Bilan? b = bilan;
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: _hauteurMinimale),
-      child: switch (etat) {
-        _MicState.arrete => const SizedBox.shrink(),
-        _MicState.ecoute => const _Legende(),
-        _MicState.refuse => Text(
-            'Micro refuse : le passage defile sans notation.',
-            style: style,
+      child: b != null
+          ? _Resultat(bilan: b)
+          : switch (etat) {
+              _MicState.arrete => const SizedBox.shrink(),
+              _MicState.ecoute => const _Legende(),
+              _MicState.refuse => Text(
+                  'Micro refuse : le passage defile sans notation.',
+                  style: style,
+                  textAlign: TextAlign.center,
+                ),
+              _MicState.indisponible => Text(
+                  'Micro indisponible : le passage defile sans notation.',
+                  style: style,
+                  textAlign: TextAlign.center,
+                ),
+            },
+    );
+  }
+}
+
+/// Le bilan du passage : un chiffre, et une seule chose a retravailler.
+///
+/// **Pas un palmares des erreurs.** Le projet dit que l'application montre la
+/// prochaine tache, jamais tout ce qui a rate. D'ou une seule mesure
+/// designee, et aucun rouge : le chiffre se suffit.
+class _Resultat extends StatelessWidget {
+  const _Resultat({required this.bilan});
+
+  final _Bilan bilan;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ScoreNote? note = bilan.aTravailler;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          'Justesse ${bilan.score} sur 100',
+          key: const Key('bilan-score'),
+          style: theme.textTheme.titleMedium,
+          textAlign: TextAlign.center,
+        ),
+        if (note != null)
+          Text(
+            'A retravailler : mesure ${note.measure}',
+            key: const Key('bilan-tache'),
+            style: theme.textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
-        _MicState.indisponible => Text(
-            'Micro indisponible : le passage defile sans notation.',
-            style: style,
-            textAlign: TextAlign.center,
-          ),
-      },
+      ],
     );
   }
 }
