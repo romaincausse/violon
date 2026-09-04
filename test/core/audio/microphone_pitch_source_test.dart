@@ -7,6 +7,7 @@ import 'package:violon/core/audio/audio_capture.dart';
 import 'package:violon/core/audio/microphone_pitch_source.dart';
 import 'package:violon/core/audio/pitch_analyzer.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
+import 'package:violon/core/audio/pitch_smoother.dart';
 
 /// Micro scripte. Permet de tester toute la chaine -- octets, trames, YIN --
 /// sans appareil, ce qui est justement la raison d'etre de [AudioCapture].
@@ -346,6 +347,52 @@ void main() {
       final AnalyseurPilote analyseur = AnalyseurPilote();
       await MicrophonePitchSource(FakeCapture(), analyzer: analyseur).dispose();
       expect(analyseur.liberations, 1);
+    });
+  });
+
+  group('MicrophonePitchSource et le lissage', () {
+    test('le meme flux est lu en hauteurs ou en detail', () async {
+      // Les deux vues ne dupliquent rien : l'accordeur veut l'excursion et le
+      // vibrato, la partition ne veut que la hauteur.
+      final FakeCapture micro = FakeCapture();
+      final MicrophonePitchSource source = MicrophonePitchSource(micro);
+      final Future<PitchEstimate> hauteur = source.pitches.first;
+      final Future<SmoothedPitch> detail = source.smoothedPitches.first;
+      await source.start();
+
+      micro.controleur.add(sinus(440, 2048));
+
+      expect((await detail).frequencyHz, (await hauteur).frequencyHz);
+    });
+
+    test('une erreur d octave isolee n atteint pas la partition', () async {
+      // C'est la raison d'etre du lissage a cet endroit : YIN se trompe
+      // parfois d'octave sur une trame, et la note passerait au rouge.
+      final FakeCapture micro = FakeCapture();
+      final MicrophonePitchSource source = MicrophonePitchSource(micro);
+      final Future<List<PitchEstimate>> trois = source.pitches.take(3).toList();
+      await source.start();
+
+      micro.controleur.add(sinus(440, 2048));
+      micro.controleur.add(sinus(880, 2048)); // l'octave parasite
+      micro.controleur.add(sinus(440, 2048));
+
+      final List<PitchEstimate> recues = await trois;
+      expect(recues.last.nearestMidi, 69, reason: 'la4, pas la5');
+    });
+
+    test('redemarrer oublie le lissage de la prise precedente', () async {
+      final FakeCapture micro = FakeCapture();
+      final MicrophonePitchSource source = MicrophonePitchSource(micro);
+      await source.start();
+      micro.controleur.add(sinus(880, 2048 * 3));
+      await Future<void>.delayed(Duration.zero);
+
+      final Future<PitchEstimate> apres = source.pitches.first;
+      await source.start();
+      micro.controleur.add(sinus(440, 2048));
+
+      expect((await apres).nearestMidi, 69, reason: 'aucune trace du la5');
     });
   });
 }
