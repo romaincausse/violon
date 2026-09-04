@@ -155,4 +155,119 @@ void main() {
       expect(t.verdictFor('n1'), TuningVerdict.unknown);
     });
   });
+
+  group('LiveTuning, exclusion de l attaque', () {
+    test('sans information de temps, tout est retenu', () {
+      // Les appelants qui ne savent pas ou en est la note gardent l'ancien
+      // comportement.
+      final LiveTuning t = LiveTuning();
+      t.observe(la4, joue(69, 0));
+      t.observe(la4, joue(69, 0));
+      expect(t.sampleCountFor('n1'), 2);
+    });
+
+    test('le debut de la note est ecarte', () {
+      // Pendant qu'un archet se pose, la hauteur glisse sur des dizaines de
+      // cents avant de se fixer. Le compter reviendrait a reprocher a
+      // l'enfant la physique de son instrument.
+      final LiveTuning t = LiveTuning(attackMs: 80);
+      t.observe(la4, joue(69, -200), sinceNoteStartMs: 0);
+      t.observe(la4, joue(69, -120), sinceNoteStartMs: 46);
+      expect(t.sampleCountFor('n1'), 0);
+
+      t.observe(la4, joue(69, 0), sinceNoteStartMs: 92);
+      expect(t.sampleCountFor('n1'), 1);
+    });
+
+    test('une attaque ratee ne condamne plus une note tenue juste', () {
+      final LiveTuning t = LiveTuning();
+      t.observe(la4, joue(69, -250), sinceNoteStartMs: 0);
+      t.observe(la4, joue(69, -180), sinceNoteStartMs: 46);
+      for (int i = 0; i < 4; i++) {
+        t.observe(la4, joue(69, 4), sinceNoteStartMs: 92 + i * 46);
+      }
+      expect(t.verdictFor('n1'), TuningVerdict.inTune);
+      expect(t.scoreFor('n1'), 100);
+    });
+  });
+
+  group('LiveTuning, note sur cent', () {
+    test('la courbe est genereuse pres de la cible', () {
+      // Dix cents, c'est en deca de ce que l'oreille distingue sur une note
+      // isolee : y perdre des points serait absurde.
+      expect(LiveTuning.noteScoreForCents(0), 100);
+      expect(LiveTuning.noteScoreForCents(10), 100);
+      expect(LiveTuning.noteScoreForCents(-10), 100);
+    });
+
+    test('elle descend regulierement jusqu au demi-ton', () {
+      // A cent cents, ce n'est plus la meme note.
+      expect(LiveTuning.noteScoreForCents(100), 0);
+      expect(LiveTuning.noteScoreForCents(-100), 0);
+      expect(LiveTuning.noteScoreForCents(55), closeTo(50, 1));
+    });
+
+    test('au-dela du demi-ton, on ne descend pas sous zero', () {
+      expect(LiveTuning.noteScoreForCents(400), 0);
+    });
+
+    test('une note non entendue n a pas de note', () {
+      final LiveTuning t = LiveTuning();
+      expect(t.scoreFor('n1'), isNull);
+      t.observe(la4, joue(69, 0));
+      expect(t.scoreFor('n1'), isNull,
+          reason: 'une seule mesure ne suffit pas');
+    });
+
+    test('la note d ensemble est la moyenne des notes entendues', () {
+      const ScoreNote si4 = ScoreNote(
+        id: 'n2',
+        midi: 71,
+        onsetTicks: 480,
+        durationTicks: 480,
+        measure: 1,
+      );
+      final LiveTuning t = LiveTuning();
+      for (int i = 0; i < 2; i++) {
+        t.observe(la4, joue(69, 0)); // 100
+        t.observe(si4, joue(71, 55)); // environ 50
+      }
+      expect(t.scoreFor('n1'), 100);
+      expect(t.scoreFor('n2'), closeTo(50, 1));
+      expect(t.overallScore, closeTo(75, 1));
+    });
+
+    test('une note non entendue ne compte pas pour zero', () {
+      // La compter punirait un silence, un archet rate ou un micro trop loin
+      // comme une fausse note.
+      const ScoreNote si4 = ScoreNote(
+        id: 'n2',
+        midi: 71,
+        onsetTicks: 480,
+        durationTicks: 480,
+        measure: 1,
+      );
+      final LiveTuning t = LiveTuning();
+      for (int i = 0; i < 2; i++) {
+        t.observe(la4, joue(69, 0));
+      }
+      t.observe(si4, joue(71, 0)); // une seule mesure : pas assez
+      expect(t.overallScore, 100);
+      expect(t.heardNoteIds, <String>['n1']);
+    });
+
+    test('sans rien entendu, il n y a pas de note d ensemble', () {
+      expect(LiveTuning().overallScore, isNull);
+    });
+
+    test('recommencer efface la note d ensemble', () {
+      final LiveTuning t = LiveTuning();
+      for (int i = 0; i < 2; i++) {
+        t.observe(la4, joue(69, 0));
+      }
+      expect(t.overallScore, 100);
+      t.reset();
+      expect(t.overallScore, isNull);
+    });
+  });
 }

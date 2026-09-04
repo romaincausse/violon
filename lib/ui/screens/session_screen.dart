@@ -158,7 +158,25 @@ class _SessionScreenState extends State<SessionScreen>
     if (note == null) {
       return;
     }
-    setState(() => _tuning.observe(note, estimate));
+    setState(
+      () => _tuning.observe(
+        note,
+        estimate,
+        sinceNoteStartMs: _depuisLeDebutDeLaNote(note),
+      ),
+    );
+  }
+
+  /// Depuis combien de temps la note en cours a commence, en millisecondes.
+  ///
+  /// Sert a ecarter l'attaque : pendant qu'un archet se pose, la hauteur
+  /// glisse sur des dizaines de cents avant de se fixer.
+  int _depuisLeDebutDeLaNote(ScoreNote note) {
+    final int ticks = _cursor.tickAt(_elapsed) - note.onsetTicks;
+    return ticks *
+        60 *
+        1000 ~/
+        (widget.passage.writtenTempoBpm * widget.passage.ticksPerBeat);
   }
 
   void _stop() {
