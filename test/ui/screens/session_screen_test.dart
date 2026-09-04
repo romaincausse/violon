@@ -38,13 +38,14 @@ void main() {
   /// avancer l'horloge.
   Future<MicroFactice> poser(
     WidgetTester tester,
-    List<PitchEstimate> script,
-  ) async {
+    List<PitchEstimate> script, {
+    Passage? passage,
+  }) async {
     final MicroFactice micro = MicroFactice(script);
     await tester.pumpWidget(
       MaterialApp(
         home: SessionScreen(
-          passage: demo,
+          passage: passage ?? demo,
           onChangePassage: () {},
           onTune: () {},
           pitchSourceFactory: micro.creer,
@@ -459,6 +460,146 @@ void main() {
       await tester.tap(find.text('Arreter'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
+    });
+  });
+
+  group('bilan de fin de passage', () {
+    /// Joue tout le passage jusqu'a ce qu'il s'arrete de lui-meme.
+    ///
+    /// On emet tant que la lecture dure : la partition se termine sur la
+    /// derniere note et libere alors le micro, et continuer a lui parler
+    /// leverait une erreur.
+    Future<void> jouerToutLePassage(
+      WidgetTester tester,
+      MicroFactice micro,
+    ) async {
+      await demarrer(tester);
+      for (int i = 0; i < 60; i++) {
+        if (find.text('Arreter').evaluate().isEmpty) {
+          return; // Le passage s'est termine tout seul.
+        }
+        micro.derniere.emitAll();
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      fail('le passage ne s est jamais termine');
+    }
+
+    testWidgets('rien n est affiche avant d avoir joue', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, const <PitchEstimate>[]);
+      expect(find.byKey(const Key('bilan-score')), findsNothing);
+    });
+
+    testWidgets('le chiffre n apparait pas pendant qu on joue', (
+      WidgetTester tester,
+    ) async {
+      // Un chiffre qui bouge pendant qu'on joue detournerait le regard de la
+      // partition, et changerait a chaque note.
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+
+      expect(find.byKey(const Key('bilan-score')), findsNothing);
+      await arreter(tester);
+    });
+
+    testWidgets('un passage joue juste vaut cent', (
+      WidgetTester tester,
+    ) async {
+      // Un passage sur une seule hauteur : le micro scripte ne sait rendre
+      // qu'une note a la fois, et on veut ici mesurer le bilan, pas la
+      // capacite du faux micro a suivre une melodie.
+      final PassageBuilder b = PassageBuilder(beatsPerMeasure: 2);
+      for (int i = 0; i < 4; i++) {
+        b.add(69, NoteValue.quarter);
+      }
+      final MicroFactice micro = await poser(
+        tester,
+        juste(69, combien: 40),
+        passage: b.build(),
+      );
+      await jouerToutLePassage(tester, micro);
+
+      expect(find.text('Justesse 100 sur 100'), findsOneWidget);
+    });
+
+    testWidgets('un passage joue faux vaut moins, sans tomber a zero', (
+      WidgetTester tester,
+    ) async {
+      // Un demi-ton en dessous sur tout le passage. Le score doit baisser
+      // franchement, mais une note reste une note : on n'affiche pas zero
+      // pour un enfant qui a joue.
+      final PassageBuilder b = PassageBuilder(beatsPerMeasure: 2);
+      for (int i = 0; i < 4; i++) {
+        b.add(69, NoteValue.quarter);
+      }
+      final MicroFactice micro = await poser(
+        tester,
+        <PitchEstimate>[
+          for (int i = 0; i < 40; i++)
+            PitchEstimate(
+              frequencyHz: PitchUtils.midiToFrequency(69) * 0.9707,
+              confidence: 1,
+              timestampMs: i * 46,
+            ),
+        ],
+        passage: b.build(),
+      );
+      await jouerToutLePassage(tester, micro);
+
+      final String texte =
+          tester.widget<Text>(find.byKey(const Key('bilan-score'))).data!;
+      expect(texte, startsWith('Justesse '));
+      expect(texte, isNot('Justesse 100 sur 100'));
+    });
+
+    testWidgets('le bilan designe une seule mesure a retravailler', (
+      WidgetTester tester,
+    ) async {
+      // Le projet montre la prochaine tache, jamais tout ce qui a rate.
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
+      await jouerToutLePassage(tester, micro);
+
+      expect(find.byKey(const Key('bilan-tache')), findsOneWidget);
+      expect(find.textContaining('A retravailler : mesure'), findsOneWidget);
+    });
+
+    testWidgets('recommencer efface le bilan precedent', (
+      WidgetTester tester,
+    ) async {
+      // Une erreur ne doit jamais rester affichee au tour suivant.
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
+      await jouerToutLePassage(tester, micro);
+      expect(find.byKey(const Key('bilan-score')), findsOneWidget);
+
+      await demarrer(tester);
+      expect(find.byKey(const Key('bilan-score')), findsNothing);
+      await arreter(tester);
+    });
+
+    testWidgets('sans rien entendre, aucun bilan n est invente', (
+      WidgetTester tester,
+    ) async {
+      // Micro refuse : le passage a defile, mais on n'a rien mesure.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SessionScreen(
+            passage: demo,
+            onChangePassage: () {},
+            onTune: () {},
+            pitchSourceFactory: () async => throw const MicPermissionDenied(),
+          ),
+        ),
+      );
+      await demarrer(tester);
+      for (int i = 0;
+          i < 60 && find.text('Arreter').evaluate().isNotEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byKey(const Key('bilan-score')), findsNothing);
     });
   });
 }

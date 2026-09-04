@@ -51,7 +51,7 @@ aussi.
 | ~~A5~~ | ~~Lissage et tolerance vibrato~~ | P0 | 2 | A2 | **Fait.** Mediane glissante qui ne franchit pas les notes, et reconnaissance d'oscillation. Branche dans la chaine : une erreur d'octave de YIN n'atteint plus la partition. |
 | ~~N1~~ | ~~Score de justesse par note~~ | P0 | 2 | A5, F2 | **Fait.** Cents medians sur la partie tenue, attaque exclue. Note sur cent, courbe genereuse. Le bilan visible est N3. |
 | N2 | Score de rythme par note | P0 | 2 | A3, A4 | Ecart d'attaque en ms par rapport a l'onset attendu. **A trancher a ce moment-la :** le detecteur d'attaques a besoin d'un flux sans trou, alors que l'analyse de hauteur jette des trames sous pression. Les deux ne peuvent pas partager la meme file. |
-| N3 | Bilan de passage | P0 | 1 | N1, N2 | Un score par note, un global. Le cumul ne redescend jamais. |
+| N3 | Bilan de passage | P0 | 1 | N1, N2 | Un score par note, un global. Le cumul ne redescend jamais. **La moitie justesse est deja affichee** apres chaque passage ; N3 y ajoute le rythme et le cumul. |
 | N4 | Boucle sur selection et montee de tempo | P0 | 2 | N3 | **Le lot anti-lassitude.** Deux mesures tapees, boucle, tempo qui monte quand c'est propre. |
 | ~~A6~~ | ~~Accordeur sol-re-la-mi~~ | P1 | 2 | A2 | **Fait.** Aiguille horizontale et cents. Leve au passage le diapason fige a 440 : le la mesure devient la reference de la justesse. |
 
