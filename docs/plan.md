@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 7 | 0 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 8 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 8 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 4 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**64 lots, 74 soirees restantes**, dont **26 de *must*** -- le reste
+**65 lots, 74 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -78,12 +78,13 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Jalon termine, sept lots.** Ils tournent sur le code deja livre, sans
-dependance nouvelle, et trois d'entre eux -- I1, I2 et D8 -- corrigeaient des
-defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
+**Jalon termine, huit lots.** Ils tournent sur le code deja livre, sans
+dependance nouvelle, et quatre d'entre eux -- I1, I2, D8 et D9 -- corrigeaient
+des defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
 
-Le septieme est apparu apres coup, sur le telephone : le ruban d'ecart livre
-en D2 faisait son travail mais n'etait pas beau. C'est D8.
+Les deux derniers sont apparus apres coup, sur le telephone : le ruban d'ecart
+livre en D2 faisait son travail mais n'etait pas beau (D8), et la portee
+laissait un blanc a droite de chaque ligne (D9).
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -94,6 +95,7 @@ en D2 faisait son travail mais n'etait pas beau. C'est D8.
 | ~~D4~~ | ~~Profils d'affichage~~ | | ★★ | fait |
 | ~~D5~~ | ~~Halo de fin de mesure~~ | | ★★ | fait |
 | ~~D8~~ | ~~Refonte graphique du ruban d'ecart~~ | | ★★ | fait |
+| ~~D9~~ | ~~La portee remplit la ligne~~ | | ★★ | fait |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -276,6 +278,50 @@ change" a la premiere retouche de theme sans dire ce qui a change. Un faux
 `Canvas` note ce qui est dessine, et chaque test nomme la propriete qu'il
 defend : la tete reste dans le cadre, la bande vaut bien `perfectCents`, les
 graduations disparaissent quand la place manque.
+
+### D9 - La portee remplit la ligne
+
+Constat a l'usage : trop de blanc autour de la partition et du ruban. La
+marge n'etait que le tiers du probleme.
+
+**Mesure d'abord.** Sur une gamme de sol, avec soixante espaces de place :
+
+```
+dispo 60 espaces -> 2 systemes de 36.0 | 36.0
+```
+
+Une ligne s'arretait a sa largeur naturelle et ne s'etirait jamais :
+**quarante pour cent de la largeur perdus a l'interieur meme de la zone de
+dessin**, a chaque ligne. La gouttiere de vingt-quatre points, elle, n'en
+coutait que treize.
+
+**Fait (PR #45).** Deux changements, dans cet ordre d'importance :
+
+- **Les systemes se justifient**, comme dans toute gravure. Pas en etirant des
+  coordonnees apres coup : en resolvant `spacesPerBeat` pour que la ligne
+  tombe juste. Tout ce qui en decoule -- barres, hampes, ligatures, curseur --
+  reste calcule par la meme formule, sans rattrapage. Le decoupage en lignes,
+  lui, continue de se faire sur les largeurs **naturelles** : sur des lignes
+  deja etirees, "est-ce que ca tient" serait vrai par construction.
+- **La gouttiere laterale passe de 24 a 12 points** (10 en paysage), la
+  verticale restant a 24. La largeur se paie en notes plus grandes ; le blanc
+  en haut et en bas ne sert qu'a ne pas coller aux barres du systeme.
+
+**Une derniere ligne a peine remplie n'est pas etiree**, regle de gravure :
+etaler une mesure isolee sur toute la largeur ferait croire a une mesure
+longue, puisque l'oeil lit la duree dans l'espace. Le seuil est la moitie de
+la largeur disponible.
+
+**Pas de plein bord.** Une portee qui touche le bord de la dalle se lit comme
+coupee, et aucune gravure ne fait ca.
+
+**Un debordement de paysage corrige au passage**, anterieur a ce lot : sur un
+S22 couche il ne reste que deux cent cinquante points de haut une fois la
+barre systeme et celle de l'application retirees, et la colonne des commandes
+debordait de quatre-vingt-douze. Elle defile maintenant, le bouton reste hors
+du defilement -- c'est le seul element qu'on doit atteindre sans chercher,
+violon en main. Le test qui couvrait le paysage le posait en 780 x 360, la
+fenetre entiere : il ne pouvait pas voir le defaut.
 
 ---
 

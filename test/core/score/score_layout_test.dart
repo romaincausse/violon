@@ -174,4 +174,131 @@ void main() {
       });
     });
   });
+
+  group('justification', () {
+    test('sans justification, la ligne s arrete a sa largeur naturelle', () {
+      // C'est le defaut d'origine : une ligne de trente-six espaces dans une
+      // place de soixante laissait quarante pour cent de blanc a droite.
+      final Passage p = passageDe(4);
+      final double uneMesure = surUneLigne(passageDe(1));
+      final ScoreLayout l = ScoreLayout.of(p, maxWidthSpaces: uneMesure * 2.6);
+
+      expect(l.systemCount, greaterThan(1));
+      expect(l.widthSpaces, lessThan(uneMesure * 2.6));
+    });
+
+    test('justifie, chaque systeme assez plein remplit la largeur', () {
+      // Cinq mesures dans une place de deux mesures et demie : trois mesures
+      // sur la premiere ligne, deux sur la seconde. Les deux sont assez
+      // pleines, donc les deux s'etirent.
+      final Passage p = passageDe(5);
+      final double dispo = surUneLigne(passageDe(1)) * 2.6;
+      final ScoreLayout l = ScoreLayout.of(
+        p,
+        maxWidthSpaces: dispo,
+        justify: true,
+      );
+
+      expect(l.systemCount, 2);
+      for (final StaffSystem s in l.systems) {
+        expect(s.widthSpaces, closeTo(dispo, 0.01));
+      }
+    });
+
+    test('justifier ne change ni le decoupage ni l ordre des notes', () {
+      // La justification est une affaire d'espacement. Si elle deplacait une
+      // mesure d'une ligne a l'autre, elle changerait la lecture.
+      final Passage p = passageDe(6);
+      final double dispo = surUneLigne(passageDe(1)) * 2.6;
+      final ScoreLayout brut = ScoreLayout.of(p, maxWidthSpaces: dispo);
+      final ScoreLayout tire = ScoreLayout.of(
+        p,
+        maxWidthSpaces: dispo,
+        justify: true,
+      );
+
+      expect(tire.systemCount, brut.systemCount);
+      for (int i = 0; i < brut.systemCount; i++) {
+        expect(
+          tire.systems[i].notes.map((PlacedNote n) => n.note.midi),
+          brut.systems[i].notes.map((PlacedNote n) => n.note.midi),
+        );
+      }
+    });
+
+    test('les notes restent dans l ordre et dans le cadre', () {
+      final Passage p = passageDe(4);
+      final double dispo = surUneLigne(passageDe(1)) * 2.6;
+      final ScoreLayout l = ScoreLayout.of(
+        p,
+        maxWidthSpaces: dispo,
+        justify: true,
+      );
+
+      for (final StaffSystem s in l.systems) {
+        double precedent = -1;
+        for (final PlacedNote n in s.notes) {
+          expect(n.xSpaces, greaterThan(precedent));
+          expect(n.xSpaces, lessThan(s.widthSpaces));
+          precedent = n.xSpaces;
+        }
+      }
+    });
+
+    test('un reste de fin garde son espacement naturel', () {
+      // Regle de gravure : une derniere ligne a peine remplie n'est pas
+      // etiree. Etaler une mesure isolee sur toute la largeur ferait croire a
+      // une mesure longue, parce que l'oeil lit la duree dans l'espace.
+      //
+      // Quatre mesures dans une place de deux et demie : trois puis une.
+      final Passage p = passageDe(4);
+      final double dispo = surUneLigne(passageDe(1)) * 2.6;
+      final ScoreLayout l = ScoreLayout.of(
+        p,
+        maxWidthSpaces: dispo,
+        justify: true,
+      );
+
+      expect(l.systems.first.widthSpaces, closeTo(dispo, 0.01));
+      expect(
+        l.systems.last.widthSpaces,
+        closeTo(surUneLigne(passageDe(1)), 0.01),
+        reason: 'la mesure isolee garde sa largeur naturelle',
+      );
+    });
+
+    test('le curseur suit l espacement etire', () {
+      // xForTick et les notes doivent rester d'accord : sinon le curseur
+      // prendrait du retard sur une ligne justifiee.
+      final Passage p = passageDe(4);
+      final double dispo = surUneLigne(passageDe(1)) * 2.6;
+      final ScoreLayout l = ScoreLayout.of(
+        p,
+        maxWidthSpaces: dispo,
+        justify: true,
+      );
+
+      for (final StaffSystem s in l.systems) {
+        for (final PlacedNote n in s.notes) {
+          expect(s.xForTick(n.note.onsetTicks), closeTo(n.xSpaces, 0.001));
+        }
+      }
+    });
+
+    test('une ligne trop longue n est jamais tassee', () {
+      // Le plafond de systemes laisse deborder le dernier : il doit defiler,
+      // pas se comprimer jusqu'a l'illisible.
+      final Passage p = passageDe(4);
+      final double etroit = surUneLigne(passageDe(1)) * 1.2;
+      final ScoreLayout l = ScoreLayout.of(
+        p,
+        maxWidthSpaces: etroit,
+        maxSystems: 1,
+        justify: true,
+      );
+
+      expect(l.systemCount, 1);
+      expect(l.widthSpaces, greaterThan(etroit));
+    });
+  });
 }

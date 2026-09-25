@@ -139,8 +139,10 @@ class ScoreView extends StatelessWidget {
     return hauteur <= constraints.maxHeight;
   }
 
-  ScoreLayout _layoutPour(double largeurEspaces) => ScoreLayout.of(
+  ScoreLayout _layoutPour(double largeurEspaces, {bool justify = false}) =>
+      ScoreLayout.of(
         passage,
+        justify: justify,
         // En defilement, aucune largeur ne borne la ligne : tout tient sur un
         // seul systeme, et c'est le doigt qui parcourt la partition.
         maxWidthSpaces: mode == ScoreDisplayMode.scrolling
@@ -158,7 +160,14 @@ class ScoreView extends StatelessWidget {
         ? constraints.maxWidth
         : ScoreLayout.of(passage, maxWidthSpaces: double.infinity).widthSpaces *
             spaceSize;
-    final ScoreLayout layout = _layoutPour(largeurDisponible / spaceSize);
+    // **La justification n'intervient qu'au dessin.** Le choix de
+    // l'interligne, lui, se fait sur les largeurs naturelles : sur des lignes
+    // deja etirees, "est-ce que ca tient" serait vrai par construction, et la
+    // boucle retiendrait toujours la plus grosse taille.
+    final ScoreLayout layout = _layoutPour(
+      largeurDisponible / spaceSize,
+      justify: true,
+    );
     final SystemMetrics metrics = SystemMetrics.of(layout);
     final ColorScheme scheme = Theme.of(context).colorScheme;
 

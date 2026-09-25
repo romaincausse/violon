@@ -107,7 +107,9 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
         appBar: AppBar(title: const Text('Jouer librement')),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            // Meme gouttiere que la seance : la largeur se paie en secondes
+            // lisibles sur le ruban.
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[

@@ -45,6 +45,11 @@ class StaffSystem {
 /// systemes pour qu'ils aient a peu pres la meme longueur. Sur deux a huit
 /// mesures, remplir chaque ligne au maximum donne le meme resultat neuf fois
 /// sur dix, et se raisonne en dix lignes au lieu de cent.
+///
+/// **Le decoupage se fait sur la largeur naturelle, la gravure sur la largeur
+/// justifiee.** Les deux ne peuvent pas etre confondues : si on decoupait sur
+/// des lignes deja etirees, chacune remplirait la place par construction et le
+/// nombre de mesures par ligne n'aurait plus de sens.
 class ScoreLayout {
   const ScoreLayout._({required this.systems, required this.passage});
 
@@ -58,6 +63,7 @@ class ScoreLayout {
     Passage passage, {
     required double maxWidthSpaces,
     int? maxSystems,
+    bool justify = false,
   }) {
     final List<List<ScoreNote>> mesures = _parMesure(passage.notes);
     final List<List<ScoreNote>> groupes = <List<ScoreNote>>[];
@@ -84,7 +90,13 @@ class ScoreLayout {
       systems: List<StaffSystem>.unmodifiable(<StaffSystem>[
         for (int i = 0; i < groupes.length; i++)
           StaffSystem(
-            layout: StaffLayout.of(_sousPassage(passage, groupes[i])),
+            layout: StaffLayout.of(
+              _sousPassage(passage, groupes[i]),
+              stretchToSpaces: justify &&
+                      _meriteDEtreEtire(passage, groupes[i], maxWidthSpaces)
+                  ? maxWidthSpaces
+                  : null,
+            ),
             index: i,
           ),
       ]),
@@ -147,6 +159,23 @@ class ScoreLayout {
 
   static double _largeurDe(Passage passage, List<ScoreNote> notes) =>
       StaffLayout.of(_sousPassage(passage, notes)).widthSpaces;
+
+  /// Un systeme deja a moitie plein se justifie ; un reste de fin, non.
+  ///
+  /// C'est la regle de gravure : la derniere ligne d'un morceau garde son
+  /// espacement naturel. Etirer une mesure isolee sur toute la largeur
+  /// donnerait des notes separees par des kilometres, et surtout ferait
+  /// croire a une mesure longue -- alors que l'oeil lit la duree dans
+  /// l'espace.
+  static const double _remplissageMinimal = 0.5;
+
+  static bool _meriteDEtreEtire(
+    Passage passage,
+    List<ScoreNote> notes,
+    double maxWidthSpaces,
+  ) =>
+      maxWidthSpaces.isFinite &&
+      _largeurDe(passage, notes) >= maxWidthSpaces * _remplissageMinimal;
 
   static Passage _sousPassage(Passage passage, List<ScoreNote> notes) =>
       Passage(
