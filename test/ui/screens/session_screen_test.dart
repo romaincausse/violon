@@ -404,6 +404,35 @@ void main() {
       );
     }
 
+    testWidgets('rien ne deborde quand la hauteur utile est celle d un S22', (
+      WidgetTester tester,
+    ) async {
+      // **780 x 360 ne suffisait pas a voir le defaut.** Cet ecran vit sous la
+      // barre de navigation de la coquille et sous la barre systeme : sur un
+      // S22 couche il ne reste que deux cent cinquante points de haut, et la
+      // colonne des commandes debordait alors de quatre-vingt-douze.
+      //
+      // Le passage compte : une gamme donne un bandeau de mesures plus haut
+      // qu'une demo de deux mesures.
+      await poser(tester, const Size(743, 250));
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('le bouton reste atteignable sans defiler', (
+      WidgetTester tester,
+    ) async {
+      // C'est le seul element qu'on doit trouver sans chercher, violon en
+      // main : il est hors du defilement, les autres commandes dedans.
+      await poser(tester, const Size(743, 250));
+      await tester.pump();
+
+      final double basDuBouton =
+          tester.getBottomLeft(find.text('Jouer le passage')).dy;
+      expect(basDuBouton, lessThanOrEqualTo(250));
+    });
+
     test('le plafond de systemes depend de l orientation', () {
       // En portrait la hauteur est abondante ; en paysage c'est la largeur.
       expect(maxSystemsFor(Orientation.portrait), 4);

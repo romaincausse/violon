@@ -588,7 +588,17 @@ class _SessionScreenState extends State<SessionScreen>
             // le SafeArea lui-meme, qui occupe toute la hauteur et dont seul
             // l'enfant est decale.
             key: const Key('session-content'),
-            padding: EdgeInsets.all(paysage ? 12 : 24),
+            // **Plus etroit lateralement que verticalement.** La largeur est
+            // la ressource utile : elle se paie en notes plus grandes sur la
+            // portee et en secondes lisibles sur le ruban. Le blanc en haut et
+            // en bas, lui, ne sert qu'a ne pas coller aux barres du systeme.
+            //
+            // Pas de plein bord pour autant : une portee qui touche le bord de
+            // la dalle se lit comme coupee, et aucune gravure ne fait ca.
+            padding: EdgeInsets.symmetric(
+              horizontal: paysage ? 10 : 12,
+              vertical: paysage ? 12 : 24,
+            ),
             child: MeasureHalo(
               trigger: _mesuresReussies,
               child: Stack(
@@ -684,21 +694,38 @@ class _SessionScreenState extends State<SessionScreen>
         const SizedBox(width: 16),
         SizedBox(
           width: _largeurDesCommandes,
+          // **La colonne defile, le bouton non.** En paysage sur un telephone,
+          // la hauteur utile tombe a deux cent cinquante points une fois la
+          // barre systeme et celle de l'application retirees : la colonne des
+          // commandes n'y tenait pas, et debordait de quatre-vingt-douze
+          // points. Le bouton reste hors du defilement -- c'est le seul
+          // element qu'on doit pouvoir atteindre sans chercher, violon en
+          // main.
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _entete(vertical: true),
-              const SizedBox(height: 12),
-              _metronome(compact: true),
-              const SizedBox(height: 12),
-              // Plus bas qu'en portrait : en paysage la hauteur est la
-              // ressource rare, et un ruban de 24 points se lit encore.
-              TuningRibbon(trace: _trace, height: 24),
-              const SizedBox(height: 6),
-              _mesures(),
-              const SizedBox(height: 10),
-              _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      _entete(vertical: true),
+                      const SizedBox(height: 12),
+                      _metronome(compact: true),
+                      const SizedBox(height: 12),
+                      // Plus bas qu'en portrait : en paysage la hauteur est la
+                      // ressource rare, et un ruban de 24 points se lit
+                      // encore.
+                      TuningRibbon(trace: _trace, height: 24),
+                      const SizedBox(height: 6),
+                      _mesures(),
+                      const SizedBox(height: 10),
+                      _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               _bouton(),
             ],

@@ -40,6 +40,13 @@ class PlacedNote {
 /// ne stocke pas le nombre de temps par mesure, mais chaque [ScoreNote] porte
 /// son numero de mesure : un changement de numero est une barre. La mise en
 /// page reste donc juste meme si le passage commence sur une levee.
+///
+/// **La ligne se justifie en ecartant les notes, pas en les grossissant.**
+/// Une portee qui s'arrete au deux tiers de la place disponible laisse un
+/// blanc a droite qu'aucune gravure n'accepte. On ne le comble pas apres coup
+/// en etirant des coordonnees : on choisit [spacesPerBeat] pour que la ligne
+/// tombe juste. Tout ce qui en decoule -- barres, hampes, ligatures, curseur
+/// -- reste alors calcule par la meme formule, sans rattrapage.
 class StaffLayout {
   const StaffLayout._({
     required this.notes,
@@ -61,10 +68,20 @@ class StaffLayout {
     double leadingSpaces = 9,
     double trailingSpaces = 3,
     double barlineGapSpaces = 2.5,
+    double? stretchToSpaces,
   }) {
     final List<ScoreNote> source = passage.notes;
     final int firstOnset = source.first.onsetTicks;
-    final double perTick = spacesPerBeat / passage.ticksPerBeat;
+    final double perTick = _espacesParTemps(
+          source: source,
+          ticksPerBeat: passage.ticksPerBeat,
+          spacesPerBeat: spacesPerBeat,
+          leadingSpaces: leadingSpaces,
+          trailingSpaces: trailingSpaces,
+          barlineGapSpaces: barlineGapSpaces,
+          stretchToSpaces: stretchToSpaces,
+        ) /
+        passage.ticksPerBeat;
 
     final List<PlacedNote> placed = <PlacedNote>[];
     final List<double> barlines = <double>[];
@@ -116,6 +133,45 @@ class StaffLayout {
       spacesPerTick: perTick,
       barlineOffsets: List<(int, double)>.unmodifiable(barlineOffsets),
     );
+  }
+
+  /// Espacement a retenir pour que la ligne fasse [stretchToSpaces] de large.
+  ///
+  /// La largeur d'une portee vaut
+  /// `leading + duree x espacement + barres x ecart + trailing`. Tout y est
+  /// connu sauf l'espacement : il suffit donc de resoudre, sans tatonner.
+  ///
+  /// **On etire, on ne serre jamais.** [spacesPerBeat] est un plancher : une
+  /// ligne trop longue pour la place disponible deborde et defile, elle ne se
+  /// tasse pas jusqu'a devenir illisible.
+  static double _espacesParTemps({
+    required List<ScoreNote> source,
+    required int ticksPerBeat,
+    required double spacesPerBeat,
+    required double leadingSpaces,
+    required double trailingSpaces,
+    required double barlineGapSpaces,
+    required double? stretchToSpaces,
+  }) {
+    if (stretchToSpaces == null || !stretchToSpaces.isFinite) {
+      return spacesPerBeat;
+    }
+    final int duree = source.last.offsetTicks - source.first.onsetTicks;
+    if (duree <= 0) {
+      return spacesPerBeat;
+    }
+    int barres = 0;
+    for (int i = 1; i < source.length; i++) {
+      if (source[i].measure != source[i - 1].measure) {
+        barres++;
+      }
+    }
+    final double utile = stretchToSpaces -
+        leadingSpaces -
+        trailingSpaces -
+        barres * barlineGapSpaces;
+    final double vise = utile * ticksPerBeat / duree;
+    return vise > spacesPerBeat ? vise : spacesPerBeat;
   }
 
   final List<PlacedNote> notes;
