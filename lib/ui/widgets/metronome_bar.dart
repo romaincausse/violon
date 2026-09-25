@@ -28,11 +28,21 @@ class MetronomeBar extends StatefulWidget {
     required this.tempoBpm,
     required this.running,
     this.beatsPerMeasure,
+    this.subdivision = 1,
     super.key,
   });
 
   final int tempoBpm;
   final bool running;
+
+  /// Pulsations par temps : 1 la noire, 2 les croches, 3 le triolet, 4 les
+  /// doubles.
+  ///
+  /// **Un metronome qui ne subdivise pas ne sert plus a rien des que le
+  /// rythme se complique**, et en 4e annee il se complique. La barre bat
+  /// alors la subdivision, et les temps restent reconnaissables a leur
+  /// intensite : sans ca, on perdrait le metre en gagnant la precision.
+  final int subdivision;
 
   /// Nombre de temps par mesure, s'il est connu. `null` signifie qu'on ne
   /// marque pas les temps forts : mieux vaut ne rien accentuer que d'accentuer
@@ -86,15 +96,28 @@ class _MetronomeBarState extends State<MetronomeBar>
     final MetronomeClock clock = MetronomeClock(
       tempoBpm: widget.tempoBpm,
       beatsPerMeasure: widget.beatsPerMeasure ?? 4,
+      subdivision: widget.subdivision,
     );
 
-    final double phase = widget.running ? clock.phaseAt(_elapsed) : 0;
-    final bool accentue = widget.running &&
-        widget.beatsPerMeasure != null &&
-        clock.isDownbeatAt(_elapsed);
+    final double phase = widget.running ? clock.pulsePhaseAt(_elapsed) : 0;
+    final PulseAccent accent = clock.accentAt(_elapsed);
+    // Trois intensites pour trois roles : le premier temps porte la mesure,
+    // les autres temps la scandent, les subdivisions remplissent. Les peindre
+    // pareil reviendrait a ne rien dire du metre.
+    final Color couleur = !widget.running
+        ? scheme.primaryContainer
+        : switch (accent) {
+            PulseAccent.downbeat => widget.beatsPerMeasure == null
+                ? scheme.primaryContainer
+                : scheme.primary,
+            PulseAccent.beat => scheme.primaryContainer,
+            PulseAccent.subdivision =>
+              scheme.primaryContainer.withValues(alpha: 0.45),
+          };
 
     return Semantics(
-      label: 'Metronome visuel, ${widget.tempoBpm} battements par minute',
+      label: 'Metronome visuel, ${widget.tempoBpm} battements par minute'
+          '${widget.subdivision > 1 ? ', divise en ${widget.subdivision}' : ''}',
       child: SizedBox(
         height: 10,
         child: DecoratedBox(
@@ -108,7 +131,7 @@ class _MetronomeBarState extends State<MetronomeBar>
             widthFactor: phase.clamp(0.0, 1.0),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: accentue ? scheme.primary : scheme.primaryContainer,
+                color: couleur,
                 borderRadius: BorderRadius.circular(5),
               ),
             ),

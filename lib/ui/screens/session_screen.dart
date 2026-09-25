@@ -8,6 +8,7 @@ import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/follow/score_cursor.dart';
 import '../../core/music/passage.dart';
+import '../../core/play/count_in.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
@@ -98,6 +99,9 @@ class SessionScreen extends StatefulWidget {
   /// Bouton de changement de profil d'affichage, pour les tests.
   static const Key profilKey = Key('profil-affichage');
 
+  /// Reglage de subdivision du metronome, pour les tests.
+  static const Key subdivisionKey = Key('subdivision-metronome');
+
   @override
   State<SessionScreen> createState() => _SessionScreenState();
 }
@@ -106,7 +110,25 @@ class _SessionScreenState extends State<SessionScreen>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker = createTicker(_onTick);
   bool _running = false;
-  Duration _elapsed = Duration.zero;
+
+  /// Temps depuis l'appui sur le bouton, decompte compris.
+  Duration _depuisLeDepart = Duration.zero;
+
+  /// Le decompte avant la prise.
+  ///
+  /// **Bete, et bloquant sans lui** : on ne peut pas commencer un passage
+  /// note sans savoir quand partir, et sans decompte la premiere note est
+  /// toujours en retard -- une note ratee par la faute de l'application.
+  CountIn get _decompte => CountIn(tempoBpm: widget.passage.writtenTempoBpm);
+
+  bool get _enDecompte => _running && !_decompte.isFinishedAt(_depuisLeDepart);
+
+  /// Temps ecoule **dans le passage**. Zero tant que le decompte tourne.
+  ///
+  /// Soustrait du temps absolu plutot que remis a zero : rien n'est cumule,
+  /// donc rien ne derive, exactement comme dans `MetronomeClock`.
+  Duration get _elapsed =>
+      _enDecompte ? Duration.zero : _depuisLeDepart - _decompte.duration;
 
   late LiveTuning _tuning = LiveTuning(a4: widget.a4);
   ScoreDisplayMode _mode = ScoreDisplayMode.systems;
@@ -138,6 +160,9 @@ class _SessionScreenState extends State<SessionScreen>
 
   DisplayProfile _profil = DisplayProfile.parCoeur;
 
+  /// Pulsations par temps du metronome visuel.
+  int _subdivision = 1;
+
   /// Derniere mesure vue par le curseur, pour reperer qu'on en a change.
   int? _mesureVue;
 
@@ -157,14 +182,22 @@ class _SessionScreenState extends State<SessionScreen>
       );
 
   void _onTick(Duration elapsed) {
+    // Pendant le decompte, le curseur n'a pas commence : le comparer a la fin
+    // du passage l'arreterait avant meme d'avoir demarre.
+    if (!_decompte.isFinishedAt(elapsed)) {
+      setState(() => _depuisLeDepart = elapsed);
+      return;
+    }
     // La lecture s'arrete d'elle-meme sur la derniere note : on termine sur
     // la fin du passage, pas sur un bouton qu'il faudrait penser a presser.
-    if (_cursor.isFinishedAt(elapsed)) {
+    if (_cursor.isFinishedAt(elapsed - _decompte.duration)) {
       _stop();
       return;
     }
-    setState(() => _elapsed = elapsed);
-    _surveillerLaFinDeMesure();
+    setState(() => _depuisLeDepart = elapsed);
+    if (!_enDecompte) {
+      _surveillerLaFinDeMesure();
+    }
   }
 
   /// Allume le halo quand une mesure vient d'etre passee proprement.
@@ -204,7 +237,7 @@ class _SessionScreenState extends State<SessionScreen>
 
   void _start() {
     setState(() {
-      _elapsed = Duration.zero;
+      _depuisLeDepart = Duration.zero;
       _running = true;
       _tuning.reset();
       _trace.reset();
@@ -300,7 +333,7 @@ class _SessionScreenState extends State<SessionScreen>
     unawaited(_fermerLeMicro());
     setState(() {
       _running = false;
-      _elapsed = Duration.zero;
+      _depuisLeDepart = Duration.zero;
     });
   }
 
@@ -376,6 +409,9 @@ class _SessionScreenState extends State<SessionScreen>
         DisplayProfile.parCoeur => 'par coeur',
         DisplayProfile.pupitre => 'pupitre',
       };
+
+  /// Le temps affiche pendant le decompte, ou `null`.
+  int? get _compteAffiche => _decompte.beatAt(_depuisLeDepart);
 
   /// Les cases de mesures, et celle qui est en cours de lecture.
   Widget _mesures({double hauteur = MeasureStrip.hauteur}) {
@@ -505,7 +541,17 @@ class _SessionScreenState extends State<SessionScreen>
           padding: EdgeInsets.all(paysage ? 12 : 24),
           child: MeasureHalo(
             trigger: _mesuresReussies,
-            child: paysage ? _enPaysage(orientation) : _enPortrait(orientation),
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: paysage
+                      ? _enPaysage(orientation)
+                      : _enPortrait(orientation),
+                ),
+                if (_enDecompte)
+                  Positioned.fill(child: _Decompte(compte: _compteAffiche)),
+              ],
+            ),
           ),
         ),
       ),
@@ -593,7 +639,7 @@ class _SessionScreenState extends State<SessionScreen>
             children: <Widget>[
               _entete(vertical: true),
               const SizedBox(height: 12),
-              _metronome(),
+              _metronome(compact: true),
               const SizedBox(height: 12),
               // Plus bas qu'en portrait : en paysage la hauteur est la
               // ressource rare, et un ruban de 24 points se lit encore.
@@ -642,10 +688,54 @@ class _SessionScreenState extends State<SessionScreen>
     );
   }
 
-  Widget _metronome() => MetronomeBar(
-        tempoBpm: widget.passage.writtenTempoBpm,
-        running: _running,
+  /// Le metronome, et de quoi choisir sa subdivision d'un appui.
+  ///
+  /// **Le reglage est sur la barre elle-meme**, pas dans un menu : on change
+  /// de subdivision en plein travail, quand le passage se complique, et
+  /// aller le chercher ailleurs couterait le fil.
+  Widget _metronome({bool compact = false}) => Semantics(
+        button: true,
+        label: 'Subdivision du metronome : $_libelleSubdivision',
+        child: InkWell(
+          key: SessionScreen.subdivisionKey,
+          onTap: _changerDeSubdivision,
+          child: Padding(
+            // En paysage la hauteur est la ressource rare : la zone d'appui
+            // se resserre plutot que de pousser le reste hors de l'ecran.
+            padding: EdgeInsets.symmetric(vertical: compact ? 0 : 6),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: MetronomeBar(
+                    tempoBpm: widget.passage.writtenTempoBpm,
+                    running: _running,
+                    subdivision: _subdivision,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _libelleSubdivision,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ],
+            ),
+          ),
+        ),
       );
+
+  /// Noire, croches, triolet, doubles -- puis on recommence.
+  void _changerDeSubdivision() {
+    setState(() {
+      _subdivision = _subdivision % 4 + 1;
+    });
+  }
+
+  String get _libelleSubdivision => switch (_subdivision) {
+        2 => 'croches',
+        3 => 'triolet',
+        4 => 'doubles',
+        _ => 'noire',
+      };
 
   Widget _bouton() => FilledButton.tonalIcon(
         onPressed: _running ? _stop : _start,
@@ -670,6 +760,41 @@ class _SessionScreenState extends State<SessionScreen>
         mode: _mode,
         zoom: _zoom,
         maxSystems: maxSystemsFor(orientation),
+      ),
+    );
+  }
+}
+
+/// "Un, deux, trois, quatre", en grand.
+///
+/// **On compte en montant, comme un chef.** C'est ce qu'il entend en cours et
+/// en orchestre ; un compte a rebours serait plus clair pour une fusee.
+///
+/// Le decompte recouvre l'ecran : il n'y a rien d'autre a regarder a cet
+/// instant precis, et le chiffre doit se voir de l'autre bout du pupitre.
+class _Decompte extends StatelessWidget {
+  const _Decompte({required this.compte});
+
+  final int? compte;
+
+  static const Key compteKey = Key('decompte');
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return IgnorePointer(
+      child: ColoredBox(
+        color: theme.colorScheme.surface.withValues(alpha: 0.88),
+        child: Center(
+          child: Text(
+            '${compte ?? ''}',
+            key: compteKey,
+            style: theme.textTheme.displayLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
       ),
     );
   }

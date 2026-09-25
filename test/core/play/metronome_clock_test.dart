@@ -72,4 +72,67 @@ void main() {
       expect(c.beatIndexAt(t), premier);
     });
   });
+
+  group('subdivisions et accents', () {
+    // A 120 bpm un temps dure 500 ms ; en croches, une pulsation dure 250 ms.
+    const MetronomeClock croches =
+        MetronomeClock(tempoBpm: 120, subdivision: 2);
+
+    test('les pulsations comptent les subdivisions', () {
+      expect(croches.pulseIndexAt(Duration.zero), 0);
+      expect(croches.pulseIndexAt(const Duration(milliseconds: 260)), 1);
+      expect(croches.pulseIndexAt(const Duration(milliseconds: 510)), 2);
+    });
+
+    test('le premier temps de la mesure se distingue des autres', () {
+      // Un musicien n'entend pas trois pulsations identiques : afficher le
+      // meme signal partout reviendrait a ne rien dire du metre.
+      expect(croches.accentAt(Duration.zero), PulseAccent.downbeat);
+      expect(
+        croches.accentAt(const Duration(milliseconds: 260)),
+        PulseAccent.subdivision,
+      );
+      expect(
+        croches.accentAt(const Duration(milliseconds: 510)),
+        PulseAccent.beat,
+      );
+    });
+
+    test('sans subdivision, il n y a que des temps', () {
+      const MetronomeClock noire = MetronomeClock(tempoBpm: 120);
+      for (int ms = 0; ms < 2000; ms += 100) {
+        expect(
+          noire.accentAt(Duration(milliseconds: ms)),
+          isNot(PulseAccent.subdivision),
+        );
+      }
+    });
+
+    test('le triolet tombe sur trois pulsations par temps', () {
+      const MetronomeClock triolet =
+          MetronomeClock(tempoBpm: 60, subdivision: 3);
+      expect(triolet.pulseIndexAt(const Duration(seconds: 1)), 3);
+      expect(triolet.accentAt(const Duration(seconds: 1)), PulseAccent.beat);
+      expect(
+        triolet.accentAt(const Duration(milliseconds: 1350)),
+        PulseAccent.subdivision,
+      );
+    });
+
+    test('la pulsation ne derive pas sur une longue seance', () {
+      // Le calcul passe par le rationnel exact. A 92 bpm en triolets, aucune
+      // duree entiere de microseconde ne represente une pulsation : cumuler
+      // ferait deriver d'une pulsation entiere au bout d'une heure.
+      const MetronomeClock c = MetronomeClock(tempoBpm: 92, subdivision: 3);
+      const Duration uneHeure = Duration(hours: 1);
+      expect(c.pulseIndexAt(uneHeure), 92 * 3 * 60);
+    });
+
+    test('la phase de pulsation avance puis retombe', () {
+      expect(croches.pulsePhaseAt(const Duration(milliseconds: 125)),
+          closeTo(0.5, 0.01));
+      expect(croches.pulsePhaseAt(const Duration(milliseconds: 250)),
+          closeTo(0, 0.01));
+    });
+  });
 }

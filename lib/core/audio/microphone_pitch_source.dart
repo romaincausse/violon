@@ -69,6 +69,7 @@ class MicrophonePitchSource implements PitchSource {
   /// Trames jetees faute d'avoir pu suivre, depuis le dernier [start].
   /// Doit rester a zero : une valeur qui monte signale que l'analyse ne tient
   /// pas le rythme de la capture.
+  @override
   int get droppedFrames => _abandonnees;
 
   /// Source retenue par le dernier [start], ou `null` a l'arret.
@@ -96,6 +97,13 @@ class MicrophonePitchSource implements PitchSource {
   /// constante les decale toutes du meme montant et disparait de la
   /// soustraction. Cette valeur ne sert qu'a faire tomber un son emis par
   /// l'application avec ce que joue l'eleve, donc a l'accompagnement.
+  @override
+  String get sourceLabel => switch (_activeSource) {
+        MicSource.unprocessed => 'UNPROCESSED',
+        MicSource.voiceRecognition => 'VOICE_RECOGNITION (repli)',
+        null => 'micro ferme',
+      };
+
   @override
   int get latencyMs => 0;
 

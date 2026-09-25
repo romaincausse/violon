@@ -205,6 +205,52 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('quintes', () {
+    testWidgets('sans deux cordes entendues, il invite a les jouer', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      expect(
+        find.text('Joue deux cordes voisines pour verifier tes quintes.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('deux cordes accordees en quinte juste donnent "juste"', (
+      WidgetTester tester,
+    ) async {
+      // Un violon s'accorde sur le rapport 3:2, pas sur la quinte temperee
+      // du piano. La corde de re est donc a deux cents au-dessus du tempere.
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, PitchUtils.midiToFrequency(55));
+      await jouer(
+        tester,
+        micro,
+        PitchUtils.midiToFrequency(55) * 3 / 2,
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('tuner-quintes')), findsOneWidget);
+      expect(find.text('Sol3-Re4'), findsOneWidget);
+      expect(find.text('juste'), findsWidgets);
+    });
+
+    testWidgets('une corde trop haute donne une quinte large', (
+      WidgetTester tester,
+    ) async {
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, PitchUtils.midiToFrequency(55));
+      await jouer(
+        tester,
+        micro,
+        PitchUtils.midiToFrequency(55) * 3 / 2 * 1.012,
+      );
+      await tester.pump();
+
+      expect(find.text('large'), findsOneWidget);
+    });
+  });
 }
 
 /// Fabrique un signal PCM 16 bits d'une sinusoide.

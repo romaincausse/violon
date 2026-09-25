@@ -53,7 +53,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
 | 1 | Le retour qui se voit | 6 | 0 | Ca devient agreable, tout de suite |
-| 2 | Les outils de tous les jours | 7 | 8 | L'application sert avant meme de jouer un morceau |
+| 2 | Les outils de tous les jours | 7 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**60 lots, 94 soirees restantes**, dont **28 de *must*** -- le reste
+**60 lots, 86 soirees restantes**, dont **28 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -240,20 +240,21 @@ un silence.
 
 ## Jalon 2 - Les outils de tous les jours
 
-Sept lots courts, tous sur le code deja livre. Ils ne font pas progresser la
-notation d'un pouce, et ils changent completement le fait de s'en servir :
+**Jalon termine.** Sept lots courts, tous sur le code deja livre. Ils ne font
+pas progresser la notation d'un pouce, et ils changent completement le fait de
+s'en servir :
 c'est le jalon ou l'application cesse d'etre une demo et devient un objet
 qu'on pose sur son pupitre tous les soirs.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| L1 | Demarrer en dix secondes | | ★★★ | 1 |
-| L2 | Refonte de la navigation | | ★★★ | 2 |
-| O3 | Ecran de controle du micro | | ★★★ | 1 |
-| O5 | Mode libre, sans partition | | ★★★ | 1 |
-| O4 | Quintes a vide dans l'accordeur | | ★★ | 1 |
-| O2 | Metronome visuel a subdivisions et accents | | ★★ | 1 |
-| D7 | Depart compte | | ★★★ | 1 |
+| ~~L1~~ | ~~Demarrer en dix secondes~~ | | ★★★ | fait |
+| ~~L2~~ | ~~Refonte de la navigation~~ | | ★★★ | fait |
+| ~~O3~~ | ~~Ecran de controle du micro~~ | | ★★★ | fait |
+| ~~O5~~ | ~~Mode libre, sans partition~~ | | ★★★ | fait |
+| ~~O4~~ | ~~Quintes a vide dans l'accordeur~~ | | ★★ | fait |
+| ~~O2~~ | ~~Metronome visuel a subdivisions et accents~~ | | ★★ | fait |
+| ~~D7~~ | ~~Depart compte~~ | | ★★★ | fait |
 
 ### L1 - Demarrer en dix secondes
 
@@ -266,11 +267,27 @@ et un seul appui lance la prise.
 Dix secondes, c'est la duree au-dela de laquelle un enfant de onze ans repose
 le violon.
 
+**Fait a moitie (PR #39), et il faut le dire.** L'application n'a plus
+d'ecran d'accueil et s'ouvre sur le travail, un appui lance la prise. Mais
+"ce qu'il faisait hier, avec le tempo atteint" suppose de se souvenir de la
+veille : **cette moitie-la attend la persistance (H1)**, et le passage de
+demonstration en tient lieu jusque-la.
+
 ### L2 - Refonte de la navigation
 
 Voir `docs/navigation.md`. A faire **ici et pas plus tard** : c'est le jalon ou
 l'application passe d'un ecran plus un accordeur a une dizaine de
 fonctionnalites, et une navigation rattrapee apres coup ne se rattrape jamais.
+
+**Fait (PR #39), avec deux ecarts assumes par rapport au document.**
+
+*Progres* n'est pas une destination : il n'a rien a montrer avant la
+persistance (H1), et **un onglet vide est pire que pas d'onglet**. Il reste
+donc deux destinations, Jouer et Repertoire, plus le tiroir d'outils.
+
+Le rappel "accorder d'abord ?" n'est pas fait. Accorder garde en revanche son
+raccourci depuis la seance, en plus du tiroir : c'est la premiere chose de
+chaque seance, elle merite un appui et pas deux.
 
 ### O3 - Ecran de controle du micro
 
@@ -282,6 +299,11 @@ repli), la hauteur detectee en direct et les trames perdues.
 Double usage : il rassure l'eleve, et il sert de banc de diagnostic quand
 quelque chose cloche sur un appareil.
 
+**Fait (PR #39).** `sourceLabel` et `droppedFrames` sont remontes dans
+l'interface `PitchSource` plutot que lus sur le type concret : c'est la meme
+correction que pour `smoothedPitches` au lot I1, et elle evite qu'un ecran de
+diagnostic devine avec quoi il parle.
+
 ### O5 - Mode libre, sans partition
 
 Elle ecoute et montre la justesse, sans rien attendre de precis : pas de
@@ -291,6 +313,10 @@ note, pour jouer d'oreille.
 C'est aussi, et surtout, la facon dont il apprend a lui faire confiance avant
 de la laisser le noter.
 
+**Fait (PR #39).** L'ecart y est mesure a la note temperee la plus proche,
+faute de tonalite -- acceptable ici precisement parce qu'on ne note pas : on
+montre ce qu'on entend, on ne dit pas que c'est faux.
+
 ### O4 - Quintes a vide dans l'accordeur
 
 Un violoniste accorde **par quintes en double corde**, pas corde par corde :
@@ -298,9 +324,15 @@ on tire deux cordes voisines ensemble et on ecoute les battements. Notre
 accordeur fait quatre mesures independantes -- ce n'est pas la technique
 reelle, et c'est celle qu'on lui enseigne.
 
-Le detecteur est monophonique, donc la double corde demande de reconnaitre
-deux hauteurs simultanees, ou a defaut de mesurer l'intervalle. A regarder au
-moment de le faire.
+**Fait (PR #39).** Le detecteur etant monophonique, il n'entend pas la double
+corde : on mesure les cordes l'une apres l'autre et on rend l'intervalle.
+Meme question, moyens differents.
+
+Point qui decide du lot : **la reference est la quinte JUSTE, pas la
+temperee.** Un violon s'accorde sur le rapport 3:2, soit 701,955 cents ; le
+piano rabote ses quintes a 700 pour que les douze tonalites tiennent. Juger
+contre 700 declarerait fausses, de deux cents et trois fois de suite, des
+cordes accordees exactement comme il faut.
 
 ### O2 - Metronome visuel a subdivisions et accents
 
@@ -308,13 +340,24 @@ Le metronome actuel bat la noire, point. En 4e annee on travaille en croches,
 en triolets, en doubles, et **on accentue le premier temps**. Un metronome qui
 ne sait pas subdiviser ne sert plus a rien des que le rythme se complique.
 
-Visuel uniquement ici : la version sonore est J3, au dernier jalon.
+Visuel uniquement ici : la version sonore est J3.
+
+**Fait (PR #39).** Trois intensites pour trois roles -- le premier temps
+porte la mesure, les autres temps la scandent, les subdivisions remplissent.
+Le reglage se change d'un appui **sur la barre elle-meme** : on change de
+subdivision en plein travail, et aller la chercher dans un menu couterait le
+fil.
 
 ### D7 - Depart compte
 
 Bete, et bloquant : on ne peut pas commencer une prise notee sans savoir quand
 partir. Une mesure comptee visuellement, au tempo choisi. La version sentie au
 vibreur viendra avec D6.
+
+**Fait (PR #39).** On compte **en montant**, comme un chef : "un, deux, trois,
+quatre" est ce qu'il entend en cours et en orchestre. Le temps du passage est
+obtenu par soustraction du temps absolu, jamais remis a zero : rien n'est
+cumule, donc rien ne derive.
 
 ---
 

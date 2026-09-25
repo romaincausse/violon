@@ -58,6 +58,12 @@ navigation suit ce deroule au lieu de le decouper en rubriques.
 
 ---
 
+> **Etat au 25 septembre 2026 (PR #39).** La coquille existe, avec **deux**
+> destinations et le tiroir d'outils. *Progres* attend la persistance (H1) :
+> il n'a rien a montrer, et un onglet vide est pire que pas d'onglet. Le
+> rappel "accorder d'abord ?" n'est pas fait non plus ; accorder a en revanche
+> son raccourci depuis la seance.
+
 ## Trois destinations, pas treize
 
 ### Jouer -- l'ecran par defaut

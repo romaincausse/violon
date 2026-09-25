@@ -8,13 +8,41 @@
 ///
 /// Dart pur et sans etat : deux appels avec le meme `elapsed` rendent toujours
 /// la meme chose, donc les tests n'ont besoin ni d'horloge ni d'attente.
+/// Ce que vaut une pulsation dans la mesure.
+///
+/// Un musicien n'entend pas trois pulsations identiques : le premier temps
+/// porte la mesure, les autres temps la scandent, les subdivisions ne font que
+/// remplir. Les afficher pareil reviendrait a ne rien dire du metre.
+enum PulseAccent {
+  /// Premier temps de la mesure.
+  downbeat,
+
+  /// Un temps, mais pas le premier.
+  beat,
+
+  /// Une subdivision a l'interieur d'un temps.
+  subdivision,
+}
+
 class MetronomeClock {
-  const MetronomeClock({required this.tempoBpm, this.beatsPerMeasure = 4})
-      : assert(tempoBpm > 0, 'un tempo est strictement positif'),
-        assert(beatsPerMeasure > 0, 'une mesure a au moins un temps');
+  const MetronomeClock({
+    required this.tempoBpm,
+    this.beatsPerMeasure = 4,
+    this.subdivision = 1,
+  })  : assert(tempoBpm > 0, 'un tempo est strictement positif'),
+        assert(beatsPerMeasure > 0, 'une mesure a au moins un temps'),
+        assert(subdivision > 0, 'un temps se divise au moins en un');
 
   final int tempoBpm;
   final int beatsPerMeasure;
+
+  /// Pulsations par temps : 1 la noire, 2 les croches, 3 le triolet, 4 les
+  /// doubles.
+  ///
+  /// **En 4e annee, un metronome qui ne subdivise pas ne sert plus a rien des
+  /// que le rythme se complique.** On travaille en croches, en triolets, en
+  /// doubles -- et c'est justement la que la pulsation aide.
+  final int subdivision;
 
   static const int _minuteUs = 60 * Duration.microsecondsPerSecond;
 
@@ -56,4 +84,33 @@ class MetronomeClock {
   /// Numero de mesure depuis le depart, base 0.
   int measureIndexAt(Duration elapsed) =>
       beatIndexAt(elapsed) ~/ beatsPerMeasure;
+
+  /// Numero de pulsation depuis le depart, base 0, subdivisions comprises.
+  ///
+  /// Calcule comme le reste sur le rationnel exact, sans duree intermediaire
+  /// arrondie : une subdivision de triolet a 92 bpm ne tombe sur aucun entier
+  /// de microseconde, et cumuler la ferait deriver.
+  int pulseIndexAt(Duration elapsed) {
+    if (elapsed <= Duration.zero) {
+      return 0;
+    }
+    return (elapsed.inMicroseconds * tempoBpm * subdivision) ~/ _minuteUs;
+  }
+
+  /// Avancement dans la pulsation courante, de 0 inclus a 1 exclu.
+  double pulsePhaseAt(Duration elapsed) {
+    if (elapsed <= Duration.zero) {
+      return 0;
+    }
+    return ((elapsed.inMicroseconds * tempoBpm * subdivision) % _minuteUs) /
+        _minuteUs;
+  }
+
+  /// Ce que vaut la pulsation courante dans la mesure.
+  PulseAccent accentAt(Duration elapsed) {
+    if (pulseIndexAt(elapsed) % subdivision != 0) {
+      return PulseAccent.subdivision;
+    }
+    return isDownbeatAt(elapsed) ? PulseAccent.downbeat : PulseAccent.beat;
+  }
 }
