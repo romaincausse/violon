@@ -16,6 +16,7 @@ import 'package:violon/core/music/score_note.dart';
 import 'package:violon/ui/screens/session_screen.dart';
 import 'package:violon/ui/widgets/measure_strip.dart';
 import 'package:violon/ui/widgets/score_view.dart';
+import 'package:violon/ui/widgets/tuning_ribbon.dart';
 import 'package:violon/ui/widgets/tuning_colors.dart';
 
 void main() {
@@ -711,6 +712,33 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(MeasureStrip.stripKey), findsOneWidget);
+    });
+  });
+
+  group('ruban de justesse', () {
+    testWidgets('le ruban est la des l ouverture, avant meme de jouer', (
+      WidgetTester tester,
+    ) async {
+      // C'est un repere permanent : il ne doit pas apparaitre et disparaitre
+      // au gre des silences.
+      await poser(tester, <PitchEstimate>[]);
+      expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
+    });
+
+    testWidgets('recommencer efface le trace precedent', (
+      WidgetTester tester,
+    ) async {
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+      await arreter(tester);
+
+      await demarrer(tester);
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
+      await arreter(tester);
     });
   });
 }

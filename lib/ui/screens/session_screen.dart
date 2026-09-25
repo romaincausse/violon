@@ -12,11 +12,13 @@ import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
 import '../../core/scoring/measure_scores.dart';
+import '../../core/scoring/tuning_trace.dart';
 import '../../core/scoring/string_drift_monitor.dart';
 import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
 import '../widgets/measure_strip.dart';
 import '../widgets/metronome_bar.dart';
+import '../widgets/tuning_ribbon.dart';
 import '../widgets/score_view.dart';
 import '../widgets/tuning_colors.dart';
 
@@ -104,6 +106,13 @@ class _SessionScreenState extends State<SessionScreen>
   /// Derive a annoncer, tant qu'elle n'a pas ete lue.
   StringDrift? _derive;
 
+  /// Les dernieres secondes de justesse, telles quelles.
+  ///
+  /// Le score dit qu'une note vaut quatre-vingt-dix ; le trace dit si elle a
+  /// ete posee juste ou attaquee basse puis rattrapee. C'est ce second geste
+  /// qu'un professeur corrige.
+  final TuningTrace _trace = TuningTrace();
+
   ScoreCursor get _cursor => ScoreCursor(
         passage: widget.passage,
         tempoBpm: widget.passage.writtenTempoBpm,
@@ -124,6 +133,8 @@ class _SessionScreenState extends State<SessionScreen>
       _elapsed = Duration.zero;
       _running = true;
       _tuning.reset();
+      _trace.reset();
+      _derive = null;
     });
     _ticker.start();
     unawaited(_ouvrirLeMicro());
@@ -184,6 +195,15 @@ class _SessionScreenState extends State<SessionScreen>
           pitch.estimate,
           sinceNoteStartMs: _depuisLeDebutDeLaNote(note),
         );
+        // Le trace suit l'ecart a la note ATTENDUE, comme le reste : compare
+        // a la note la plus proche, il dirait "juste" sur une fausse note.
+        _trace.add(
+          pitch.timestampMs,
+          PitchUtils.centsBetween(
+            pitch.frequencyHz,
+            PitchUtils.midiToFrequency(note.midi, a4: widget.a4),
+          ),
+        );
       }
     });
   }
@@ -240,8 +260,10 @@ class _SessionScreenState extends State<SessionScreen>
     if (widget.a4 != oldWidget.a4) {
       setState(() {
         _tuning = LiveTuning(a4: widget.a4);
-        // On vient d'accorder : ce qui precede ne decrit plus l'instrument.
+        // On vient d'accorder : ce qui precede ne decrit plus l'instrument,
+        // et le trace a ete mesure contre l'ancienne reference.
         _accord = StringDriftMonitor(tuner: Tuner(a4: widget.a4));
+        _trace.reset();
         _derive = null;
       });
     }
@@ -390,6 +412,8 @@ class _SessionScreenState extends State<SessionScreen>
         _metronome(),
         Expanded(child: _partition(orientation)),
         const SizedBox(height: 8),
+        TuningRibbon(trace: _trace),
+        const SizedBox(height: 6),
         _mesures(),
         const SizedBox(height: 8),
         _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
@@ -417,11 +441,15 @@ class _SessionScreenState extends State<SessionScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               _entete(vertical: true),
-              const SizedBox(height: 16),
-              _metronome(),
-              const SizedBox(height: 16),
-              _mesures(),
               const SizedBox(height: 12),
+              _metronome(),
+              const SizedBox(height: 12),
+              // Plus bas qu'en portrait : en paysage la hauteur est la
+              // ressource rare, et un ruban de 24 points se lit encore.
+              TuningRibbon(trace: _trace, height: 24),
+              const SizedBox(height: 6),
+              _mesures(),
+              const SizedBox(height: 10),
               _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
               const SizedBox(height: 16),
               _bouton(),
