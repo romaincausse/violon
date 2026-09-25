@@ -60,9 +60,7 @@ class _TunerScreenState extends State<TunerScreen> {
         return;
       }
       _source = source;
-      if (source is MicrophonePitchSource) {
-        _abonnement = source.smoothedPitches.listen(_onPitch);
-      }
+      _abonnement = source.smoothedPitches.listen(_onPitch);
       await source.start();
     } on MicPermissionDenied {
       _direLeProbleme('Micro refuse : impossible d\'accorder.');

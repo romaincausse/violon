@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../core/audio/microphone_pitch_source.dart';
-import '../../core/audio/pitch_estimate.dart';
+import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/follow/score_cursor.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
+import '../../core/scoring/string_drift_monitor.dart';
+import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
 import '../widgets/metronome_bar.dart';
 import '../widgets/score_view.dart';
@@ -85,8 +87,20 @@ class _SessionScreenState extends State<SessionScreen>
   double? _ecartInitial;
   double _zoomAuDebutDuGeste = 1;
   PitchSource? _source;
-  StreamSubscription<PitchEstimate>? _abonnement;
+  StreamSubscription<SmoothedPitch>? _abonnement;
   _MicState _mic = _MicState.arrete;
+
+  /// Surveille l'accord de l'instrument pendant qu'on joue.
+  ///
+  /// Chaque corde a vide du passage mesure gratuitement l'accord reel. Sans
+  /// ca, un violon qui descend de quinze cents en cours de seance fait
+  /// reprocher a l'enfant, pendant une demi-heure, une faute qui appartient
+  /// a l'instrument.
+  late StringDriftMonitor _accord =
+      StringDriftMonitor(tuner: Tuner(a4: widget.a4));
+
+  /// Derive a annoncer, tant qu'elle n'a pas ete lue.
+  StringDrift? _derive;
 
   ScoreCursor get _cursor => ScoreCursor(
         passage: widget.passage,
@@ -127,7 +141,7 @@ class _SessionScreenState extends State<SessionScreen>
         return;
       }
       _source = source;
-      _abonnement = source.pitches.listen(_onPitch);
+      _abonnement = source.smoothedPitches.listen(_onPitch);
       await source.start();
       if (mounted) {
         setState(() => _mic = _MicState.ecoute);
@@ -150,21 +164,26 @@ class _SessionScreenState extends State<SessionScreen>
   /// tant que la latence n'est pas calibree (lot J2), prendre l'horodatage du
   /// micro donnerait une fausse precision. A 46 ms par trame, l'ecart ne se
   /// voit pas sur une coloration.
-  void _onPitch(PitchEstimate estimate) {
+  void _onPitch(SmoothedPitch pitch) {
     if (!_running) {
       return;
     }
+    // L'accord se surveille meme entre deux notes attendues : une corde a
+    // vide tiree pour verifier compte autant qu'une du passage.
+    final StringDrift? derive = _accord.observe(pitch);
     final ScoreNote? note = _cursor.noteAt(_elapsed);
-    if (note == null) {
-      return;
-    }
-    setState(
-      () => _tuning.observe(
-        note,
-        estimate,
-        sinceNoteStartMs: _depuisLeDebutDeLaNote(note),
-      ),
-    );
+    setState(() {
+      if (derive != null) {
+        _derive = derive;
+      }
+      if (note != null) {
+        _tuning.observe(
+          note,
+          pitch.estimate,
+          sinceNoteStartMs: _depuisLeDebutDeLaNote(note),
+        );
+      }
+    });
   }
 
   /// Depuis combien de temps la note en cours a commence, en millisecondes.
@@ -190,7 +209,7 @@ class _SessionScreenState extends State<SessionScreen>
 
   Future<void> _fermerLeMicro() async {
     final PitchSource? source = _source;
-    final StreamSubscription<PitchEstimate>? abonnement = _abonnement;
+    final StreamSubscription<SmoothedPitch>? abonnement = _abonnement;
     _source = null;
     _abonnement = null;
     // Annuler sans attendre. Un abonnement cesse de livrer des l'appel ; la
@@ -217,7 +236,12 @@ class _SessionScreenState extends State<SessionScreen>
     // Un nouveau diapason change tous les verdicts : les couleurs deja
     // affichees ont ete calculees contre l'ancien.
     if (widget.a4 != oldWidget.a4) {
-      setState(() => _tuning = LiveTuning(a4: widget.a4));
+      setState(() {
+        _tuning = LiveTuning(a4: widget.a4);
+        // On vient d'accorder : ce qui precede ne decrit plus l'instrument.
+        _accord = StringDriftMonitor(tuner: Tuner(a4: widget.a4));
+        _derive = null;
+      });
     }
   }
 
@@ -355,7 +379,7 @@ class _SessionScreenState extends State<SessionScreen>
         _metronome(),
         Expanded(child: _partition(orientation)),
         const SizedBox(height: 8),
-        _Bandeau(etat: _mic, bilan: _bilan()),
+        _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
         const SizedBox(height: 16),
         _bouton(),
       ],
@@ -383,7 +407,7 @@ class _SessionScreenState extends State<SessionScreen>
               const SizedBox(height: 16),
               _metronome(),
               const SizedBox(height: 16),
-              _Bandeau(etat: _mic, bilan: _bilan()),
+              _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
               const SizedBox(height: 16),
               _bouton(),
             ],
@@ -471,10 +495,13 @@ class _Bilan {
 /// Sa hauteur est libre, mais jamais nulle : reserver la place evite que la
 /// partition sursaute quand l'etat change.
 class _Bandeau extends StatelessWidget {
-  const _Bandeau({required this.etat, required this.bilan});
+  const _Bandeau({required this.etat, required this.bilan, this.derive});
 
   final _MicState etat;
   final _Bilan? bilan;
+
+  /// Une corde a bouge depuis le debut de la seance.
+  final StringDrift? derive;
 
   static const double _hauteurMinimale = 20;
 
@@ -483,24 +510,71 @@ class _Bandeau extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final TextStyle? style = theme.textTheme.bodySmall;
     final _Bilan? b = bilan;
+    final StringDrift? d = derive;
+    // **Le bilan passe devant l'alerte, et l'alerte le suit.** L'alerte seule
+    // masquerait le score a la fin du passage ; le score seul laisserait
+    // croire que le chiffre parle de l'enfant alors qu'une corde est fausse.
+    // Les deux, donc, dans cet ordre.
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: _hauteurMinimale),
       child: b != null
-          ? _Resultat(bilan: b)
-          : switch (etat) {
-              _MicState.arrete => const SizedBox.shrink(),
-              _MicState.ecoute => const _Legende(),
-              _MicState.refuse => Text(
-                  'Micro refuse : le passage defile sans notation.',
-                  style: style,
-                  textAlign: TextAlign.center,
-                ),
-              _MicState.indisponible => Text(
-                  'Micro indisponible : le passage defile sans notation.',
-                  style: style,
-                  textAlign: TextAlign.center,
-                ),
-            },
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _Resultat(bilan: b),
+                if (d != null) _AlerteAccord(derive: d),
+              ],
+            )
+          : d != null
+              ? _AlerteAccord(derive: d)
+              : switch (etat) {
+                  _MicState.arrete => const SizedBox.shrink(),
+                  _MicState.ecoute => const _Legende(),
+                  _MicState.refuse => Text(
+                      'Micro refuse : le passage defile sans notation.',
+                      style: style,
+                      textAlign: TextAlign.center,
+                    ),
+                  _MicState.indisponible => Text(
+                      'Micro indisponible : le passage defile sans notation.',
+                      style: style,
+                      textAlign: TextAlign.center,
+                    ),
+                },
+    );
+  }
+}
+
+/// "Ton mi a baisse, reaccorde."
+///
+/// **Ce n'est pas un reproche, et la formulation compte.** Un violon se
+/// desaccorde tout seul en jouant ; l'enfant n'y est pour rien, et la phrase
+/// doit le dire. On nomme la corde et le sens, sans chiffre : quinze cents ne
+/// veulent rien dire a onze ans, "ton mi a baisse" si.
+class _AlerteAccord extends StatelessWidget {
+  const _AlerteAccord({required this.derive});
+
+  final StringDrift derive;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Icon(Icons.tune, size: 16, color: theme.colorScheme.primary),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            'Ton ${derive.stringName.toLowerCase()} a '
+            '${derive.flat ? 'baisse' : 'monte'} : reaccorde.',
+            key: const Key('alerte-accord'),
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.primary),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'pitch_estimate.dart';
+import 'pitch_smoother.dart';
 import 'pitch_source.dart';
 
 /// Source de hauteurs scriptee.
@@ -32,13 +33,38 @@ class FakePitchSource implements PitchSource {
   final List<PitchEstimate> script;
   final Duration interval;
 
-  final StreamController<PitchEstimate> _controller =
-      StreamController<PitchEstimate>.broadcast();
+  final StreamController<SmoothedPitch> _controller =
+      StreamController<SmoothedPitch>.broadcast();
+
   Timer? _timer;
   int _index = 0;
 
   @override
-  Stream<PitchEstimate> get pitches => _controller.stream;
+  Stream<PitchEstimate> get pitches =>
+      _controller.stream.map((SmoothedPitch p) => p.estimate);
+
+  @override
+  Stream<SmoothedPitch> get smoothedPitches => _controller.stream;
+
+  /// **Aucun lissage ici, et c'est delibere.**
+  ///
+  /// J'avais d'abord fait passer le script par un vrai [PitchSmoother], pour
+  /// que la source factice ressemble a la chaine reelle. Un test l'a refuse :
+  /// un script `la4, si4, do5` ressortait `la4, la#4, do5`, parce que la
+  /// mediane glissante attend deux ecarts de suite avant d'admettre un
+  /// changement de note.
+  ///
+  /// Le lisseur avait raison, c'est l'idee qui etait mauvaise : **une source
+  /// scriptee dont le script ne ressort pas tel quel n'est plus un outil de
+  /// test.** Le lissage se teste dans `pitch_smoother_test.dart`, sur du
+  /// signal fait pour ca.
+  ///
+  /// Consequence a connaitre : ici `excursionCents` vaut zero et `vibrato`
+  /// est faux. Tout ce qui juge une oscillation doit donc etre teste sur des
+  /// [SmoothedPitch] construits a la main, pas sur cette source.
+  void _emettre(PitchEstimate estimate) => _controller.add(
+        SmoothedPitch(estimate: estimate, excursionCents: 0, vibrato: false),
+      );
 
   @override
   int get latencyMs => 0;
@@ -52,7 +78,7 @@ class FakePitchSource implements PitchSource {
         timer.cancel();
         return;
       }
-      _controller.add(script[_index]);
+      _emettre(script[_index]);
       _index++;
     });
   }
@@ -60,7 +86,7 @@ class FakePitchSource implements PitchSource {
   /// Emet tout le script immediatement : pratique pour les tests unitaires.
   void emitAll() {
     for (final PitchEstimate estimate in script) {
-      _controller.add(estimate);
+      _emettre(estimate);
     }
   }
 

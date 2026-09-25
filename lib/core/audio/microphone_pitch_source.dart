@@ -82,6 +82,7 @@ class MicrophonePitchSource implements PitchSource {
   ///
   /// Meme flux que [pitches], vu en entier : l'accordeur et la notation ont
   /// besoin de l'excursion et du vibrato, pas seulement de la hauteur.
+  @override
   Stream<SmoothedPitch> get smoothedPitches => _controller.stream;
 
   @override

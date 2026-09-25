@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees | Ce qu'on gagne |
 |---|-------|------|---------|----------------|
-| 1 | Le retour qui se voit | 6 | 10 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 6 | 8 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 8 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**58 lots, 102 soirees** au total, dont **28 soirees de *must*** -- le reste
+**58 lots, 100 soirees** au total, dont **28 soirees de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -80,7 +80,7 @@ Aucun lot n'attend le suiveur.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| I1 | Cordes a vide comme ancre, alerte de desaccord | | ★★★ | 2 |
+| ~~I1~~ | ~~Cordes a vide comme ancre, alerte de desaccord~~ | | ★★★ | fait |
 | I2 | Intonation expressive | | ★★★ | 2 |
 | D1 | Bandeau de mesures | | ★★★ | 2 |
 | D2 | Ruban de justesse | | ★★★ | 2 |
@@ -98,8 +98,20 @@ seance, l'application lui reproche sa justesse pendant une demi-heure --
 **elle l'accuse d'une faute qui appartient a l'instrument.** Elle doit dire
 "ton mi a baisse, reaccorde", et proteger son propre verdict au passage.
 
-L'accordeur et le `A4Estimator` existent : il n'y a qu'a les ecouter en
-continu.
+**Fait (PR #34).** `StringDriftMonitor` surveille l'accord pendant la seance
+et annonce "ton mi a baisse, reaccorde", sans chiffre : quinze cents ne
+veulent rien dire a onze ans.
+
+Le piege n'etait pas la mesure mais le **faux positif** -- un re joue au
+quatrieme doigt sur la corde de sol tombe exactement sur la frequence du re a
+vide. Le discriminant retenu : **une corde a vide ne peut pas etre jouee
+faux**, donc elle donne toujours le meme ecart, alors qu'un doigt se pose un
+peu differemment a chaque fois. Un verdict n'est rendu que sur une serie
+nombreuse **et groupee**.
+
+A verifie au passage : le flux lisse est remonte dans l'interface
+`PitchSource`. L'accordeur testait le type reel de sa source et restait donc
+muet des qu'on developpait avec une source factice.
 
 ### I2 - Intonation expressive
 
