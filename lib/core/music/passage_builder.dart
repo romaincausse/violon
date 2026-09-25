@@ -4,8 +4,8 @@ import 'score_note.dart';
 
 /// Construit un [Passage] note par note, sans MusicXML.
 ///
-/// C'est la seule facon d'entrer un passage aujourd'hui : le gravage de
-/// partition arrive au jalon suivant. Toute l'arithmetique vit ici plutot que
+/// C'est la seule facon d'entrer un passage aujourd'hui ; l'import d'un
+/// morceau entier viendra au lot H6. Toute l'arithmetique vit ici plutot que
 /// dans l'ecran de saisie, pour rester testable sans `pumpWidget`.
 ///
 /// Deux quantites sont deduites, jamais saisies :

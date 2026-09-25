@@ -20,11 +20,14 @@ dependencies:
   # Volontairement absents pour que le squelette compile et que la CI soit
   # verte des le premier commit, sans risque de conflit de versions.
   #
-  # flutter_svg       : affichage des partitions gravees par Verovio
-  # just_audio        : lecture audio / play-along
-  # soloud            : moteur audio bas niveau (metronome pre-planifie)
-  # shared_preferences: preferences locales
-  # drift ou sqflite  : historique des sessions et heatmap
+  # soloud            : moteur audio bas niveau, pre-planifie (lot J1,
+  #                     tire par le bourdon -- jalon 4)
+  # shared_preferences: preferences locales (lot H1)
+  # drift ou sqflite  : historique des seances et heatmap (lot H1)
+  #
+  # flutter_svg a disparu de cette liste : il servait a afficher des
+  # partitions pre-gravees par Verovio, voie rendue caduque par l'ADR-009.
+  # Un suiveur a besoin des notes, pas d'une image.
 
 dev_dependencies:
   flutter_test:

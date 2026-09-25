@@ -11,8 +11,10 @@ class Onset {
   /// de la prise.
   ///
   /// Il porte un biais systematique : le changement est constate a la fin de
-  /// la fenetre d'analyse, pas a son debut. Ce biais est constant, donc la
-  /// calibration de latence (lot A4) l'absorbe avec celle du materiel.
+  /// la fenetre d'analyse, pas a son debut. **Ce biais est constant, donc il
+  /// s'annule** des qu'on compare deux attaques entre elles -- ce qui est
+  /// exactement ce que fait le juge de rythme depuis l'ADR-010. Aucune
+  /// calibration n'est necessaire pour le corriger.
   final int timestampMs;
 
   /// Hauteur du pic de flux spectral. Sert a comparer deux attaques entre

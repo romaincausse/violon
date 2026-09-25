@@ -147,7 +147,7 @@ class _SessionScreenState extends State<SessionScreen>
   ///
   /// L'attribution se fait a l'arrivee de la mesure, pas a son horodatage :
   /// la capture et le curseur ne demarrent pas exactement au meme instant, et
-  /// tant que la latence n'est pas calibree (lot A4), prendre l'horodatage du
+  /// tant que la latence n'est pas calibree (lot J2), prendre l'horodatage du
   /// micro donnerait une fausse precision. A 46 ms par trame, l'ecart ne se
   /// voit pas sur une coloration.
   void _onPitch(PitchEstimate estimate) {
