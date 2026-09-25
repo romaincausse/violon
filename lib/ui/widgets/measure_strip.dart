@@ -25,6 +25,7 @@ class MeasureStrip extends StatelessWidget {
   const MeasureStrip({
     required this.measures,
     this.currentMeasure,
+    this.height = hauteur,
     super.key,
   });
 
@@ -32,6 +33,11 @@ class MeasureStrip extends StatelessWidget {
 
   /// Mesure en cours de lecture, mise en evidence.
   final int? currentMeasure;
+
+  /// Hauteur des cases. Le profil pupitre les veut bien plus hautes : a
+  /// soixante-dix centimetres, une case de vingt-huit points ne se lit pas
+  /// du coin de l'oeil.
+  final double height;
 
   static const Key stripKey = Key('bandeau-mesures');
 
@@ -53,7 +59,11 @@ class MeasureStrip extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: _Case(mesure: m, courante: m.measure == currentMeasure),
+              child: _Case(
+                mesure: m,
+                courante: m.measure == currentMeasure,
+                hauteur: height,
+              ),
             ),
           ),
       ],
@@ -62,10 +72,15 @@ class MeasureStrip extends StatelessWidget {
 }
 
 class _Case extends StatelessWidget {
-  const _Case({required this.mesure, required this.courante});
+  const _Case({
+    required this.mesure,
+    required this.courante,
+    required this.hauteur,
+  });
 
   final MeasureScore mesure;
   final bool courante;
+  final double hauteur;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +105,7 @@ class _Case extends StatelessWidget {
         children: <Widget>[
           Container(
             key: MeasureStrip.keyFor(mesure.measure),
-            height: MeasureStrip.hauteur,
+            height: hauteur,
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(4),

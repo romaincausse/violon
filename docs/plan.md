@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 6 | 2 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 6 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 8 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**60 lots, 96 soirees restantes**, dont **28 de *must*** -- le reste
+**60 lots, 94 soirees restantes**, dont **28 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -78,8 +78,9 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Utilisable des maintenant :** tout ce jalon tourne sur le code deja livre.
-Aucun lot n'attend le suiveur.
+**Jalon termine.** Les six lots tournent sur le code deja livre, sans
+dependance nouvelle, et deux d'entre eux -- I1 et I2 -- corrigeaient des
+defauts en production plutot que d'ajouter une fonctionnalite.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -87,8 +88,8 @@ Aucun lot n'attend le suiveur.
 | ~~I2~~ | ~~Intonation expressive~~ | | ★★★ | fait |
 | ~~D1~~ | ~~Bandeau de mesures~~ | | ★★★ | fait |
 | ~~D2~~ | ~~Ruban de justesse~~ | | ★★★ | fait |
-| D4 | Profils d'affichage | | ★★ | 1 |
-| D5 | Halo de fin de mesure | | ★★ | 1 |
+| ~~D4~~ | ~~Profils d'affichage~~ | | ★★ | fait |
+| ~~D5~~ | ~~Halo de fin de mesure~~ | | ★★ | fait |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -212,6 +213,12 @@ Trois profils, parce que le bon affichage depend de ce qu'il sait deja :
 - **Pupitre** -- trois informations maximum, taille maximale, lisible d'un
   coup d'oeil a soixante-dix centimetres.
 
+**Fait (PR #38).** Les profils defilent en boucle sur un seul bouton plutot
+que dans un menu : un menu couterait deux appuis, et on change de profil
+violon en main. Le reglage defilement / plusieurs lignes disparait hors du
+profil "par coeur" -- choisir la mise en page d'une partition qu'on n'affiche
+pas n'a pas de sens.
+
 ### D5 - Halo de fin de mesure
 
 Une mesure passee proprement fait brievement respirer le bord de l'ecran.
@@ -219,6 +226,15 @@ Discret, non textuel, lisible du coin de l'oeil, et cale sur la **mesure** --
 jamais sur la note, qui clignoterait en permanence.
 
 C'est la seule recompense autorisee : de la lumiere, pas un badge.
+
+**Fait (PR #38).** Elle s'allume vite et s'eteint doucement -- une lueur qui
+monte progressivement distrait plus qu'elle ne se remarque -- et laisse
+passer les appuis : une recompense ne doit jamais avaler un bouton.
+
+Une mesure se felicite a partir de quatre-vingt-dix, et seulement si elle a
+ete entendue pour moitie au moins. Exiger cent serait severe et n'arriverait
+presque jamais ; feliciter une mesure a peine entendue reviendrait a feliciter
+un silence.
 
 ---
 

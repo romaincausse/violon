@@ -16,11 +16,38 @@ import '../../core/scoring/tuning_trace.dart';
 import '../../core/scoring/string_drift_monitor.dart';
 import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
+import '../widgets/measure_halo.dart';
 import '../widgets/measure_strip.dart';
 import '../widgets/metronome_bar.dart';
 import '../widgets/tuning_ribbon.dart';
 import '../widgets/score_view.dart';
 import '../widgets/tuning_colors.dart';
+
+/// Ce que l'ecran montre pendant qu'il joue.
+///
+/// **Le bon affichage depend de ce qu'il sait deja du passage**, et pas d'une
+/// preference esthetique. Depuis l'ADR-009 il lit sa partition papier ; la
+/// partition a l'ecran n'est donc utile que lorsqu'elle n'a plus rien a lui
+/// apprendre.
+enum DisplayProfile {
+  /// Il dechiffre. L'ecran ne montre que le retour : ruban et mesures.
+  ///
+  /// La partition a l'ecran serait une seconde partition a suivre, en plus
+  /// petit et moins bien gravee que celle de son pupitre. Elle encombre.
+  decouverte,
+
+  /// Il connait le passage. La partition prend tout son sens ici.
+  ///
+  /// Curseur et coloration note par note : c'est le seul moment ou regarder
+  /// l'ecran ne lui coute pas sa lecture.
+  parCoeur,
+
+  /// Trois informations, en grand, lisibles a soixante-dix centimetres.
+  ///
+  /// Ni partition, ni metronome, ni legende : ou il en est, comment ca va, et
+  /// le bouton. Pour jouer sans rien avoir a chercher.
+  pupitre,
+}
 
 /// Construit la source de hauteurs. Injectable pour les tests et pour le
 /// developpement de l'interface, ou l'on ne veut pas du vrai micro.
@@ -68,6 +95,9 @@ class SessionScreen extends StatefulWidget {
 
   final PitchSourceFactory pitchSourceFactory;
 
+  /// Bouton de changement de profil d'affichage, pour les tests.
+  static const Key profilKey = Key('profil-affichage');
+
   @override
   State<SessionScreen> createState() => _SessionScreenState();
 }
@@ -106,6 +136,14 @@ class _SessionScreenState extends State<SessionScreen>
   /// Derive a annoncer, tant qu'elle n'a pas ete lue.
   StringDrift? _derive;
 
+  DisplayProfile _profil = DisplayProfile.parCoeur;
+
+  /// Derniere mesure vue par le curseur, pour reperer qu'on en a change.
+  int? _mesureVue;
+
+  /// Change a chaque mesure reussie : c'est ce qui declenche le halo.
+  int _mesuresReussies = 0;
+
   /// Les dernieres secondes de justesse, telles quelles.
   ///
   /// Le score dit qu'une note vaut quatre-vingt-dix ; le trace dit si elle a
@@ -126,7 +164,43 @@ class _SessionScreenState extends State<SessionScreen>
       return;
     }
     setState(() => _elapsed = elapsed);
+    _surveillerLaFinDeMesure();
   }
+
+  /// Allume le halo quand une mesure vient d'etre passee proprement.
+  ///
+  /// **Au changement de mesure, pas a chaque note.** A la note, la lueur
+  /// clignoterait en permanence et deviendrait du bruit ; a la mesure, elle
+  /// marque une etape que l'enfant reconnait sur son papier.
+  void _surveillerLaFinDeMesure() {
+    final int? courante = _cursor.noteAt(_elapsed)?.measure;
+    if (courante == null || courante == _mesureVue) {
+      return;
+    }
+    final int? precedente = _mesureVue;
+    _mesureVue = courante;
+    if (precedente == null) {
+      return;
+    }
+    final MeasureScore? finie = scoreByMeasure(widget.passage, _tuning)
+        .where((MeasureScore m) => m.measure == precedente)
+        .firstOrNull;
+    // Entendue, et propre. Une mesure a peine entendue ne se felicite pas :
+    // on ne sait pas ce qui s'y est passe.
+    if (finie != null &&
+        finie.heard &&
+        finie.score! >= _scoreDuHalo &&
+        finie.coverage >= 0.5) {
+      setState(() => _mesuresReussies++);
+    }
+  }
+
+  /// A partir de quoi une mesure est dite propre.
+  ///
+  /// Cent serait severe -- il faudrait chaque note dans la bande parfaite --
+  /// et n'arriverait presque jamais. Quatre-vingt-dix laisse passer une note
+  /// un peu flottante sans rien enlever au fait que la mesure est tenue.
+  static const int _scoreDuHalo = 90;
 
   void _start() {
     setState(() {
@@ -135,6 +209,7 @@ class _SessionScreenState extends State<SessionScreen>
       _tuning.reset();
       _trace.reset();
       _derive = null;
+      _mesureVue = null;
     });
     _ticker.start();
     unawaited(_ouvrirLeMicro());
@@ -279,19 +354,43 @@ class _SessionScreenState extends State<SessionScreen>
   Color? _couleurDe(ScoreNote note) =>
       TuningColors.of(_tuning.verdictFor(note.id));
 
-  /// Ce qu'il y a a dire une fois le passage termine.
+  /// Les profils defilent en boucle plutot que de s'ouvrir dans un menu.
   ///
-  /// Rien pendant la lecture : un chiffre qui bouge pendant qu'on joue
-  /// detournerait le regard de la partition, et changerait a chaque note.
+  /// Un menu couterait deux appuis, et on change de profil **violon en
+  /// main** : l'icone dit ou l'on est, l'infobulle le nomme.
+  void _changerDeProfil() {
+    setState(() {
+      _profil = DisplayProfile
+          .values[(_profil.index + 1) % DisplayProfile.values.length];
+    });
+  }
+
+  IconData get _iconeDuProfil => switch (_profil) {
+        DisplayProfile.decouverte => Icons.hearing,
+        DisplayProfile.parCoeur => Icons.music_note,
+        DisplayProfile.pupitre => Icons.fullscreen,
+      };
+
+  String get _nomDuProfil => switch (_profil) {
+        DisplayProfile.decouverte => 'decouverte',
+        DisplayProfile.parCoeur => 'par coeur',
+        DisplayProfile.pupitre => 'pupitre',
+      };
+
   /// Les cases de mesures, et celle qui est en cours de lecture.
-  Widget _mesures() {
+  Widget _mesures({double hauteur = MeasureStrip.hauteur}) {
     final ScoreNote? courante = _running ? _cursor.noteAt(_elapsed) : null;
     return MeasureStrip(
       measures: scoreByMeasure(widget.passage, _tuning),
       currentMeasure: courante?.measure,
+      height: hauteur,
     );
   }
 
+  /// Ce qu'il y a a dire une fois le passage termine.
+  ///
+  /// Rien pendant la lecture : un chiffre qui bouge pendant qu'on joue
+  /// detournerait le regard de la partition, et changerait a chaque note.
   _Bilan? _bilan() {
     if (_running) {
       return null;
@@ -371,16 +470,25 @@ class _SessionScreenState extends State<SessionScreen>
             tooltip: 'Accorder',
           ),
           IconButton(
-            onPressed: _changerDeMode,
-            icon: Icon(
-              _mode == ScoreDisplayMode.systems
-                  ? Icons.view_headline
-                  : Icons.swap_horiz,
-            ),
-            tooltip: _mode == ScoreDisplayMode.systems
-                ? 'Passer au defilement'
-                : 'Passer a plusieurs lignes',
+            key: SessionScreen.profilKey,
+            onPressed: _changerDeProfil,
+            icon: Icon(_iconeDuProfil),
+            tooltip: 'Affichage : $_nomDuProfil',
           ),
+          // La mise en page de la partition n'a de sens que si la partition
+          // est a l'ecran.
+          if (_profil == DisplayProfile.parCoeur)
+            IconButton(
+              onPressed: _changerDeMode,
+              icon: Icon(
+                _mode == ScoreDisplayMode.systems
+                    ? Icons.view_headline
+                    : Icons.swap_horiz,
+              ),
+              tooltip: _mode == ScoreDisplayMode.systems
+                  ? 'Passer au defilement'
+                  : 'Passer a plusieurs lignes',
+            ),
           IconButton(
             onPressed: widget.onChangePassage,
             icon: const Icon(Icons.edit_note),
@@ -395,7 +503,10 @@ class _SessionScreenState extends State<SessionScreen>
           // l'enfant est decale.
           key: const Key('session-content'),
           padding: EdgeInsets.all(paysage ? 12 : 24),
-          child: paysage ? _enPaysage(orientation) : _enPortrait(orientation),
+          child: MeasureHalo(
+            trigger: _mesuresReussies,
+            child: paysage ? _enPaysage(orientation) : _enPortrait(orientation),
+          ),
         ),
       ),
     );
@@ -403,6 +514,23 @@ class _SessionScreenState extends State<SessionScreen>
 
   /// En portrait, la hauteur est abondante : tout s'empile.
   Widget _enPortrait(Orientation orientation) {
+    // Le profil pupitre ne montre que trois choses, en grand : ou il en est,
+    // comment ca va, et le bouton. Rien a chercher, rien a lire.
+    if (_profil == DisplayProfile.pupitre) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Spacer(),
+          TuningRibbon(trace: _trace, height: 96),
+          const SizedBox(height: 20),
+          _mesures(hauteur: 72),
+          const Spacer(),
+          _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+          const SizedBox(height: 20),
+          _bouton(),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -410,7 +538,12 @@ class _SessionScreenState extends State<SessionScreen>
         const SizedBox(height: 24),
         const SizedBox(height: 20),
         _metronome(),
-        Expanded(child: _partition(orientation)),
+        // En decouverte, la partition a l'ecran serait une seconde partition
+        // a suivre, en plus petit que celle du pupitre. Elle encombre.
+        if (_profil == DisplayProfile.parCoeur)
+          Expanded(child: _partition(orientation))
+        else
+          const Spacer(),
         const SizedBox(height: 8),
         TuningRibbon(trace: _trace),
         const SizedBox(height: 6),
@@ -429,10 +562,28 @@ class _SessionScreenState extends State<SessionScreen>
   /// Empiler comme en portrait ne laisserait pas de quoi afficher deux
   /// systemes, ce qui est justement l'interet de tourner l'ecran.
   Widget _enPaysage(Orientation orientation) {
+    if (_profil == DisplayProfile.pupitre) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Spacer(),
+          TuningRibbon(trace: _trace, height: 64),
+          const SizedBox(height: 12),
+          _mesures(hauteur: 48),
+          const Spacer(),
+          _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+          const SizedBox(height: 12),
+          _bouton(),
+        ],
+      );
+    }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Expanded(child: _partition(orientation)),
+        if (_profil == DisplayProfile.parCoeur)
+          Expanded(child: _partition(orientation))
+        else
+          const Spacer(),
         const SizedBox(width: 16),
         SizedBox(
           width: _largeurDesCommandes,

@@ -14,8 +14,10 @@ import 'package:violon/core/music/passage_builder.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/ui/screens/session_screen.dart';
+import 'package:violon/ui/widgets/measure_halo.dart';
 import 'package:violon/ui/widgets/measure_strip.dart';
 import 'package:violon/ui/widgets/score_view.dart';
+import 'package:violon/ui/widgets/metronome_bar.dart';
 import 'package:violon/ui/widgets/tuning_ribbon.dart';
 import 'package:violon/ui/widgets/tuning_colors.dart';
 
@@ -738,6 +740,102 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull);
       expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
+      await arreter(tester);
+    });
+  });
+
+  group('profils d affichage', () {
+    /// Passe au profil suivant, autant de fois que demande.
+    Future<void> changerDeProfil(WidgetTester tester, {int fois = 1}) async {
+      for (int i = 0; i < fois; i++) {
+        await tester.tap(find.byKey(SessionScreen.profilKey));
+        await tester.pump();
+      }
+    }
+
+    testWidgets('par defaut la partition est a l ecran', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      expect(find.byType(ScoreView), findsOneWidget);
+    });
+
+    testWidgets('en decouverte la partition disparait, le retour reste', (
+      WidgetTester tester,
+    ) async {
+      // Il dechiffre depuis son papier : une seconde partition a l'ecran, en
+      // plus petit, ne ferait qu'encombrer.
+      await poser(tester, <PitchEstimate>[]);
+      await changerDeProfil(tester, fois: 2);
+
+      expect(find.byType(ScoreView), findsNothing);
+      expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
+      expect(find.byKey(MeasureStrip.stripKey), findsOneWidget);
+    });
+
+    testWidgets('en pupitre il ne reste que le retour et le bouton', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      await changerDeProfil(tester);
+
+      expect(find.byType(ScoreView), findsNothing);
+      expect(find.byType(MetronomeBar), findsNothing);
+      expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
+      expect(find.byKey(MeasureStrip.stripKey), findsOneWidget);
+      expect(find.text('Jouer le passage'), findsOneWidget);
+    });
+
+    testWidgets('le reglage de mise en page suit la partition', (
+      WidgetTester tester,
+    ) async {
+      // Choisir entre defilement et plusieurs lignes n'a aucun sens quand la
+      // partition n'est pas affichee.
+      await poser(tester, <PitchEstimate>[]);
+      expect(find.byTooltip('Passer au defilement'), findsOneWidget);
+
+      await changerDeProfil(tester);
+      expect(find.byTooltip('Passer au defilement'), findsNothing);
+    });
+
+    testWidgets('les trois profils reviennent au point de depart', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      await changerDeProfil(tester, fois: 3);
+      expect(find.byType(ScoreView), findsOneWidget);
+    });
+
+    testWidgets('aucun profil ne deborde, dans les deux orientations', (
+      WidgetTester tester,
+    ) async {
+      for (final Size taille in <Size>[
+        const Size(360, 640),
+        const Size(740, 360)
+      ]) {
+        await tester.binding.setSurfaceSize(taille);
+        await poser(tester, <PitchEstimate>[]);
+        for (int i = 0; i < 3; i++) {
+          await changerDeProfil(tester);
+          await tester.pump();
+          expect(tester.takeException(), isNull,
+              reason: 'profil $i a ${taille.width}x${taille.height}');
+        }
+      }
+      await tester.binding.setSurfaceSize(null);
+    });
+  });
+
+  group('halo de fin de mesure', () {
+    testWidgets('le halo enveloppe l ecran sans rien deplacer', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      expect(find.byType(MeasureHalo), findsOneWidget);
+      // Le bouton reste atteignable : une recompense n'avale pas un appui.
+      await tester.tap(find.text('Jouer le passage'));
+      await tester.pump();
+      expect(find.text('Arreter'), findsOneWidget);
       await arreter(tester);
     });
   });
