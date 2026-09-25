@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
+import 'package:violon/core/device/screen_awake.dart';
 import 'package:violon/core/play/fake_audio_engine.dart';
 import 'package:violon/core/store/session_store.dart';
 import 'package:violon/main.dart';
@@ -20,12 +21,16 @@ Future<PitchSource> micMuet() async => FakePitchSource(const <PitchEstimate>[]);
 /// n'existent pas dans la machine virtuelle de test -- et surtout elle
 /// **attend** cette lecture avant de s'afficher : une seule image ne suffit
 /// plus a la voir apparaitre.
-Future<void> poserLApplication(WidgetTester tester) async {
+Future<void> poserLApplication(
+  WidgetTester tester, {
+  ScreenKeeper? gardienDEcran,
+}) async {
   await tester.pumpWidget(
-    const ViolonApp(
+    ViolonApp(
       pitchSourceFactory: micMuet,
       audioEngineFactory: FakeAudioEngine.new,
       sessionStoreFactory: FakeSessionStore.new,
+      screenKeeperFactory: () => gardienDEcran ?? FakeScreenKeeper(),
     ),
   );
   await tester.pump();
@@ -121,5 +126,23 @@ void main() {
     final double basDuContenu =
         tester.getBottomLeft(find.byKey(const Key('session-content'))).dy;
     expect(basDuContenu, lessThanOrEqualTo(hauteurEcran - hauteurBarre));
+  });
+
+  testWidgets('l ecran reste allume pendant la prise, et pas avant', (
+    WidgetTester tester,
+  ) async {
+    final FakeScreenKeeper gardien = FakeScreenKeeper();
+    await poserLApplication(tester, gardienDEcran: gardien);
+
+    // Avant de jouer, rien : l'enfant a une main libre pour toucher l'ecran.
+    expect(gardien.toggles, isEmpty);
+
+    await tester.tap(find.text('Jouer le passage'));
+    await tester.pump();
+    expect(gardien.on, isTrue);
+
+    await tester.tap(find.text('Arreter'));
+    await tester.pump();
+    expect(gardien.toggles, <bool>[true, false]);
   });
 }

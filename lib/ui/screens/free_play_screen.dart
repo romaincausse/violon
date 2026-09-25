@@ -9,6 +9,7 @@ import '../../core/scoring/tuning_trace.dart';
 import '../widgets/tuning_colors.dart';
 import '../widgets/tuning_ribbon.dart';
 import 'session_screen.dart' show PitchSourceFactory;
+import '../widgets/keep_screen_awake.dart';
 
 /// Elle ecoute, et ne demande rien.
 ///
@@ -101,40 +102,42 @@ class _FreePlayScreenState extends State<FreePlayScreen> {
     final SmoothedPitch? p = _dernier;
     final int? midi =
         p == null ? null : PitchUtils.nearestMidiNote(p.frequencyHz, a4: _a4);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Jouer librement')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              const Spacer(),
-              Text(
-                midi == null ? '--' : PitchUtils.noteName(midi),
-                key: FreePlayScreen.noteKey,
-                style: theme.textTheme.displayLarge,
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                p == null
-                    ? 'joue ce que tu veux'
-                    : '${_ecart >= 0 ? '+' : ''}${_ecart.round()} cents',
-                key: FreePlayScreen.centsKey,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: p == null ? null : _couleur(),
+    return KeepScreenAwake(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Jouer librement')),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                const Spacer(),
+                Text(
+                  midi == null ? '--' : PitchUtils.noteName(midi),
+                  key: FreePlayScreen.noteKey,
+                  style: theme.textTheme.displayLarge,
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const Spacer(),
-              TuningRibbon(trace: _trace, height: 96),
-              const SizedBox(height: 16),
-              Text(
-                'Rien n est note ici.',
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
+                Text(
+                  p == null
+                      ? 'joue ce que tu veux'
+                      : '${_ecart >= 0 ? '+' : ''}${_ecart.round()} cents',
+                  key: FreePlayScreen.centsKey,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: p == null ? null : _couleur(),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const Spacer(),
+                TuningRibbon(trace: _trace, height: 96),
+                const SizedBox(height: 16),
+                Text(
+                  'Rien n est note ici.',
+                  style: theme.textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),

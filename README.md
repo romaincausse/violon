@@ -43,9 +43,10 @@ lib/
     play/              horloge de metronome, depart compte, bourdon, clics
     store/             ce qu'on se rappelle d'une seance a l'autre
     exercises/         catalogue de gammes et d'exercices, progression
+    device/            l'ecran du telephone, allume ou non
   platform/            adaptateurs vers les plugins, une classe par frontiere
   ui/                  ecrans et widgets, aucune logique metier
-test/                  miroir de lib/, 580 tests
+test/                  miroir de lib/, 591 tests
 assets/fonts/          Bravura (SIL OFL), livree non modifiee
 tool/                  script Verovio -- mort-ne, voir Etat
 docs/                  plan, decisions, journal, navigation, professeur
@@ -104,9 +105,9 @@ Deux exclusions fermes :
 
 ## Etat
 
-**580 tests, quarante lots livres** -- dix-huit avant la refonte du plan,
-vingt-deux depuis (jalons 1 a 4, plus H1 remonte et deux lots de
-consolidation). Le plan a ete refondu : c'est desormais
+**591 tests, quarante et un lots livres** -- dix-huit avant la refonte du
+plan, vingt-trois depuis (jalons 1 a 4, plus H1 remonte, deux lots de
+consolidation et l'ecran qui ne s'eteint plus). Le plan a ete refondu : c'est desormais
 l'application qui suit l'eleve, et non l'inverse (ADR-009), et il est
 reordonne par rapport effet/cout.
 

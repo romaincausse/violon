@@ -78,6 +78,7 @@ lib/
     play/          <- metronome et accompagnement pre-planifies
     exercises/     <- catalogue de gammes et d'exercices, progression
     store/         <- ce que l'application se rappelle d'une seance a l'autre
+    device/        <- l'ecran du telephone : allume tant qu'on joue
   platform/        <- adaptateurs vers les plugins, une classe par frontiere
   ui/              <- widgets et ecrans, aucune logique metier
 ```
@@ -95,8 +96,9 @@ Quatre regles structurantes :
    dans `lib/platform/` cote implementation ; `PitchSource` rend des hauteurs ;
    `AudioEngine` est la sortie, et n'expose que deux choses -- tenir une note a
    une frequence exacte, poser un clic a un instant exact (ADR-012).
-   `SessionStore` suit la meme regle pour le stockage local : `lib/core/`
-   decrit ce qu'on se rappelle, `lib/platform/` sait ou le ranger.
+   `SessionStore` suit la meme regle pour le stockage local et `ScreenKeeper`
+   pour l'ecran : `lib/core/` decrit ce qu'on se rappelle et quand l'ecran doit
+   rester allume, `lib/platform/` sait ou le ranger et quel drapeau poser.
    Ce sont les seules couches a reecrire pour porter sur iOS, et les seules a
    remplacer pour developper l'interface sous Flutter Web. Rien au-dessus ne
    connait le micro ni le haut-parleur.

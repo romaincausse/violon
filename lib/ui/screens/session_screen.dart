@@ -23,6 +23,7 @@ import '../widgets/metronome_bar.dart';
 import '../widgets/tuning_ribbon.dart';
 import '../widgets/score_view.dart';
 import '../widgets/tuning_colors.dart';
+import '../widgets/keep_screen_awake.dart';
 
 /// Ce que l'ecran montre pendant qu'il joue.
 ///
@@ -539,61 +540,68 @@ class _SessionScreenState extends State<SessionScreen>
     final Orientation orientation = MediaQuery.orientationOf(context);
     final bool paysage = orientation == Orientation.landscape;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(passage.title),
-        actions: <Widget>[
-          IconButton(
-            onPressed: widget.onTune,
-            icon: const Icon(Icons.tune),
-            tooltip: 'Accorder',
-          ),
-          IconButton(
-            key: SessionScreen.profilKey,
-            onPressed: _changerDeProfil,
-            icon: Icon(_iconeDuProfil),
-            tooltip: 'Affichage : $_nomDuProfil',
-          ),
-          // La mise en page de la partition n'a de sens que si la partition
-          // est a l'ecran.
-          if (_profil == DisplayProfile.parCoeur)
+    return KeepScreenAwake(
+      // Pendant la prise seulement : c'est le seul moment ou l'archet occupe
+      // les deux mains. Cet ecran est l'onglet d'accueil, il reste monte toute
+      // la seance -- le garder allume tout du long reviendrait a l'allumer
+      // pour toujours.
+      actif: _running,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(passage.title),
+          actions: <Widget>[
             IconButton(
-              onPressed: _changerDeMode,
-              icon: Icon(
-                _mode == ScoreDisplayMode.systems
-                    ? Icons.view_headline
-                    : Icons.swap_horiz,
-              ),
-              tooltip: _mode == ScoreDisplayMode.systems
-                  ? 'Passer au defilement'
-                  : 'Passer a plusieurs lignes',
+              onPressed: widget.onTune,
+              icon: const Icon(Icons.tune),
+              tooltip: 'Accorder',
             ),
-          IconButton(
-            onPressed: widget.onChangePassage,
-            icon: const Icon(Icons.edit_note),
-            tooltip: 'Changer de passage',
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          // Cle explicite : le test de mise en page mesure ce contenu, pas
-          // le SafeArea lui-meme, qui occupe toute la hauteur et dont seul
-          // l'enfant est decale.
-          key: const Key('session-content'),
-          padding: EdgeInsets.all(paysage ? 12 : 24),
-          child: MeasureHalo(
-            trigger: _mesuresReussies,
-            child: Stack(
-              children: <Widget>[
-                Positioned.fill(
-                  child: paysage
-                      ? _enPaysage(orientation)
-                      : _enPortrait(orientation),
+            IconButton(
+              key: SessionScreen.profilKey,
+              onPressed: _changerDeProfil,
+              icon: Icon(_iconeDuProfil),
+              tooltip: 'Affichage : $_nomDuProfil',
+            ),
+            // La mise en page de la partition n'a de sens que si la partition
+            // est a l'ecran.
+            if (_profil == DisplayProfile.parCoeur)
+              IconButton(
+                onPressed: _changerDeMode,
+                icon: Icon(
+                  _mode == ScoreDisplayMode.systems
+                      ? Icons.view_headline
+                      : Icons.swap_horiz,
                 ),
-                if (_enDecompte)
-                  Positioned.fill(child: _Decompte(compte: _compteAffiche)),
-              ],
+                tooltip: _mode == ScoreDisplayMode.systems
+                    ? 'Passer au defilement'
+                    : 'Passer a plusieurs lignes',
+              ),
+            IconButton(
+              onPressed: widget.onChangePassage,
+              icon: const Icon(Icons.edit_note),
+              tooltip: 'Changer de passage',
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Padding(
+            // Cle explicite : le test de mise en page mesure ce contenu, pas
+            // le SafeArea lui-meme, qui occupe toute la hauteur et dont seul
+            // l'enfant est decale.
+            key: const Key('session-content'),
+            padding: EdgeInsets.all(paysage ? 12 : 24),
+            child: MeasureHalo(
+              trigger: _mesuresReussies,
+              child: Stack(
+                children: <Widget>[
+                  Positioned.fill(
+                    child: paysage
+                        ? _enPaysage(orientation)
+                        : _enPortrait(orientation),
+                  ),
+                  if (_enDecompte)
+                    Positioned.fill(child: _Decompte(compte: _compteAffiche)),
+                ],
+              ),
             ),
           ),
         ),

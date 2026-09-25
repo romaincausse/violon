@@ -7,6 +7,7 @@ import '../../core/audio/pitch_source.dart';
 import '../../core/music/pitch_utils.dart';
 import '../widgets/tuning_colors.dart';
 import 'session_screen.dart' show PitchSourceFactory;
+import '../widgets/keep_screen_awake.dart';
 
 /// "Est-ce qu'elle m'entend bien ?"
 ///
@@ -104,73 +105,75 @@ class _MicCheckScreenState extends State<MicCheckScreen> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final SmoothedPitch? p = _dernier;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Est-ce qu elle m entend ?')),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _echec != null
-              ? Center(
-                  child: Text(
-                    'Micro indisponible. Verifie que l autorisation est '
-                    'accordee dans les reglages du telephone.',
-                    style: theme.textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      'Joue une note, n importe laquelle.',
-                      style: theme.textTheme.bodyMedium,
+    return KeepScreenAwake(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Est-ce qu elle m entend ?')),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: _echec != null
+                ? Center(
+                    child: Text(
+                      'Micro indisponible. Verifie que l autorisation est '
+                      'accordee dans les reglages du telephone.',
+                      style: theme.textTheme.bodyLarge,
                       textAlign: TextAlign.center,
                     ),
-                    const Spacer(),
-                    Text(
-                      p == null
-                          ? '--'
-                          : PitchUtils.noteName(p.estimate.nearestMidi),
-                      key: MicCheckScreen.noteKey,
-                      style: theme.textTheme.displayLarge?.copyWith(
-                        color: p == null
-                            ? theme.colorScheme.outline
-                            : TuningColors.inTune,
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        'Joue une note, n importe laquelle.',
+                        style: theme.textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Text(
-                      p == null
-                          ? 'rien entendu pour l instant'
-                          : '${p.frequencyHz.toStringAsFixed(1)} Hz',
-                      style: theme.textTheme.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const Spacer(),
-                    _Ligne(
-                      cle: MicCheckScreen.sourceKey,
-                      titre: 'Source audio',
-                      valeur: _sourceLabel,
-                    ),
-                    _Ligne(
-                      cle: MicCheckScreen.confidenceKey,
-                      titre: 'Mesures recues',
-                      valeur: '$_mesures',
-                    ),
-                    _Ligne(
-                      cle: MicCheckScreen.droppedKey,
-                      titre: 'Trames perdues',
-                      valeur: '$_perdues',
-                    ),
-                    if (p != null)
+                      const Spacer(),
+                      Text(
+                        p == null
+                            ? '--'
+                            : PitchUtils.noteName(p.estimate.nearestMidi),
+                        key: MicCheckScreen.noteKey,
+                        style: theme.textTheme.displayLarge?.copyWith(
+                          color: p == null
+                              ? theme.colorScheme.outline
+                              : TuningColors.inTune,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        p == null
+                            ? 'rien entendu pour l instant'
+                            : '${p.frequencyHz.toStringAsFixed(1)} Hz',
+                        style: theme.textTheme.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const Spacer(),
                       _Ligne(
-                        titre: 'Stabilite',
-                        valeur: p.vibrato
-                            ? 'vibrato reconnu'
-                            : '${p.excursionCents.round()} cents',
+                        cle: MicCheckScreen.sourceKey,
+                        titre: 'Source audio',
+                        valeur: _sourceLabel,
                       ),
-                  ],
-                ),
+                      _Ligne(
+                        cle: MicCheckScreen.confidenceKey,
+                        titre: 'Mesures recues',
+                        valeur: '$_mesures',
+                      ),
+                      _Ligne(
+                        cle: MicCheckScreen.droppedKey,
+                        titre: 'Trames perdues',
+                        valeur: '$_perdues',
+                      ),
+                      if (p != null)
+                        _Ligne(
+                          titre: 'Stabilite',
+                          valeur: p.vibrato
+                              ? 'vibrato reconnu'
+                              : '${p.excursionCents.round()} cents',
+                        ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );

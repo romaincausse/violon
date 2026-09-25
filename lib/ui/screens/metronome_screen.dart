@@ -7,6 +7,7 @@ import '../../core/play/audio_engine.dart';
 import '../../core/play/metronome_clock.dart';
 import '../../core/play/metronome_scheduler.dart';
 import '../widgets/metronome_bar.dart';
+import '../widgets/keep_screen_awake.dart';
 
 /// Le metronome sonore.
 ///
@@ -124,100 +125,103 @@ class _MetronomeScreenState extends State<MetronomeScreen>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Metronome')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text('$_tempo', style: theme.textTheme.displaySmall),
-                Text('a la noire', style: theme.textTheme.bodyMedium),
-              ],
-            ),
-            Slider(
-              key: MetronomeScreen.tempoKey,
-              value: _tempo.toDouble(),
-              min: 40,
-              max: 208,
-              divisions: 168,
-              label: '$_tempo',
-              onChanged: (double v) => _reglage(() => _tempo = v.round()),
-            ),
-            const SizedBox(height: 8),
-            MetronomeBar(
-              tempoBpm: _tempo,
-              running: _marche,
-              beatsPerMeasure: _tempsParMesure,
-              subdivision: _subdivision,
-              key: ValueKey<String>('$_tempo-$_subdivision-$_tempsParMesure'),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _marche
-                  ? 'Temps ${_horloge.beatInMeasureAt(_ecoule)} '
-                      'sur $_tempsParMesure'
-                  : 'Arrete',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-            Text('Subdivision', style: theme.textTheme.titleSmall),
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 8,
-              children: <Widget>[
-                for (final (int n, String nom) in <(int, String)>[
-                  (1, 'Noires'),
-                  (2, 'Croches'),
-                  (3, 'Triolets'),
-                  (4, 'Doubles'),
-                ])
-                  ChoiceChip(
-                    key: MetronomeScreen.subdivisionKey(n),
-                    label: Text(nom),
-                    selected: _subdivision == n,
-                    onSelected: (bool choisi) {
-                      if (choisi) {
-                        _reglage(() => _subdivision = n);
-                      }
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text('Temps par mesure', style: theme.textTheme.titleSmall),
-            const SizedBox(height: 4),
-            Wrap(
-              key: MetronomeScreen.mesureKey,
-              spacing: 8,
-              children: <Widget>[
-                for (final int n in <int>[2, 3, 4, 6])
-                  ChoiceChip(
-                    label: Text('$n'),
-                    selected: _tempsParMesure == n,
-                    onSelected: (bool choisi) {
-                      if (choisi) {
-                        _reglage(() => _tempsParMesure = n);
-                      }
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              key: MetronomeScreen.jouerKey,
-              onPressed: () => unawaited(_basculer()),
-              icon: Icon(_marche ? Icons.stop : Icons.play_arrow),
-              label: Text(_marche ? 'Arreter' : 'Faire sonner'),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Le premier temps sonne plus aigu, pas plus fort.',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+    return KeepScreenAwake(
+      actif: _marche,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Metronome')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text('$_tempo', style: theme.textTheme.displaySmall),
+                  Text('a la noire', style: theme.textTheme.bodyMedium),
+                ],
+              ),
+              Slider(
+                key: MetronomeScreen.tempoKey,
+                value: _tempo.toDouble(),
+                min: 40,
+                max: 208,
+                divisions: 168,
+                label: '$_tempo',
+                onChanged: (double v) => _reglage(() => _tempo = v.round()),
+              ),
+              const SizedBox(height: 8),
+              MetronomeBar(
+                tempoBpm: _tempo,
+                running: _marche,
+                beatsPerMeasure: _tempsParMesure,
+                subdivision: _subdivision,
+                key: ValueKey<String>('$_tempo-$_subdivision-$_tempsParMesure'),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _marche
+                    ? 'Temps ${_horloge.beatInMeasureAt(_ecoule)} '
+                        'sur $_tempsParMesure'
+                    : 'Arrete',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 16),
+              Text('Subdivision', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                children: <Widget>[
+                  for (final (int n, String nom) in <(int, String)>[
+                    (1, 'Noires'),
+                    (2, 'Croches'),
+                    (3, 'Triolets'),
+                    (4, 'Doubles'),
+                  ])
+                    ChoiceChip(
+                      key: MetronomeScreen.subdivisionKey(n),
+                      label: Text(nom),
+                      selected: _subdivision == n,
+                      onSelected: (bool choisi) {
+                        if (choisi) {
+                          _reglage(() => _subdivision = n);
+                        }
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text('Temps par mesure', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Wrap(
+                key: MetronomeScreen.mesureKey,
+                spacing: 8,
+                children: <Widget>[
+                  for (final int n in <int>[2, 3, 4, 6])
+                    ChoiceChip(
+                      label: Text('$n'),
+                      selected: _tempsParMesure == n,
+                      onSelected: (bool choisi) {
+                        if (choisi) {
+                          _reglage(() => _tempsParMesure = n);
+                        }
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                key: MetronomeScreen.jouerKey,
+                onPressed: () => unawaited(_basculer()),
+                icon: Icon(_marche ? Icons.stop : Icons.play_arrow),
+                label: Text(_marche ? 'Arreter' : 'Faire sonner'),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Le premier temps sonne plus aigu, pas plus fort.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
       ),
     );

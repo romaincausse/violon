@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'core/device/screen_awake.dart';
 import 'core/exercises/exercise.dart';
 import 'core/exercises/exercise_catalog.dart';
 import 'core/exercises/exercise_progress.dart';
@@ -12,9 +13,11 @@ import 'core/play/audio_engine.dart';
 import 'core/store/session_store.dart';
 import 'platform/audio/default_pitch_source.dart';
 import 'platform/audio/soloud_audio_engine.dart';
+import 'platform/device/wakelock_screen_keeper.dart';
 import 'platform/store/prefs_session_store.dart';
 import 'ui/screens/home_shell.dart';
 import 'ui/screens/session_screen.dart' show PitchSourceFactory;
+import 'ui/widgets/keep_screen_awake.dart';
 
 void main() {
   runApp(const ViolonApp());
@@ -27,6 +30,7 @@ class ViolonApp extends StatefulWidget {
     this.pitchSourceFactory = defaultPitchSource,
     this.audioEngineFactory = defaultAudioEngine,
     this.sessionStoreFactory = defaultSessionStore,
+    this.screenKeeperFactory = defaultScreenKeeper,
     super.key,
   });
 
@@ -46,12 +50,21 @@ class ViolonApp extends StatefulWidget {
   /// widget n'ecrit nulle part.
   final SessionStoreFactory sessionStoreFactory;
 
+  /// Fabrique du gardien de l'ecran, injectable pour la meme raison : un test
+  /// de widget n'a pas d'ecran a garder allume.
+  final ScreenKeeperFactory screenKeeperFactory;
+
   @override
   State<ViolonApp> createState() => _ViolonAppState();
 }
 
 class _ViolonAppState extends State<ViolonApp> {
   late final SessionStore _memoire = widget.sessionStoreFactory();
+
+  /// **Un seul gardien pour toute l'application**, pour la meme raison qu'il
+  /// n'y a qu'un moteur de son : les ecrans s'empilent, et deux compteurs
+  /// separes s'eteindraient l'un l'autre.
+  late final ScreenAwake _ecran = ScreenAwake(widget.screenKeeperFactory());
 
   /// **Un seul ecrivain.** La progression vit dans la coquille de navigation,
   /// le diapason et le passage ici : si les deux rangeaient de leur cote, la
@@ -124,38 +137,42 @@ class _ViolonAppState extends State<ViolonApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Violon',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF6D4C41),
-        useMaterial3: true,
+    return ScreenAwakeScope(
+      awake: _ecran,
+      child: MaterialApp(
+        title: 'Violon',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorSchemeSeed: const Color(0xFF6D4C41),
+          useMaterial3: true,
+        ),
+        // Aucun ecran d'accueil : l'application s'ouvre sur le travail en
+        // cours.
+        home: !_relue
+            ? const Scaffold(body: SizedBox.shrink())
+            : HomeShell(
+                pitchSourceFactory: widget.pitchSourceFactory,
+                audioEngineFactory: widget.audioEngineFactory,
+                passage: _passage,
+                a4: _a4,
+                initialBests: _records,
+                initialExercise: _exercice,
+                onPassageChanged: (Passage p) => setState(() => _passage = p),
+                onA4Changed: (double a4) {
+                  setState(() => _a4 = a4);
+                  _ranger(a4: a4);
+                },
+                onRemember:
+                    (List<ExerciseBest> bests, Exercise? exercice, int? tempo) {
+                  _exercice = exercice;
+                  _ranger(
+                    bests: bests,
+                    exerciseId: exercice?.id,
+                    tempoBpm: tempo,
+                  );
+                },
+              ),
       ),
-      // Aucun ecran d'accueil : l'application s'ouvre sur le travail en cours.
-      home: !_relue
-          ? const Scaffold(body: SizedBox.shrink())
-          : HomeShell(
-              pitchSourceFactory: widget.pitchSourceFactory,
-              audioEngineFactory: widget.audioEngineFactory,
-              passage: _passage,
-              a4: _a4,
-              initialBests: _records,
-              initialExercise: _exercice,
-              onPassageChanged: (Passage p) => setState(() => _passage = p),
-              onA4Changed: (double a4) {
-                setState(() => _a4 = a4);
-                _ranger(a4: a4);
-              },
-              onRemember:
-                  (List<ExerciseBest> bests, Exercise? exercice, int? tempo) {
-                _exercice = exercice;
-                _ranger(
-                  bests: bests,
-                  exerciseId: exercice?.id,
-                  tempoBpm: tempo,
-                );
-              },
-            ),
     );
   }
 }
