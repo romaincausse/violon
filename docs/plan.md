@@ -48,24 +48,30 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 ---
 
-## Les huit jalons
+## Les onze jalons
 
 | # | Jalon | Lots | Soirees | Ce qu'on gagne |
 |---|-------|------|---------|----------------|
 | 1 | Le retour qui se voit | 6 | 10 | Ca devient agreable, tout de suite |
-| 2 | La preuve | 3 | 6 | On sait si le suiveur tient |
-| 3 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
-| 4 | La note | 9 | 13 | Justesse et rythme, par mesure |
-| 5 | Quoi rejouer | 5 | 8 | La boucle de travail se ferme |
-| 6 | La memoire | 7 | 16 | Le progres devient visible |
-| 7 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
-| 8 | L'accompagnement | 6 | 14 | On joue avec quelqu'un |
+| 2 | Les outils de tous les jours | 7 | 8 | L'application sert avant meme de jouer un morceau |
+| 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
+| 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
+| 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
+| 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
+| 7 | La note | 9 | 13 | Justesse et rythme, par mesure |
+| 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
+| 9 | La memoire | 7 | 16 | Le progres devient visible |
+| 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
+| 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**47 lots, 86 soirees** au total, dont **28 soirees de *must*** -- le reste
+**58 lots, 102 soirees** au total, dont **28 soirees de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
----
+**Le calendrier des dependances a change.** L'ancien plan n'arbitrait rien
+avant le jalon 6. Le bourdon oblige a trancher le moteur audio au **jalon 4** :
+c'est le prix a payer pour l'exercice de justesse que les violonistes citent
+en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
@@ -153,7 +159,183 @@ C'est la seule recompense autorisee : de la lumiere, pas un badge.
 
 ---
 
-## Jalon 2 - La preuve
+## Jalon 2 - Les outils de tous les jours
+
+Sept lots courts, tous sur le code deja livre. Ils ne font pas progresser la
+notation d'un pouce, et ils changent completement le fait de s'en servir :
+c'est le jalon ou l'application cesse d'etre une demo et devient un objet
+qu'on pose sur son pupitre tous les soirs.
+
+| ID | Lot | Must | ROI | Est. |
+|----|-----|------|-----|------|
+| L1 | Demarrer en dix secondes | | ★★★ | 1 |
+| L2 | Refonte de la navigation | | ★★★ | 2 |
+| O3 | Ecran de controle du micro | | ★★★ | 1 |
+| O5 | Mode libre, sans partition | | ★★★ | 1 |
+| O4 | Quintes a vide dans l'accordeur | | ★★ | 1 |
+| O2 | Metronome visuel a subdivisions et accents | | ★★ | 1 |
+| D7 | Depart compte | | ★★★ | 1 |
+
+### L1 - Demarrer en dix secondes
+
+Nos propres notes d'analyse le donnent comme une attente forte, et ce n'etait
+un critere nulle part. Concretement : aucun ecran d'accueil, aucun menu,
+aucune selection a refaire. **L'application s'ouvre sur le travail en cours**
+-- le devoir de la semaine, ou ce qu'il faisait hier, avec le tempo atteint --
+et un seul appui lance la prise.
+
+Dix secondes, c'est la duree au-dela de laquelle un enfant de onze ans repose
+le violon.
+
+### L2 - Refonte de la navigation
+
+Voir `docs/navigation.md`. A faire **ici et pas plus tard** : c'est le jalon ou
+l'application passe d'un ecran plus un accordeur a une dizaine de
+fonctionnalites, et une navigation rattrapee apres coup ne se rattrape jamais.
+
+### O3 - Ecran de controle du micro
+
+"Est-ce qu'elle m'entend bien ?" C'est le probleme numero un de toutes les
+applications d'ecoute, et le premier soupcon de l'utilisateur quand un score
+le surprend. L'ecran montre le niveau, la source retenue (`UNPROCESSED` ou le
+repli), la hauteur detectee en direct et les trames perdues.
+
+Double usage : il rassure l'eleve, et il sert de banc de diagnostic quand
+quelque chose cloche sur un appareil.
+
+### O5 - Mode libre, sans partition
+
+Elle ecoute et montre la justesse, sans rien attendre de precis : pas de
+partition, pas de score, pas de jugement. Pour s'echauffer, pour chercher une
+note, pour jouer d'oreille.
+
+C'est aussi, et surtout, la facon dont il apprend a lui faire confiance avant
+de la laisser le noter.
+
+### O4 - Quintes a vide dans l'accordeur
+
+Un violoniste accorde **par quintes en double corde**, pas corde par corde :
+on tire deux cordes voisines ensemble et on ecoute les battements. Notre
+accordeur fait quatre mesures independantes -- ce n'est pas la technique
+reelle, et c'est celle qu'on lui enseigne.
+
+Le detecteur est monophonique, donc la double corde demande de reconnaitre
+deux hauteurs simultanees, ou a defaut de mesurer l'intervalle. A regarder au
+moment de le faire.
+
+### O2 - Metronome visuel a subdivisions et accents
+
+Le metronome actuel bat la noire, point. En 4e annee on travaille en croches,
+en triolets, en doubles, et **on accentue le premier temps**. Un metronome qui
+ne sait pas subdiviser ne sert plus a rien des que le rythme se complique.
+
+Visuel uniquement ici : la version sonore est J3, au dernier jalon.
+
+### D7 - Depart compte
+
+Bete, et bloquant : on ne peut pas commencer une prise notee sans savoir quand
+partir. Une mesure comptee visuellement, au tempo choisi. La version sentie au
+vibreur viendra avec D6.
+
+---
+
+## Jalon 3 - Les gammes et les exercices
+
+**Le meilleur rapport effet/cout de tout le plan.** Un eleve de 4e annee passe
+une part considerable de son temps sur des gammes, des arpeges et des etudes.
+Or c'est le cas d'usage ideal pour cette application :
+
+- **aucune saisie, aucun import** : une gamme se genere a partir d'une
+  tonalite, d'une position et d'un nombre d'octaves ;
+- **la justesse est exactement ce qu'on y travaille**, c'est leur raison
+  d'etre ;
+- le suiveur y a la tache la plus facile qui soit, ce qui en fait aussi un
+  excellent banc d'essai ;
+- ca rend l'application utile **tous les jours, sans rien preparer**.
+
+| ID | Lot | Must | ROI | Est. |
+|----|-----|------|-----|------|
+| E1 | Catalogue d'exercices issus des methodes | | ★★★ | 3 |
+| E2 | Progression de difficulte et score | | ★★★ | 3 |
+
+### E1 - Catalogue d'exercices issus des methodes
+
+**Pas d'exercices inventes.** Le catalogue s'appuie sur les methodes reelles,
+celles que son professeur lui donne deja :
+
+| Methode | Ce qu'elle apporte |
+|---|---|
+| Sevcik op. 1 | Motifs de doigts, combinatoire systematique |
+| Schradieck, *School of Violin Technics* | Deliement, changements de corde |
+| Hrimaly, *Scale Studies* | Gammes et arpeges par tonalite |
+| Wohlfahrt op. 45 | Etudes de base |
+| Kayser op. 20, Mazas op. 36 | Etudes melodiques |
+
+**Toutes sont dans le domaine public** (fin du XIXe, debut du XXe), donc
+versionnables sans probleme -- contrairement aux methodes modernes.
+
+> A ne pas embarquer : le *Contemporary Violin Technique* de Galamian, encore
+> sous droits. C'est le systeme de gammes le plus connu, et c'est
+> precisement celui qu'il ne faut pas copier.
+
+Point technique qui rend ce lot abordable : ces exercices sont **systematiques
+par construction**. Sevcik est de la combinatoire de doigts, Hrimaly est une
+gamme declinee par tonalite. La plupart se **generent** a partir de quelques
+parametres au lieu d'etre saisis un a un.
+
+### E2 - Progression de difficulte et score
+
+**La progression existe deja, on ne l'invente pas.** Sevcik, Schradieck et
+Hrimaly sont ordonnes par difficulte croissante depuis 1880, et c'est cet
+ordre-la qu'on suit : il a fait ses preuves sur quatre generations de
+violonistes, et il correspond a ce que son professeur lui fera travailler.
+
+Un palier s'ouvre quand le precedent est propre au tempo vise. Le score par
+exercice, le tempo atteint et les paliers ouverts sont **des donnees qui
+montent** -- pas des badges, pas de mascotte, pas de confettis. La regle
+produit tient : montrer une progression n'est pas de la gamification, offrir
+une recompense en est.
+
+---
+
+## Jalon 4 - Le son
+
+**Le jalon qui oblige a trancher le moteur audio**, bien plus tot que dans
+l'ancien plan. Ce qu'on achete avec cette dependance :
+
+| ID | Lot | Must | ROI | Est. |
+|----|-----|------|-----|------|
+| J1 | Moteur audio pre-planifie **<- dependance a choisir** | | ★★ | 2 |
+| O1 | Bourdon sur la tonique | | ★★★ | 1 |
+| J3 | Metronome sonore | | ★★ | 1 |
+
+### O1 - Bourdon sur la tonique
+
+**L'exercice de justesse le plus efficace qui existe pour un instrument a
+cordes**, et celui que nos propres notes d'analyse citaient en premier parmi
+les fonctions "appreciees et rarement anticipees" -- avant de disparaitre du
+plan.
+
+Jouer contre un bourdon fait entendre les battements. L'enfant corrige **tout
+seul**, a l'oreille, sans qu'aucune application ne lui dise qu'il est faux.
+C'est l'exact inverse d'un score, et c'est pour ca que ca marche.
+
+**Mode d'entrainement, pas de notation** (ADR-008) : l'application emet, donc
+elle n'ecoute pas. On ne note pas, on s'entraine. La contradiction du jalon 11
+ne se pose pas ici.
+
+Une note tenue est par ailleurs la sortie audio la plus simple imaginable :
+c'est le meilleur premier usage possible du moteur, et une facon peu risquee
+de le mettre a l'epreuve avant l'accompagnement.
+
+### J3 - Metronome sonore
+
+Reserve au mode accompagnement et au mode bourdon, jamais pendant la notation
+(ADR-008). Complete O2, qui en est la version visuelle.
+
+---
+
+## Jalon 5 - La preuve
 
 **Ne livre aucune fonctionnalite, et c'est assume.** Le suivi adaptatif etait
 decrit comme le lot le plus risque du projet. Le prouver coute six soirees ;
@@ -171,7 +353,7 @@ mesure** et **90 % sur la bonne note**. En dessous, c'est le plan qui change.
 
 ---
 
-## Jalon 3 - Le suivi
+## Jalon 6 - Le suivi
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -200,7 +382,7 @@ d'une croche est mesure contre la note **suivante**.
 
 ---
 
-## Jalon 4 - La note
+## Jalon 7 - La note
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -241,9 +423,9 @@ disparait de la soustraction.
 
 ---
 
-## Jalon 5 - Quoi rejouer
+## Jalon 8 - Quoi rejouer
 
-**C'est ici que la boucle se ferme.** Jusqu'au jalon 4 l'application constate ;
+**C'est ici que la boucle se ferme.** Jusqu'au jalon 7 l'application constate ;
 a partir d'ici elle dirige le travail. Et c'est ici que survit la reponse a la
 lassitude : ce n'est plus l'enfant qui decide de rejouer la meme mesure pour la
 dixieme fois, c'est la mesure qui designe la mesure.
@@ -253,8 +435,15 @@ dixieme fois, c'est la mesure qui designe la mesure.
 | R1 | Selection des mesures faibles | **Must** | ★★★ | 1 |
 | R2 | Boucle sur la selection | **Must** | ★★★ | 2 |
 | R3 | Montee de tempo automatique | **Must** | ★★★ | 2 |
+| R5 | Selection manuelle des mesures | | ★★★ | 1 |
 | R4 | Fin sur une reussite | | ★★★ | 1 |
 | C2 | Point de rupture | | ★★★ | 2 |
+
+**R5 - Selection manuelle.** R1 designe les mesures faibles automatiquement,
+mais il doit pouvoir repondre "non, moi je veux celles-la". **L'application
+propose, il dispose** -- sinon elle devient autoritaire, ce qui est exactement
+ce qu'on cherche a eviter a onze ans. C'est aussi ce qui permet de travailler
+un passage que la mesure n'a pas encore vu.
 
 **C2 - Point de rupture.** L'application monte le tempo jusqu'a ce que ca
 casse, note le chiffre, et redescend. C'est la technique de travail classique,
@@ -263,7 +452,7 @@ projet cherche depuis le debut.
 
 ---
 
-## Jalon 6 - La memoire
+## Jalon 9 - La memoire
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -299,7 +488,7 @@ rythme qu'elle a elle-meme inventee.
 
 ---
 
-## Jalon 7 - Le professeur
+## Jalon 10 - Le professeur
 
 Detail et garde-fous : `docs/professeur.md`.
 
@@ -316,21 +505,22 @@ L'export reste un geste volontaire, sur son telephone, avec ses donnees.
 
 ---
 
-## Jalon 8 - L'accompagnement
+## Jalon 11 - L'accompagnement
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| J1 | Moteur audio pre-planifie | | ★★ | 2 |
 | J4 | Accompagnement deduit du passage | | ★★★ | 3 |
 | J2 | Calibration de latence | | ★★ | 2 |
-| J3 | Metronome sonore | | ★ | 1 |
 | J5 | Accompagnement qui suit | | ★ | 5 |
 | D6 | Retour haptique hors ecoute | | ★★ | 1 |
+
+Le moteur audio (J1) et le metronome sonore (J3) ont ete avances au jalon 4,
+tires par le bourdon.
 
 **D6 - Retour haptique.** Tentant, mais un telephone qui vibre sur un pupitre
 en bois **est une source sonore** qui entre dans le micro. Le vibreur est donc
 interdit pendant l'ecoute, et reserve aux moments ou l'application n'ecoute
-pas : un depart compte qu'on sent, la relance d'une boucle. Il est range ici
+pas : un depart compte qu'on sent, la relance d'une boucle. Il est range au dernier jalon
 pour cette raison, pas par manque d'interet.
 
 **La contradiction a resoudre avant J5.** L'ADR-008 interdit d'ecouter pendant
@@ -342,23 +532,41 @@ renoncement : rien n'est choisi, d'ou le ★.
 
 ## Le palmares
 
-Les douze meilleurs rapports effet/cout, tous jalons confondus. A piocher
-dedans quand une soiree se libere.
+Les meilleurs rapports effet/cout, tous jalons confondus. A piocher dedans
+quand une soiree se libere.
 
-| Lot | Jalon | Est. | Pourquoi |
-|-----|-------|------|----------|
-| R1 | 5 | 1 | Une soiree, et l'application se met a diriger le travail |
-| B1 | 4 | 1 | Le meilleur indicateur de difficulte, presque gratuit |
-| S4 | 3 | 1 | Le suivi devient enfin visible |
-| S5 | 3 | 1 | Empeche de noter n'importe quoi en silence |
-| P3 | 2 | 1 | Un chiffre qui valide ou annule quarante soirees |
-| D5 | 1 | 1 | La seule recompense autorisee : de la lumiere |
-| I1 | 1 | 2 | Cesse d'accuser l'enfant du desaccord de son violon |
-| I2 | 1 | 2 | Cesse de marquer faux ce qu'il joue juste |
-| D1 | 1 | 2 | Un seul widget : suivi pendant, bilan apres |
-| D2 | 1 | 2 | L'ecart se voit sans lire, du coin de l'oeil |
-| C1 | 4 | 2 | Dit ce qu'aucun score par note ne dit |
-| C2 | 5 | 2 | Une donnee qui monte, semaine apres semaine |
+**Une soiree chacun.**
+
+| Lot | Jalon | Pourquoi |
+|-----|-------|----------|
+| O1 | 4 | Le bourdon : l'exercice de justesse le plus efficace qui existe |
+| L1 | 2 | Dix secondes, au-dela desquelles un enfant repose le violon |
+| O3 | 2 | Repond au premier soupcon : "est-ce qu'elle m'entend bien ?" |
+| O5 | 2 | Le mode libre : c'est la qu'il apprend a lui faire confiance |
+| D7 | 2 | Le depart compte : bete, et bloquant sans lui |
+| R1 | 8 | Une soiree, et l'application se met a diriger le travail |
+| R5 | 8 | Et il garde le dernier mot : elle propose, il dispose |
+| B1 | 7 | Le meilleur indicateur de difficulte, presque gratuit |
+| S4 | 6 | Le suivi devient enfin visible |
+| S5 | 6 | Empeche de noter n'importe quoi en silence |
+| P3 | 5 | Un chiffre qui valide ou annule quarante soirees |
+| D5 | 1 | La seule recompense autorisee : de la lumiere |
+
+**Deux soirees chacun.**
+
+| Lot | Jalon | Pourquoi |
+|-----|-------|----------|
+| I1 | 1 | Cesse d'accuser l'enfant du desaccord de son violon |
+| I2 | 1 | Cesse de marquer faux ce qu'il joue juste |
+| D1 | 1 | Un seul widget : suivi pendant, bilan apres |
+| D2 | 1 | L'ecart se voit sans lire, du coin de l'oeil |
+| L2 | 2 | Une navigation rattrapee apres coup ne se rattrape jamais |
+| C1 | 7 | Dit ce qu'aucun score par note ne dit |
+| C2 | 8 | Une donnee qui monte, semaine apres semaine |
+
+**Et le bloc a trois soirees qui rend l'application quotidienne :** E1 et E2,
+les gammes et les exercices. Rien a preparer, rien a saisir, et c'est ce qu'il
+travaille tous les soirs de toute facon.
 
 ---
 
@@ -370,10 +578,10 @@ Aucune n'est ajoutee sans accord explicite.
 |--------|------|-------|
 | ~~Bravura (asset, SIL OFL)~~ | ~~le rendu de partition~~ | **ajoutee** |
 | ~~`record`~~ | ~~la capture micro~~ | **ajoutee** |
-| stockage local | H1, la persistance | 6 |
-| moteur audio bas niveau | J1, l'accompagnement | 8 |
+| stockage local | H1, la persistance | 9 |
+| moteur audio bas niveau | O1 le bourdon, puis l'accompagnement | **4** |
 
-**Rien a arbitrer avant le jalon 6.** Les cinq premiers jalons sont du calcul
+**Premier arbitrage au jalon 4.** Les cinq premiers jalons sont du calcul
 sur des flux deja captes et du dessin sur un `CustomPainter` deja ecrit.
 
 ---
@@ -412,7 +620,7 @@ lot propre.
 
 | Ancien ID | Sort |
 |----|------|
-| A4 - Calibration de latence | Deplace en jalon 8 (J2), plus bloquant pour le rythme |
+| A4 - Calibration de latence | Deplace en jalon 11 (J2), plus bloquant pour le rythme |
 | F3 - Suivi adaptatif, V4 | **Devient le coeur** : jalons 2 et 3 |
 | S1 (ancien) - Import MusicXML pre-grave | Remplace par H6, qui lit le MusicXML directement |
 
