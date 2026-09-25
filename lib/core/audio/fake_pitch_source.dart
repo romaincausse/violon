@@ -67,6 +67,13 @@ class FakePitchSource implements PitchSource {
       );
 
   @override
+  String get sourceLabel => 'source factice';
+
+  /// Une source scriptee ne jette rien : tout ce qui est ecrit est livre.
+  @override
+  int get droppedFrames => 0;
+
+  @override
   int get latencyMs => 0;
 
   @override

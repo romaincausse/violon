@@ -21,6 +21,21 @@ abstract class PitchSource {
   /// l'accordeur muet des qu'on developpait avec une source factice.
   Stream<SmoothedPitch> get smoothedPitches;
 
+  /// Comment la source se nomme, pour l'ecran de controle du micro.
+  ///
+  /// Sur Android c'est la source audio reellement obtenue -- `UNPROCESSED` ou
+  /// son repli -- et c'est une information que l'utilisateur doit pouvoir
+  /// lire : le repli degrade la detection sur un son tenu, et il vaut mieux
+  /// le savoir que le subir.
+  String get sourceLabel;
+
+  /// Trames jetees faute d'avoir pu les analyser a temps.
+  ///
+  /// Zero en marche normale. Un compteur qui monte dit que l'appareil ne
+  /// suit pas, ce qui explique des scores etranges bien mieux qu'un
+  /// diagnostic devine.
+  int get droppedFrames;
+
   /// Latence entree/sortie mesuree lors de la calibration, en millisecondes.
   /// Necessaire pour noter le rythme : sans elle, tout parait en retard.
   int get latencyMs;

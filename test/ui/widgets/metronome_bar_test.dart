@@ -130,6 +130,52 @@ void main() {
       );
     });
   });
+
+  group('subdivisions', () {
+    testWidgets('la barre bat la subdivision, pas seulement le temps', (
+      WidgetTester tester,
+    ) async {
+      // En 4e annee on travaille en croches, en triolets, en doubles : un
+      // metronome qui ne subdivise pas ne sert plus a rien.
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MetronomeBar(tempoBpm: 120, running: true, subdivision: 2),
+          ),
+        ),
+      );
+      double part() => tester
+          .widget<FractionallySizedBox>(find.byKey(MetronomeBar.pulseKey))
+          .widthFactor!;
+
+      // A 120 bpm en croches, une pulsation dure 250 ms : a 200 ms la barre
+      // est presque pleine, a 300 ms elle est repartie.
+      await tester.pump(const Duration(milliseconds: 200));
+      final double avant = part();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(part(), lessThan(avant),
+          reason: 'la barre est retombee entre-temps');
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    });
+
+    testWidgets('la subdivision s annonce pour la synthese vocale', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MetronomeBar(tempoBpm: 92, running: false, subdivision: 3),
+          ),
+        ),
+      );
+      expect(
+        find.bySemanticsLabel(
+          'Metronome visuel, 92 battements par minute, divise en 3',
+        ),
+        findsOneWidget,
+      );
+    });
+  });
 }
 
 extension on Decoration {

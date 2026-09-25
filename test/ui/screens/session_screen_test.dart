@@ -11,6 +11,7 @@ import 'package:violon/core/music/demo_passage.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
+import 'package:violon/core/play/count_in.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/ui/screens/session_screen.dart';
@@ -61,10 +62,15 @@ void main() {
     return micro;
   }
 
-  /// Lance la lecture, laisse le micro s'ouvrir, et passe l'attaque.
+  /// Lance la lecture, passe le decompte, laisse le micro s'ouvrir, et passe
+  /// l'attaque.
   ///
   /// L'ouverture du micro est volontairement asynchrone dans l'ecran -- le
   /// curseur ne doit pas attendre une permission -- d'ou les deux images.
+  ///
+  /// Le decompte precede le passage : une mesure entiere au tempo ecrit. Sans
+  /// lui, la premiere note serait toujours en retard, et ce serait la faute
+  /// de l'application.
   ///
   /// La derniere avance l'horloge au-dela de l'attaque : les quatre-vingts
   /// premieres millisecondes de chaque note sont ecartees du jugement, et
@@ -73,6 +79,7 @@ void main() {
     await tester.tap(find.text('Jouer le passage'));
     await tester.pump();
     await tester.pump();
+    await tester.pump(CountIn(tempoBpm: demo.writtenTempoBpm).duration);
     await tester.pump(const Duration(milliseconds: 120));
   }
 
@@ -837,6 +844,104 @@ void main() {
       await tester.pump();
       expect(find.text('Arreter'), findsOneWidget);
       await arreter(tester);
+    });
+  });
+
+  group('depart compte', () {
+    testWidgets('une mesure est comptee avant que le passage ne commence', (
+      WidgetTester tester,
+    ) async {
+      // Sans decompte, la premiere note est toujours en retard -- et c'est
+      // l'application qui l'a fait rater.
+      await poser(tester, <PitchEstimate>[]);
+      await tester.tap(find.text('Jouer le passage'));
+      await tester.pump();
+
+      expect(find.byKey(const Key('decompte')), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      await arreter(tester);
+    });
+
+    testWidgets('on compte en montant, comme un chef', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      await tester.tap(find.text('Jouer le passage'));
+      await tester.pump();
+
+      final int msParTemps = 60000 ~/ demo.writtenTempoBpm;
+      await tester.pump(Duration(milliseconds: msParTemps + 10));
+      expect(find.text('2'), findsOneWidget);
+      await arreter(tester);
+    });
+
+    testWidgets('le decompte s efface quand le passage commence', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      await tester.tap(find.text('Jouer le passage'));
+      await tester.pump();
+      await tester.pump(CountIn(tempoBpm: demo.writtenTempoBpm).duration);
+
+      expect(find.byKey(const Key('decompte')), findsNothing);
+      await arreter(tester);
+    });
+
+    testWidgets('le curseur ne bouge pas pendant le decompte', (
+      WidgetTester tester,
+    ) async {
+      // Le passage n'a pas commence : faire avancer le curseur pendant qu'on
+      // compte reviendrait a en manger le debut.
+      await poser(tester, <PitchEstimate>[]);
+      await tester.tap(find.text('Jouer le passage'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final ScoreView vue = tester.widget<ScoreView>(find.byType(ScoreView));
+      expect(vue.cursorTick, demo.notes.first.onsetTicks);
+      await arreter(tester);
+    });
+  });
+
+  group('subdivision du metronome', () {
+    testWidgets('elle se change d un appui sur la barre', (
+      WidgetTester tester,
+    ) async {
+      // On change de subdivision en plein travail, quand le passage se
+      // complique : aller la chercher dans un menu couterait le fil.
+      await poser(tester, <PitchEstimate>[]);
+      expect(find.text('noire'), findsOneWidget);
+
+      await tester.tap(find.byKey(SessionScreen.subdivisionKey));
+      await tester.pump();
+      expect(find.text('croches'), findsOneWidget);
+
+      await tester.tap(find.byKey(SessionScreen.subdivisionKey));
+      await tester.pump();
+      expect(find.text('triolet'), findsOneWidget);
+    });
+
+    testWidgets('elle revient a la noire apres les doubles', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      for (int i = 0; i < 4; i++) {
+        await tester.tap(find.byKey(SessionScreen.subdivisionKey));
+        await tester.pump();
+      }
+      expect(find.text('noire'), findsOneWidget);
+    });
+
+    testWidgets('la barre recoit bien la subdivision choisie', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      await tester.tap(find.byKey(SessionScreen.subdivisionKey));
+      await tester.pump();
+      expect(
+        tester.widget<MetronomeBar>(find.byType(MetronomeBar)).subdivision,
+        2,
+      );
     });
   });
 }

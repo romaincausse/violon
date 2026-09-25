@@ -7,8 +7,10 @@ import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/scoring/a4_estimator.dart';
+import '../../core/scoring/open_string_fifths.dart';
 import '../../core/scoring/tuner.dart';
 import '../widgets/tuner_gauge.dart';
+import '../widgets/tuning_colors.dart';
 import 'session_screen.dart' show PitchSourceFactory;
 
 /// Accorder avant de jouer.
@@ -80,8 +82,14 @@ class _TunerScreenState extends State<TunerScreen> {
       return;
     }
     setState(() {
-      _lecture = _accordeur.read(pitch);
+      final TunerReading? lecture = _accordeur.read(pitch);
+      _lecture = lecture;
       _diapasonMesure = _diapason.add(pitch) ?? _diapasonMesure;
+      // On ne retient qu'une corde tenue : une hauteur qui glisse pendant que
+      // l'archet se pose donnerait une quinte fantaisiste.
+      if (lecture != null && lecture.steady) {
+        _cordesMesurees[lecture.stringMidi] = lecture.frequencyHz;
+      }
     });
   }
 
@@ -98,6 +106,13 @@ class _TunerScreenState extends State<TunerScreen> {
     super.dispose();
   }
 
+  /// Derniere frequence tenue sur chaque corde a vide.
+  ///
+  /// C'est ce qui permet de rendre les **quintes**, alors que le detecteur
+  /// est monophonique et n'entend pas une double corde : on mesure les cordes
+  /// l'une apres l'autre, et on rend l'intervalle.
+  final Map<int, double> _cordesMesurees = <int, double>{};
+
   void _adopterLeDiapason() {
     final double? mesure = _diapasonMesure;
     if (mesure == null) {
@@ -108,6 +123,9 @@ class _TunerScreenState extends State<TunerScreen> {
       _accordeur = Tuner(a4: mesure);
       _diapason = A4Estimator(tuner: _accordeur);
       _diapasonMesure = null;
+      // Les cordes ont ete mesurees contre l'ancienne reference : les garder
+      // donnerait des quintes fausses d'un bout a l'autre.
+      _cordesMesurees.clear();
     });
   }
 
@@ -144,6 +162,8 @@ class _TunerScreenState extends State<TunerScreen> {
               ),
               const SizedBox(height: 16),
               TunerGauge(reading: lecture),
+              const SizedBox(height: 16),
+              _Quintes(quintes: OpenStringFifths.from(_cordesMesurees)),
               const Spacer(),
               if (_probleme != null)
                 Text(
@@ -182,6 +202,65 @@ class _TunerScreenState extends State<TunerScreen> {
 
 /// Le diapason de reference, et la possibilite d'adopter celui de
 /// l'instrument.
+/// Les trois quintes du violon, une fois les cordes entendues.
+///
+/// **Un violoniste accorde par quintes, pas note par note.** On tire deux
+/// cordes voisines ensemble et on ecoute les battements : c'est ce qu'on lui
+/// enseigne. Le detecteur etant monophonique, on mesure les cordes l'une
+/// apres l'autre et on rend l'intervalle -- meme question, moyens differents.
+///
+/// La reference est la quinte **juste**, pas la temperee : un violon
+/// s'accorde sur le rapport 3:2, et juger contre les 700 cents du piano
+/// declarerait fausses trois cordes accordees exactement comme il faut.
+class _Quintes extends StatelessWidget {
+  const _Quintes({required this.quintes});
+
+  final List<StringFifth> quintes;
+
+  static const Key quintesKey = Key('tuner-quintes');
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    if (quintes.isEmpty) {
+      return Text(
+        'Joue deux cordes voisines pour verifier tes quintes.',
+        key: quintesKey,
+        style: theme.textTheme.bodySmall,
+        textAlign: TextAlign.center,
+      );
+    }
+    return Row(
+      key: quintesKey,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        for (final StringFifth q in quintes)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(q.name, style: theme.textTheme.labelSmall),
+              Text(
+                OpenStringFifths.isInTune(q)
+                    ? 'juste'
+                    : q.tooWide
+                        ? 'large'
+                        : 'etroite',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: OpenStringFifths.isInTune(q)
+                      ? TuningColors.inTune
+                      : q.tooWide
+                          ? TuningColors.high
+                          : TuningColors.low,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
 class _LigneDuDiapason extends StatelessWidget {
   const _LigneDuDiapason({
     required this.reference,
