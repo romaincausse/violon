@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 7 | 1 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 7 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 8 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 4 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**64 lots, 75 soirees restantes**, dont **26 de *must*** -- le reste
+**64 lots, 74 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -78,12 +78,12 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Les six lots sont livres.** Ils tournent sur le code deja livre, sans
-dependance nouvelle, et deux d'entre eux -- I1 et I2 -- corrigeaient des
-defauts en production plutot que d'ajouter une fonctionnalite.
+**Jalon termine, sept lots.** Ils tournent sur le code deja livre, sans
+dependance nouvelle, et trois d'entre eux -- I1, I2 et D8 -- corrigeaient des
+defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
 
-**Un septieme est apparu apres coup**, a l'usage sur le telephone : le ruban
-d'ecart livre en D2 fait son travail mais n'est pas beau. C'est D8.
+Le septieme est apparu apres coup, sur le telephone : le ruban d'ecart livre
+en D2 faisait son travail mais n'etait pas beau. C'est D8.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -93,7 +93,7 @@ d'ecart livre en D2 fait son travail mais n'est pas beau. C'est D8.
 | ~~D2~~ | ~~Ruban de justesse~~ | | ★★★ | fait |
 | ~~D4~~ | ~~Profils d'affichage~~ | | ★★ | fait |
 | ~~D5~~ | ~~Halo de fin de mesure~~ | | ★★ | fait |
-| D8 | Refonte graphique du ruban d'ecart | | ★★ | 1 |
+| ~~D8~~ | ~~Refonte graphique du ruban d'ecart~~ | | ★★ | fait |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -239,6 +239,43 @@ Une mesure se felicite a partir de quatre-vingt-dix, et seulement si elle a
 ete entendue pour moitie au moins. Exiger cent serait severe et n'arriverait
 presque jamais ; feliciter une mesure a peine entendue reviendrait a feliciter
 un silence.
+
+---
+
+### D8 - Refonte graphique du ruban d'ecart
+
+Le ruban de D2 disait ce qu'il fallait et le disait mal. Sur le telephone, il
+se lisait comme une boite beige vide.
+
+**Fait (PR #44).** Quatre defauts, tous constates sur un rendu avant d'etre
+corriges :
+
+- **La bande qui vaut cent sur cent etait invisible** -- du vert a douze pour
+  cent sur un fond clair. C'etait pourtant la seule information utile au coin
+  de l'oeil. Le fond est desormais plus sombre que la bande, et non l'inverse.
+- **Le trait changeait de couleur d'un point au suivant**, ce qui posait une
+  couture franche au milieu d'un trait continu : ca se lit comme un defaut
+  d'affichage, pas comme une information. La teinte suit maintenant la hauteur
+  par un degrade, donc elle dit exactement ce que dit la position.
+- **Aucune echelle.** On voyait que le trait montait, pas de combien. Deux
+  graduations pointillees a mi-chemin du demi-ton donnent la mesure -- et
+  disparaissent sous cinquante-six points de haut, ou elles ne seraient que du
+  bruit.
+- **Le passe et le present avaient le meme poids.** Le trace s'attenue vers la
+  gauche, sans jamais s'effacer : une attaque basse rattrapee trois secondes
+  plus tot doit rester lisible, c'est justement ce que le ruban montre.
+
+Deux ajouts : le trace passe par des quadratiques au lieu de segments -- les
+trames arrivent toutes les quarante millisecondes et le sismographe ne se
+lisait pas -- et **un ruban vide a l'air d'attendre** au lieu d'etre eteint,
+grace a la tete posee au milieu. C'est ce qu'on a sous les yeux avant chaque
+prise.
+
+**Les tests interrogent le peintre, pas une image.** Un golden dirait "ca a
+change" a la premiere retouche de theme sans dire ce qui a change. Un faux
+`Canvas` note ce qui est dessine, et chaque test nomme la propriete qu'il
+defend : la tete reste dans le cadre, la bande vaut bien `perfectCents`, les
+graduations disparaissent quand la place manque.
 
 ---
 
