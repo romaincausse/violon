@@ -108,6 +108,12 @@ par partage de fichier.
 
 ## ADR-006 : La partition vivante est le coeur, pas le boucleur a cartes
 
+> **Amende par l'ADR-009.** Le coeur reste la partition suivie en temps reel,
+> mais le sens du suivi s'inverse : c'est l'application qui suit l'eleve, et
+> non l'inverse. Le point 1 ci-dessous -- la boucle sur une selection --
+> survit, en mieux : c'est desormais la mesure qui choisit les mesures a
+> rejouer, pas l'enfant.
+
 **Contexte.** L'ADR-004 avait fait du generateur de variations la
 fonctionnalite centrale, la notation devenant un support. Six mois de recul
 et un prototype jouable plus tard, l'utilisateur tranche autrement : ce qu'il
@@ -181,6 +187,12 @@ morceau entier du repertoire, plus tard, et les deux chemins cohabiteront.
 
 ## ADR-008 : Accompagnement et notation sont deux modes, jamais simultanes
 
+> **Tendu par l'ADR-009, pas encore revu.** Un accompagnement qui *suit*
+> l'eleve -- le seul qui vaille musicalement -- doit ecouter pendant qu'il
+> joue, ce que cet ADR interdit. La contradiction est reelle et reste ouverte :
+> elle se resout au casque, par annulation d'echo, ou pas du tout. Voir le
+> dernier jalon de la feuille de route.
+
 **Contexte.** Sur un telephone pose sur un pupitre, le haut-parleur est a une
 dizaine de centimetres du micro. Un accompagnement continu entre donc en
 plein dans la capture, et le detecteur de hauteur analyserait un melange
@@ -209,3 +221,93 @@ l'accompagnement" n'existe pas, et c'est assume. Le mode accompagnement n'a
 besoin d'aucun DSP : c'est le lot le moins risque des trois piliers. Si un
 casque est branche, rien n'interdit de lever la restriction plus tard : la
 detection de casque est triviale, et l'ADR pourra etre revu sans rien casser.
+
+---
+
+## ADR-009 : L'application suit l'eleve, l'eleve ne suit pas l'application
+
+**Contexte.** L'ADR-006 a fait de la partition affichee le coeur, avec un
+curseur qui avance sur l'horloge et un enfant qui se cale dessus. Deux choses
+clochent, et l'usage les a revelees.
+
+D'abord, **l'enfant lit sa partition papier**, posee sur le pupitre, comme il
+le fait en cours et comme il le fera toute sa vie. Il ne lit pas un telephone
+de six pouces pose a cote. La partition a l'ecran etait donc une surface de
+lecture que personne ne lisait.
+
+Ensuite, **un curseur qui avance tout seul impose un tempo a quelqu'un qui est
+en train d'apprendre le passage**. Il le force a courir apres au lieu de le
+laisser jouer. C'est exactement l'inverse de ce qu'un professeur fait avec un
+eleve de quatrieme annee : on le laisse jouer, on ecoute, on corrige.
+
+**Decision.** L'eleve joue, sur sa partition papier, a son tempo, quand il
+veut. **L'application le suit.** Elle connait la partition, elle ecoute, elle
+sait a tout instant ou il en est, et elle mesure la justesse et le rythme de
+ce qu'elle a entendu.
+
+**Ce que la decision coute.** Le suivi adaptatif etait en V4 dans l'ancien
+plan, decrit comme "le lot le plus risque du projet". Il devient le premier
+lot. **On commence donc par le risque**, et c'est volontaire : batir la
+notation, la boucle et le diagnostic sur un suiveur non prouve reviendrait a
+construire trois etages sur des fondations qu'on n'a pas coulees.
+
+**Consequences.**
+
+- La partition a l'ecran n'est plus une surface de lecture, c'est une
+  **surface de retour**. Elle doit se comprendre d'un coup d'oeil entre deux
+  traits d'archet, et se lire posement apres. Les lots G1 a G8 restent
+  entierement valables : c'est leur moment qui change, pas leur contenu.
+- `ScoreCursor`, pilote par l'horloge, n'est plus le coeur. Il survit comme
+  mode secondaire, pour travailler au metronome quand c'est ce qu'on veut.
+- **La coloration en direct gagne en honnetete au passage.** Aujourd'hui, un
+  enfant en retard d'une croche est mesure contre la note suivante : il peut
+  jouer parfaitement juste et se voir affiche faux. Avec le suivi, il est
+  mesure contre la note qu'il joue vraiment.
+- Il faut la partition **en machine** pour la suivre. Saisir quatre mesures a
+  la main convient pour un passage ; un morceau entier demandera un import.
+
+---
+
+## ADR-010 : Suivre est tolerant, juger est strict
+
+**Contexte.** L'ADR-009 cree un paradoxe immediat. Si l'application s'adapte a
+ce que joue l'eleve, alors par construction il n'est jamais en retard : le
+suiveur le rattrape. Un suiveur parfait rendrait toute notation du rythme
+impossible.
+
+**Decision.** **Un seul alignement, deux lectures qui n'ont pas le meme
+caractere.**
+
+- Le **suiveur** est elastique. Son unique objectif est de ne jamais perdre la
+  position, quoi qu'il arrive : hesitation, fausse note, arret net, reprise de
+  la mesure pour la cinquieme fois. Il ne juge rien.
+- Le **juge** est strict. Il reprend les instants d'attaque que l'alignement a
+  produits, en deduit le tempo reellement tenu, et mesure l'ecart de chaque
+  note a la grille metrique **a ce tempo-la**.
+
+**Ce que cette separation distingue, et qui est exactement ce qu'un professeur
+distingue a l'oreille :**
+
+| Ce qui est joue | Verdict |
+|---|---|
+| Tout le passage a 74 au lieu de 92, rythme impeccable | Tempo tenu : 74. **Pas une faute de rythme.** |
+| Une noire jouee comme une croche | Ecart residuel important sur cette note. **Faute de rythme.** |
+| Deux secondes d'arret avant le do# | Ni l'un ni l'autre : une **hesitation**, qui vaut souvent plus que les deux. |
+
+Compter le premier cas comme une faute de rythme serait reprocher a un enfant
+d'avoir choisi un tempo qu'il tient. C'est pourtant ce que fait toute
+application calee sur un metronome.
+
+**Consequence majeure : la calibration de latence cesse d'etre bloquante.**
+Le rythme est desormais juge en comparant les attaques de l'eleve **entre
+elles**. Une latence de capture constante les decale toutes du meme montant et
+disparait de la soustraction. Le lot A4 reste necessaire au jalon de
+l'accompagnement, ou l'application emet un son qui doit tomber avec l'eleve.
+Le score de rythme, lui, n'attend plus rien -- ni A4, ni la dependance de
+moteur audio qui le bloquait.
+
+**Consequence technique a ne pas oublier.** Le suiveur consomme les deux flux
+a la fois : les hauteurs et les attaques. Le probleme signale dans l'ancien
+lot N2 -- le detecteur d'attaques a besoin d'un flux sans trou, l'analyse de
+hauteur jette des trames sous pression -- n'est donc plus reportable. Il est
+au premier jalon.

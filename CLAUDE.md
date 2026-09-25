@@ -5,41 +5,52 @@ Instructions pour Claude Code sur ce depot.
 ## Le projet en une phrase
 
 Application Flutter d'aide au travail du violon pour un enfant de 11 ans,
-4e annee de conservatoire. Elle ecoute ce qu'il joue, mesure la justesse et
-le rythme, et surtout **rend la repetition supportable**.
+4e annee de conservatoire. **Elle le suit pendant qu'il joue sur sa partition
+papier**, mesure la justesse et le rythme, et lui dit quelles mesures
+rejouer.
 
 ## Le coeur de l'application
 
-Le coeur est la **partition dynamique suivie en temps reel**. Elle affiche le
-passage travaille, avance avec ce qui est joue, et rend trois choses :
+Le coeur est le **suivi de l'eleve** (ADR-009). L'eleve joue sur **sa
+partition papier**, a son tempo, quand il veut. L'application ecoute, sait a
+tout instant ou il en est dans le morceau, et en tire :
 
 1. un **retour visuel** note par note, en direct ;
-2. une **notation** de la justesse et du rythme ;
-3. un **accompagnement**, dans un mode separe.
+2. une **notation** de la justesse et du rythme, par note et par mesure ;
+3. **les mesures a rejouer**, choisies par la mesure et non par l'enfant ;
+4. un **accompagnement**, dans un mode separe.
 
-Tout le reste est au service de ca.
+**Le sens du suivi n'est pas negociable.** Ce n'est pas l'enfant qui suit un
+curseur : c'est l'application qui le suit. Toute proposition qui remet un
+curseur maitre du tempo au centre contredit l'ADR-009.
 
-## Le probleme reel a resoudre
+Le telephone n'est pas un pupitre. C'est un professeur qui ecoute.
 
-L'utilisateur unique de cette application se lasse de rejouer dix fois la
-meme mesure. Ce n'est pas un probleme de justesse, c'est un probleme de
-**monotonie**.
+## Suivre est tolerant, juger est strict
 
-Ce constat n'a pas change, et il ne doit pas etre oublie sous pretexte que
-l'application sait maintenant noter. **Une application qui note en
-permanence, sans repondre a la lassitude, aura resolu un probleme que
-personne n'avait.**
+Consequence directe, et piege principal du projet (ADR-010). Un suiveur qui
+s'adapte a l'eleve le rattrape toujours : il ne peut donc pas servir a le
+juger. Un seul alignement, deux lectures.
 
-Comment le coeur actuel y repond :
+- Le **suiveur** ne juge rien. Son seul objectif est de ne jamais perdre la
+  position : hesitation, fausse note, arret, mesure rejouee dix fois.
+- Le **juge** reprend les attaques alignees, en deduit le tempo reellement
+  tenu, et mesure l'ecart a la grille metrique **a ce tempo**.
 
-- **La boucle, pas la carte.** On selectionne deux mesures, on les boucle, et
-  le tempo monte tout seul quand le passage est propre. Meme mecanisme
-  anti-lassitude que l'ancien boucleur, sans l'ecran de cartes.
-- **L'application mesure au lieu de demander.** Plus d'auto-evaluation : un
-  score mesure est plus motivant qu'un bouton sur lequel on appuie soi-meme,
-  et plus honnete.
-- **L'accompagnement est la variete.** C'est lui qui rend une dixieme
-  repetition supportable.
+Ce que ca separe :
+
+| Ce qui est joue | Verdict |
+|---|---|
+| Tout a 74 au lieu de 92, rythme impeccable | Tempo tenu, **pas une faute** |
+| Une noire jouee comme une croche | **Faute de rythme** |
+| Deux secondes d'arret avant une note | **Hesitation**, comptee a part |
+
+## Le probleme de fond
+
+L'enfant se lasse de rejouer dix fois la meme mesure. Ce constat reste vrai,
+mais il n'est plus la finalite : c'est **l'application qui designe les mesures
+a retravailler**, a partir de ce qu'elle a mesure. La repetition devient
+dirigee au lieu d'etre subie, et l'accompagnement apporte la variete.
 
 ## Les regles produit, qui n'ont pas bouge
 
@@ -62,7 +73,7 @@ lib/
     audio/         <- detection de hauteur, attaques, abstraction du micro
     music/         <- modele de notes, conversions, passages, saisie
     score/         <- mise en page d'une portee monodique
-    follow/        <- curseur, appariement joue / attendu
+    follow/        <- suiveur, alignement joue / attendu (le coeur)
     scoring/       <- notation de la justesse et du rythme
     play/          <- metronome et accompagnement pre-planifies
   platform/        <- adaptateurs vers les plugins, une classe par frontiere
@@ -113,8 +124,12 @@ Quatre regles structurantes :
   l'accompagnement encore plus. En mode notation l'application n'emet **aucun
   son** : le metronome est visuel. Accompagnement et notation sont deux modes
   exclusifs (ADR-008).
-- **Le curseur avance sur l'horloge**, pas sur ce qui est joue. Le suivi
-  adaptatif est un lot a part, en V4, et le plus risque du projet.
+- **Le curseur suit ce qui est joue**, pas l'horloge (ADR-009). C'est le lot
+  le plus risque du projet, et il est desormais le premier : un jalon de
+  preuve le valide sur de vraies prises avant qu'on batisse dessus.
+- **Un enfant qui travaille ne joue pas du debut a la fin.** Il s'arrete,
+  reprend la mesure, saute. Pour le suiveur c'est le cas nominal, pas le cas
+  limite.
 - **YIN ne voit pas une note repetee a la meme hauteur.** Noter le rythme
   demande un detecteur d'attaques distinct.
 - **100 % hors ligne.** Aucun serveur, aucun compte.

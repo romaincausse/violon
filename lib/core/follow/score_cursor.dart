@@ -3,11 +3,13 @@ import '../music/score_note.dart';
 
 /// Curseur de lecture, pilote par l'horloge.
 ///
-/// **Il avance sur le temps, pas sur ce qui est joue.** Le suivi adaptatif --
-/// l'application qui attend la bonne note -- est un lot a part, et le plus
-/// risque du projet. Ici le curseur est un metronome qui sait ou il en est
-/// dans la partition : c'est suffisant pour montrer ou on devrait etre, et
-/// c'est ce dont depend tout le retour visuel.
+/// **Mode secondaire depuis l'ADR-009.** Le coeur est desormais le suiveur :
+/// c'est l'application qui se cale sur l'eleve, pas l'inverse. Ce curseur-ci
+/// avance sur le temps, sans rien ecouter, et garde un seul usage -- travailler
+/// au metronome quand c'est le but recherche.
+///
+/// Il ne doit plus servir a juger : mesurer un enfant contre une horloge qu'il
+/// ne suit pas revient a le comparer a la note suivante.
 ///
 /// Comme [MetronomeClock], rien n'est accumule : la position se calcule
 /// toujours depuis le temps absolu ecoule, sur le rationnel exact. Une
