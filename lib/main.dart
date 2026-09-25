@@ -31,7 +31,7 @@ class ViolonApp extends StatefulWidget {
 class _ViolonAppState extends State<ViolonApp> {
   /// Le passage de demonstration sert de point de depart.
   ///
-  /// Tant que la persistance n'existe pas (lot P4), imposer la saisie a chaque
+  /// Tant que la persistance n'existe pas (lot H1), imposer la saisie a chaque
   /// lancement rendrait l'application penible : on ouvre, on joue. Le passage
   /// saisi remplace la demo pour la duree de la session.
   Passage _passage = buildDemoPassage();

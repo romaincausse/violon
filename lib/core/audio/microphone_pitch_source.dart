@@ -88,8 +88,13 @@ class MicrophonePitchSource implements PitchSource {
   Stream<PitchEstimate> get pitches =>
       _controller.stream.map((SmoothedPitch p) => p.estimate);
 
-  /// Zero tant que la calibration n'a pas eu lieu (lot A4). Tant qu'elle vaut
-  /// zero, la notation du rythme n'a pas de sens : celle de la justesse, si.
+  /// Zero tant que la calibration n'a pas eu lieu (lot J2).
+  ///
+  /// **Et ca ne bloque plus rien.** Depuis l'ADR-010, le rythme se juge en
+  /// comparant les attaques de l'eleve entre elles : une latence de capture
+  /// constante les decale toutes du meme montant et disparait de la
+  /// soustraction. Cette valeur ne sert qu'a faire tomber un son emis par
+  /// l'application avec ce que joue l'eleve, donc a l'accompagnement.
   @override
   int get latencyMs => 0;
 
