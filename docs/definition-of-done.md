@@ -27,6 +27,5 @@ Une PR est prete a merger quand :
       l'eleve lit son papier, pas l'ecran (ADR-009)
 
 **Documentation**
-- [ ] `docs/roadmap.md` **et** `docs/backlog.md` mis a jour si un lot est
-      termine, les deux devant rester d'accord
+- [ ] `docs/plan.md` mis a jour si un lot est termine
 - [ ] Une entree dans `docs/decisions.md` si un choix structurant a ete fait

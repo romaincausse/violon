@@ -176,5 +176,6 @@ Quatre regles structurantes :
 
 ## Etat d'avancement
 
-Voir `docs/roadmap.md` pour les jalons et `docs/backlog.md` pour le detail
-des taches. Mettre a jour ces fichiers quand un lot est termine.
+Voir `docs/plan.md` : **fichier unique** de suivi, jalons et lots. Le mettre
+a jour quand un lot est termine. `docs/journal.md` recense les tensions non
+tranchees.
