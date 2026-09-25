@@ -201,10 +201,29 @@ void main() {
     });
 
     test('elle descend regulierement jusqu au demi-ton', () {
-      // A cent cents, ce n'est plus la meme note.
-      expect(LiveTuning.noteScoreForCents(100), 0);
+      // On teste la forme de la courbe, pas un point precis : figer une
+      // valeur intermediaire revient a figer `perfectCents`, et la moindre
+      // revision du bareme casse un test qui ne dit rien de plus.
+      expect(LiveTuning.noteScoreForCents(100), 0, reason: 'une autre note');
       expect(LiveTuning.noteScoreForCents(-100), 0);
-      expect(LiveTuning.noteScoreForCents(55), closeTo(50, 1));
+      expect(LiveTuning.noteScoreForCents(LiveTuning.perfectCents), 100);
+
+      int precedent = 101;
+      for (double cents = LiveTuning.perfectCents;
+          cents <= LiveTuning.worstCents;
+          cents += 5) {
+        final int note = LiveTuning.noteScoreForCents(cents);
+        expect(note, lessThanOrEqualTo(precedent),
+            reason: 'jouer plus faux ne rapporte jamais plus');
+        precedent = note;
+      }
+    });
+
+    test('la courbe est symetrique : trop bas vaut trop haut', () {
+      for (final double cents in <double>[30, 45, 70, 90]) {
+        expect(LiveTuning.noteScoreForCents(cents),
+            LiveTuning.noteScoreForCents(-cents));
+      }
     });
 
     test('au-dela du demi-ton, on ne descend pas sous zero', () {
@@ -229,12 +248,14 @@ void main() {
       );
       final LiveTuning t = LiveTuning();
       for (int i = 0; i < 2; i++) {
-        t.observe(la4, joue(69, 0)); // 100
-        t.observe(si4, joue(71, 55)); // environ 50
+        t.observe(la4, joue(69, 0));
+        t.observe(si4, joue(71, 55));
       }
-      expect(t.scoreFor('n1'), 100);
-      expect(t.scoreFor('n2'), closeTo(50, 1));
-      expect(t.overallScore, closeTo(75, 1));
+      final int? juste = t.scoreFor('n1');
+      final int? faux = t.scoreFor('n2');
+      expect(juste, 100);
+      expect(faux, lessThan(100));
+      expect(t.overallScore, ((juste! + faux!) / 2).round());
     });
 
     test('une note non entendue ne compte pas pour zero', () {
@@ -268,6 +289,90 @@ void main() {
       expect(t.overallScore, 100);
       t.reset();
       expect(t.overallScore, isNull);
+    });
+  });
+
+  group('intonation expressive', () {
+    // Un violoniste ne joue pas tempere. La gamme temperee est un compromis
+    // de clavier ; sur un instrument a hauteur libre, deux references sont
+    // enseignees et toutes deux sont justes. Elles vont en sens INVERSE :
+    // en jeu melodique on monte les tierces et les sensibles, en double
+    // corde ou sur un bourdon on les baisse pour que l'accord sonne.
+    //
+    // Ecarts au tempere, en cents, calcules depuis les rapports de
+    // frequences exacts.
+    const Map<String, (double, double)> intervalles =
+        <String, (double, double)>{
+      // nom                        juste   pythagoricienne
+      'tierce mineure': (15.6, -5.9),
+      'tierce majeure': (-13.7, 7.8),
+      'sixte majeure': (-15.6, 5.9),
+      'septieme majeure': (-11.7, 9.8),
+    };
+
+    test('les deux references valent cent sur cent', () {
+      intervalles.forEach((String nom, (double, double) ecarts) {
+        expect(LiveTuning.noteScoreForCents(ecarts.$1), 100,
+            reason: '\$nom juste');
+        expect(LiveTuning.noteScoreForCents(ecarts.$2), 100,
+            reason: '\$nom pythagoricienne');
+      });
+    });
+
+    test('une sensible poussee haute vaut cent sur cent', () {
+      // Le geste le plus enseigne du repertoire : la sensible se serre contre
+      // la tonique. Vingt cents est courant, et ce n'est pas une faute.
+      expect(LiveTuning.noteScoreForCents(20), 100);
+    });
+
+    test('le bareme est plus large que l ecart entre deux bonnes reponses', () {
+      // C'est l'argument du lot. Sur la tierce majeure, les deux systemes
+      // valides different de 21,5 cents. Noter plus finement, c'est
+      // distinguer deux reponses correctes l'une de l'autre : on mesure du
+      // bruit, et on retire des points a un enfant qui fait exactement ce que
+      // son professeur lui demande.
+      final (double, double) tierce = intervalles['tierce majeure']!;
+      final double desaccord = (tierce.$2 - tierce.$1).abs();
+      expect(desaccord, closeTo(21.5, 0.5));
+      expect(LiveTuning.perfectCents, greaterThanOrEqualTo(desaccord));
+    });
+
+    test('mais un quart de ton reste une fausse note', () {
+      // L'elargissement ne doit pas rendre le bareme complaisant : un demi
+      // demi-ton n'appartient a aucun systeme d'intonation.
+      expect(LiveTuning.noteScoreForCents(50), lessThan(75));
+      expect(LiveTuning.noteScoreForCents(90), lessThan(20));
+    });
+  });
+
+  group('rien a retravailler', () {
+    test('un passage joue juste ne designe aucune mesure', () {
+      // Defaut trouve en elargissant le bareme : quand toutes les notes
+      // valent cent, la plus faible restait la premiere, et l'application
+      // demandait de retravailler ce qui etait deja juste. C'est la regle
+      // produit prise a l'envers.
+      final LiveTuning t = LiveTuning();
+      for (int i = 0; i < 3; i++) {
+        t.observe(la4, joue(69, 3));
+      }
+      expect(t.overallScore, 100);
+      expect(t.weakestNoteId, isNull);
+    });
+
+    test('des qu une note perd des points, elle est designee', () {
+      const ScoreNote si4 = ScoreNote(
+        id: 'n2',
+        midi: 71,
+        onsetTicks: 480,
+        durationTicks: 480,
+        measure: 2,
+      );
+      final LiveTuning t = LiveTuning();
+      for (int i = 0; i < 3; i++) {
+        t.observe(la4, joue(69, 0));
+        t.observe(si4, joue(71, 60));
+      }
+      expect(t.weakestNoteId, 'n2');
     });
   });
 }

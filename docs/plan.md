@@ -50,23 +50,26 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 ## Les onze jalons
 
-| # | Jalon | Lots | Soirees | Ce qu'on gagne |
-|---|-------|------|---------|----------------|
-| 1 | Le retour qui se voit | 6 | 8 | Ca devient agreable, tout de suite |
+| # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
+|---|-------|------|-------------------|----------------|
+| 1 | Le retour qui se voit | 6 | 6 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 8 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
-| 7 | La note | 9 | 13 | Justesse et rythme, par mesure |
+| 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
-| 9 | La memoire | 7 | 16 | Le progres devient visible |
+| 9 | La memoire | 8 | 18 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**58 lots, 100 soirees** au total, dont **28 soirees de *must*** -- le reste
+**60 lots, 100 soirees restantes**, dont **28 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
+
+Les lots barres sont livres ; la colonne des soirees ne compte que ce qui
+reste.
 
 **Le calendrier des dependances a change.** L'ancien plan n'arbitrait rien
 avant le jalon 6. Le bourdon oblige a trancher le moteur audio au **jalon 4** :
@@ -81,7 +84,7 @@ Aucun lot n'attend le suiveur.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~I1~~ | ~~Cordes a vide comme ancre, alerte de desaccord~~ | | ★★★ | fait |
-| I2 | Intonation expressive | | ★★★ | 2 |
+| ~~I2~~ | ~~Intonation expressive~~ | | ★★★ | fait |
 | D1 | Bandeau de mesures | | ★★★ | 2 |
 | D2 | Ruban de justesse | | ★★★ | 2 |
 | D4 | Profils d'affichage | | ★★ | 1 |
@@ -115,13 +118,40 @@ muet des qu'on developpait avec une source factice.
 
 ### I2 - Intonation expressive
 
-C'est une faute **deja livree**. `LiveTuning` compare a la note temperee. Or
-un violoniste ne joue pas tempere : une sensible se joue haute, une tierce
-majeure basse par rapport au piano, et en 4e annee c'est deja enseigne.
+**Fait (PR #35).**
 
-L'application marque donc systematiquement faux ce qu'il joue juste, sur des
-notes precises et toujours les memes. Au minimum une tolerance elargie sur
-les degres concernes, au mieux une reference melodique optionnelle.
+`LiveTuning` comparait a la note temperee. Or la gamme temperee est un
+compromis de clavier : sur un instrument a hauteur libre, **deux references
+sont enseignees et toutes deux sont justes**, et elles vont en sens inverse.
+En jeu melodique on monte les sensibles et les tierces ; en double corde ou
+sur un bourdon, on les baisse pour que l'accord sonne.
+
+| Intervalle | Juste | Pythagoricienne |
+|---|---|---|
+| tierce mineure | +15,6 | -5,9 |
+| tierce majeure | -13,7 | +7,8 |
+| sixte majeure | -15,6 | +5,9 |
+| septieme majeure | -11,7 | +9,8 |
+
+**Correction de ce que ce plan affirmait.** Il disait que l'application
+"marque systematiquement faux ce qu'il joue juste". C'etait exagere : avec
+une tolerance de 35 cents, la couleur n'etait jamais fausse. Ce qu'elle
+faisait, c'est **retirer des points** -- de 4 a 11 sur cent -- toujours sur
+les memes degres.
+
+L'argument reel est ailleurs, et il est plus fort : **les deux systemes
+valides different de 21,5 cents sur la tierce majeure, alors que le bareme
+distinguait a 10 cents.** Il notait donc plus finement que ne different deux
+reponses correctes. `perfectCents` passe a 22.
+
+**Le prix est assume :** une quinte ou une octave, qui ne varient que de deux
+cents d'un systeme a l'autre, sont desormais jugees aussi largement. Les
+corriger demande de connaitre le degre de la note dans la tonalite -- voir
+I3.
+
+**Defaut corrige en chemin.** Quand toutes les notes valaient cent, le bilan
+designait quand meme une mesure a retravailler : la premiere, faute de mieux.
+L'application demandait de retravailler ce qui etait deja juste.
 
 ### D1 - Bandeau de mesures
 
@@ -475,6 +505,7 @@ projet cherche depuis le debut.
 | H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
 | M2 | Avant / apres audible | | ★★★ | 2 |
 | H6 | Import d'un morceau entier | | ★★ | 3 |
+| I3 | Justesse par degre dans la tonalite | | ★★ | 2 |
 
 **H3 - Erreurs systematiques.** Le differenciateur. Les fautes d'un violoniste
 ne sont pas aleatoires, elles sont **structurees par la main** : un demi-ton
@@ -491,6 +522,17 @@ minutes est le motivateur le plus puissant qui existe, bien plus qu'un score.
 > conserver le moindre enregistrement audio, pour de bonnes raisons. Sortie
 > possible : strictement local, strictement ephemere, efface en quittant,
 > jamais exportable, jamais accessible au professeur. Sa voix a lui, pour lui.
+
+**I3 - Justesse par degre.** Le complement de I2. Une quinte et une tierce
+n'ont pas la meme marge : la premiere ne varie que de deux cents d'un systeme
+d'intonation a l'autre, la seconde de vingt-et-un. Les juger avec la meme
+tolerance est le prix qu'on paie aujourd'hui.
+
+Y remedier demande le **degre de la note dans la tonalite**, donc la
+tonalite -- que ni `Passage` ni `ScoreNote` ne portent. Ce lot est range ici
+parce que **le MusicXML la transporte** : l'import la fournit gratuitement.
+Il peut aussi remonter plus tot si l'ecran de saisie se met a demander
+l'armure.
 
 **H6 - Import.** Suivre suppose la partition en machine. La saisie a la main
 tient pour un passage, pas pour un morceau. L'OMR (reconnaissance optique)
