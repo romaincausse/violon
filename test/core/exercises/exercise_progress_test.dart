@@ -185,6 +185,99 @@ void main() {
       expect(progres.estAcquis(exercise), isTrue);
     });
 
+    test('le tempo propose reste le tempo vise tant que rien n est acquis', () {
+      // L'objectif ne bouge pas parce qu'on a rate.
+      final ExerciseProgress progres = ExerciseProgress();
+      final Exercise exercise = _palier1.first;
+      expect(progres.tempoPropose(exercise), exercise.tempoVise);
+
+      progres.record(ExerciseAttempt(
+        exerciseId: exercise.id,
+        score: 40,
+        tempoBpm: exercise.tempoVise,
+      ));
+      expect(progres.tempoPropose(exercise), exercise.tempoVise);
+    });
+
+    test('une fois acquis, on propose le cran au-dessus', () {
+      final ExerciseProgress progres = ExerciseProgress();
+      final Exercise exercise = _palier1.first;
+      progres.record(ExerciseAttempt(
+        exerciseId: exercise.id,
+        score: 95,
+        tempoBpm: exercise.tempoVise,
+      ));
+      expect(
+        progres.tempoPropose(exercise),
+        exercise.tempoVise + ExerciseProgress.pasDeTempo,
+      );
+    });
+
+    test('le cran monte a partir du meilleur tempo tenu, pas du vise', () {
+      final ExerciseProgress progres = ExerciseProgress();
+      final Exercise exercise = _palier1.first;
+      for (final int tempo in <int>[
+        exercise.tempoVise,
+        exercise.tempoVise + 12
+      ]) {
+        progres.record(ExerciseAttempt(
+          exerciseId: exercise.id,
+          score: 95,
+          tempoBpm: tempo,
+        ));
+      }
+      expect(
+        progres.tempoPropose(exercise),
+        exercise.tempoVise + 12 + ExerciseProgress.pasDeTempo,
+      );
+    });
+
+    test('la progression se range et se relit', () {
+      final ExerciseProgress progres = ExerciseProgress();
+      final Exercise exercise = _palier1.first;
+      progres.record(ExerciseAttempt(
+        exerciseId: exercise.id,
+        score: 95,
+        tempoBpm: exercise.tempoVise,
+      ));
+
+      final ExerciseProgress relue = ExerciseProgress()
+        ..restore(progres.bests.values);
+      expect(relue.estAcquis(exercise), isTrue);
+      expect(relue.acquis, 1);
+      expect(relue.bestFor(exercise.id)?.essais, 1);
+      expect(relue.prochaineTache?.id, _palier1[1].id);
+    });
+
+    test('un record d un exercice disparu du catalogue est ignore', () {
+      // Le catalogue peut changer entre deux versions ; la memoire ne doit pas
+      // ressusciter un exercice qui n'existe plus.
+      final ExerciseProgress progres = ExerciseProgress()
+        ..restore(<ExerciseBest>[
+          const ExerciseBest(
+            exerciseId: 'gamme-de-mars',
+            meilleurScore: 100,
+            meilleurTempoPropre: 200,
+            essais: 9,
+          ),
+        ]);
+      expect(progres.bests, isEmpty);
+      expect(progres.acquis, 0);
+    });
+
+    test('relire remplace, ca ne s ajoute pas', () {
+      final ExerciseProgress progres = ExerciseProgress();
+      final Exercise exercise = _palier1.first;
+      progres.record(ExerciseAttempt(
+        exerciseId: exercise.id,
+        score: 95,
+        tempoBpm: exercise.tempoVise,
+      ));
+      progres.restore(const <ExerciseBest>[]);
+      expect(progres.bests, isEmpty);
+      expect(progres.estAcquis(exercise), isFalse);
+    });
+
     test('un seuil plus severe retarde l acquisition', () {
       final ExerciseProgress severe = ExerciseProgress(scorePropre: 99);
       final Exercise exercise = _palier1.first;

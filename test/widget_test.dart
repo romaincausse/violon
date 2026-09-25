@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
+import 'package:violon/core/play/fake_audio_engine.dart';
+import 'package:violon/core/store/session_store.dart';
 import 'package:violon/main.dart';
 import 'package:violon/ui/widgets/metronome_bar.dart';
 import 'package:violon/ui/widgets/score_view.dart';
@@ -12,11 +14,28 @@ import 'package:violon/ui/widgets/score_view.dart';
 /// `pumpWidget`, pour rien.
 Future<PitchSource> micMuet() async => FakePitchSource(const <PitchEstimate>[]);
 
+/// Pose l'application avec une memoire factice.
+///
+/// Sans elle, l'application irait lire les preferences du telephone -- qui
+/// n'existent pas dans la machine virtuelle de test -- et surtout elle
+/// **attend** cette lecture avant de s'afficher : une seule image ne suffit
+/// plus a la voir apparaitre.
+Future<void> poserLApplication(WidgetTester tester) async {
+  await tester.pumpWidget(
+    const ViolonApp(
+      pitchSourceFactory: micMuet,
+      audioEngineFactory: FakeAudioEngine.new,
+      sessionStoreFactory: FakeSessionStore.new,
+    ),
+  );
+  await tester.pump();
+}
+
 void main() {
   testWidgets('l\'application s\'ouvre sur le passage de demonstration', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+    await poserLApplication(tester);
 
     expect(find.text('Demo - mesures 12 a 13'), findsOneWidget);
     expect(find.text('Mesures 12 a 13'), findsOneWidget);
@@ -26,7 +45,7 @@ void main() {
   testWidgets('le passage est grave sur une portee', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+    await poserLApplication(tester);
 
     expect(find.byType(ScoreView), findsOneWidget);
     // Les notes ne sont plus du texte : elles sont peintes.
@@ -36,7 +55,7 @@ void main() {
   testWidgets('le tempo ecrit du passage est affiche', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+    await poserLApplication(tester);
 
     expect(find.textContaining('bpm'), findsOneWidget);
   });
@@ -44,7 +63,7 @@ void main() {
   testWidgets('la lecture se lance et s arrete depuis l ecran', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+    await poserLApplication(tester);
 
     expect(find.text('Jouer le passage'), findsOneWidget);
     await tester.tap(find.text('Jouer le passage'));
@@ -67,7 +86,7 @@ void main() {
   testWidgets('changer de passage arrete la lecture', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+    await poserLApplication(tester);
     await tester.tap(find.text('Jouer le passage'));
     await tester.pump(const Duration(milliseconds: 200));
     expect(find.text('Arreter'), findsOneWidget);
@@ -94,7 +113,7 @@ void main() {
     tester.view.physicalSize = const Size(400, hauteurEcran);
     tester.view.padding = const FakeViewPadding(bottom: hauteurBarre);
 
-    await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+    await poserLApplication(tester);
 
     // Sans SafeArea, le bas de la colonne debordait sous la barre systeme.
     // On mesure le contenu et non le SafeArea : ce dernier occupe toute la

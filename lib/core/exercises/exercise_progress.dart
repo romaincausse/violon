@@ -59,6 +59,40 @@ class ExerciseBest {
   final int meilleurTempoPropre;
 
   final int essais;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'id': exerciseId,
+        'score': meilleurScore,
+        'tempo': meilleurTempoPropre,
+        'essais': essais,
+      };
+
+  /// Relit ce qui a ete range, en se mefiant de ce qu'on relit.
+  ///
+  /// Une valeur absente ou d'un autre type rend `null` plutot que de lever :
+  /// un enregistrement abime ne doit pas empecher l'application de s'ouvrir.
+  /// On perd un record, pas une seance.
+  static ExerciseBest? fromJson(Object? json) {
+    if (json is! Map<String, Object?>) {
+      return null;
+    }
+    final Object? id = json['id'];
+    final Object? score = json['score'];
+    final Object? tempo = json['tempo'];
+    final Object? essais = json['essais'];
+    if (id is! String || score is! int || tempo is! int || essais is! int) {
+      return null;
+    }
+    if (score < 0 || score > 100 || tempo < 0 || essais < 0) {
+      return null;
+    }
+    return ExerciseBest(
+      exerciseId: id,
+      meilleurScore: score,
+      meilleurTempoPropre: tempo,
+      essais: essais,
+    );
+  }
 }
 
 /// Ou en est l'eleve dans le catalogue.
@@ -121,6 +155,25 @@ class ExerciseProgress {
 
   ExerciseBest? bestFor(String exerciseId) => _meilleurs[exerciseId];
 
+  /// Tout ce qui a ete retenu, pour le ranger.
+  Map<String, ExerciseBest> get bests =>
+      Map<String, ExerciseBest>.unmodifiable(_meilleurs);
+
+  /// Repart de ce qui avait ete range.
+  ///
+  /// Les records d'exercices disparus du catalogue sont ignores : le catalogue
+  /// peut changer entre deux versions, la memoire ne doit pas ressusciter un
+  /// exercice qui n'existe plus.
+  void restore(Iterable<ExerciseBest> bests) {
+    _meilleurs.clear();
+    final Set<String> connus = catalogue.map((Exercise e) => e.id).toSet();
+    for (final ExerciseBest best in bests) {
+      if (connus.contains(best.exerciseId)) {
+        _meilleurs[best.exerciseId] = best;
+      }
+    }
+  }
+
   /// Nombre de prises enregistrees, tous exercices confondus.
   int get essais => _meilleurs.values
       .fold(0, (int total, ExerciseBest b) => total + b.essais);
@@ -158,6 +211,28 @@ class ExerciseProgress {
   int resteAuPalier(int numero) => catalogue
       .where((Exercise e) => e.palier == numero && !estAcquis(e))
       .length;
+
+  /// De combien on monte quand un exercice est acquis.
+  ///
+  /// **Six battements.** Assez pour que ce soit un vrai pas -- en dessous, on
+  /// ne sent pas la difference et le palier ne veut plus rien dire -- et assez
+  /// peu pour que ce soit encore jouable le soir meme. C'est a peu pres le
+  /// cran d'un metronome mecanique dans cette region.
+  static const int pasDeTempo = 6;
+
+  /// Le tempo a proposer pour la prochaine prise de [exercise].
+  ///
+  /// **Tant que l'exercice n'est pas acquis, c'est le tempo vise** : l'objectif
+  /// ne bouge pas parce qu'on a rate. Une fois acquis, on propose le cran
+  /// au-dessus du meilleur tempo reellement tenu -- c'est la seule facon dont
+  /// une progression se voit, et elle ne redescend jamais.
+  int tempoPropose(Exercise exercise) {
+    final ExerciseBest? best = _meilleurs[exercise.id];
+    if (best == null || best.meilleurTempoPropre < exercise.tempoVise) {
+      return exercise.tempoVise;
+    }
+    return best.meilleurTempoPropre + pasDeTempo;
+  }
 
   /// Le prochain exercice a travailler.
   ///

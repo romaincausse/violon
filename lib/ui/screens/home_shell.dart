@@ -12,6 +12,7 @@ import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
 import 'metronome_screen.dart';
+import 'training_screen.dart';
 import 'mic_check_screen.dart';
 import 'passage_editor_screen.dart';
 import 'session_screen.dart';
@@ -37,6 +38,9 @@ class HomeShell extends StatefulWidget {
     required this.onPassageChanged,
     required this.onA4Changed,
     required this.audioEngineFactory,
+    required this.onRemember,
+    this.initialBests = const <ExerciseBest>[],
+    this.initialExercise,
     super.key,
   });
 
@@ -48,6 +52,20 @@ class HomeShell extends StatefulWidget {
   /// ouvriraient chacun le materiel audio se marcheraient dessus, et un
   /// bourdon lance depuis un ecran ferme continuerait de sonner.
   final AudioEngineFactory audioEngineFactory;
+
+  /// La progression relue, s'il y en avait une.
+  final List<ExerciseBest> initialBests;
+
+  /// L'exercice travaille en dernier, s'il y en avait un.
+  final Exercise? initialExercise;
+
+  /// Signale ce qu'il y a a se rappeler.
+  ///
+  /// La coquille ne range rien elle-meme : elle previent, et c'est `ViolonApp`
+  /// qui ecrit. Deux ecrivains sur la meme cle, et la derniere ecriture efface
+  /// ce que l'autre venait d'ajouter.
+  final void Function(List<ExerciseBest> bests, Exercise? exercice, int? tempo)
+      onRemember;
   final Passage passage;
   final double a4;
   final ValueChanged<Passage> onPassageChanged;
@@ -76,7 +94,8 @@ class _HomeShellState extends State<HomeShell> {
   /// progression vit le temps d'une seance. C'est assez pour que l'application
   /// designe la prochaine tache pendant qu'on travaille, et c'est ce qui
   /// compte ce soir.
-  final ExerciseProgress _progres = ExerciseProgress();
+  late final ExerciseProgress _progres = ExerciseProgress()
+    ..restore(widget.initialBests);
 
   /// Le moteur de son, cree une fois et partage.
   ///
@@ -90,7 +109,17 @@ class _HomeShellState extends State<HomeShell> {
   /// Un passage saisi a la main n'est pas un exercice du catalogue : il ne
   /// doit rien faire avancer, sinon n'importe quelles quatre mesures
   /// ouvriraient les paliers.
-  Exercise? _exercice;
+  late Exercise? _exercice = widget.initialExercise;
+
+  /// Tempo de la derniere prise lancee, pour le ranger avec l'exercice.
+  late int? _tempo =
+      widget.initialExercise == null ? null : widget.passage.writtenTempoBpm;
+
+  void _seRappeler() => widget.onRemember(
+        _progres.bests.values.toList(growable: false),
+        _exercice,
+        _tempo,
+      );
 
   /// Note la prise dans la progression.
   ///
@@ -114,17 +143,22 @@ class _HomeShellState extends State<HomeShell> {
         ),
       );
     });
+    _seRappeler();
     if (acquisAvant || !_progres.estAcquis(exercice)) {
       return;
     }
     final int palier = _progres.palierOuvert;
+    final int suivant = _progres.tempoPropose(exercice);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           palier > palierAvant
               ? '${exercice.titre} : acquis a ${resultat.tempoBpm}. '
                   'Palier $palier ouvert.'
-              : '${exercice.titre} : acquis a ${resultat.tempoBpm}.',
+              // Une donnee qui monte devient une invitation : c'est la seule
+              // recompense que le projet s'autorise.
+              : '${exercice.titre} : acquis a ${resultat.tempoBpm}. '
+                  'Et a $suivant ?',
         ),
       ),
     );
@@ -146,7 +180,27 @@ class _HomeShellState extends State<HomeShell> {
     if (choix == null) {
       return;
     }
+    if (choix.mode == ExerciseMode.travailler) {
+      // On ne touche ni au passage ni a la progression : travailler n'est pas
+      // passer. Rien de ce qui se joue ici ne sera note.
+      if (!mounted) {
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (BuildContext c) => TrainingScreen(
+            exercise: choix.exercise,
+            tempoBpm: choix.tempoBpm,
+            engine: _son,
+            a4: widget.a4,
+          ),
+        ),
+      );
+      return;
+    }
     _exercice = choix.exercise;
+    _tempo = choix.tempoBpm;
+    _seRappeler();
     widget.onPassageChanged(
       choix.exercise.toPassage(tempoBpm: choix.tempoBpm),
     );
@@ -251,6 +305,8 @@ class _HomeShellState extends State<HomeShell> {
       // Un passage saisi n'est plus l'exercice d'avant : sans cet oubli, une
       // prise sur un tout autre passage serait comptee pour lui.
       _exercice = null;
+      _tempo = null;
+      _seRappeler();
       widget.onPassageChanged(saisi);
       // On revient jouer : saisir un passage, c'est vouloir le travailler.
       setState(() => _destination = 0);

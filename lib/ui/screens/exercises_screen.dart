@@ -4,14 +4,33 @@ import '../../core/exercises/exercise.dart';
 import '../../core/exercises/exercise_catalog.dart';
 import '../../core/exercises/exercise_progress.dart';
 
+/// Les deux facons d'aborder un exercice.
+///
+/// La distinction vient de l'ADR-008 -- l'application emet **ou** elle ecoute
+/// -- mais elle se trouve etre celle d'un cours de violon. On travaille la
+/// gamme au bourdon, on la passe ensuite.
+enum ExerciseMode {
+  /// Bourdon et metronome, l'application emet. Rien n'est note.
+  travailler,
+
+  /// Silence. Elle ecoute, elle note, elle designe quoi rejouer.
+  passer,
+}
+
 /// Ce que l'ecran rend quand un exercice est choisi.
 class ExerciseChoice {
-  const ExerciseChoice({required this.exercise, required this.tempoBpm});
+  const ExerciseChoice({
+    required this.exercise,
+    required this.tempoBpm,
+    required this.mode,
+  });
 
   final Exercise exercise;
 
   /// Tempo de travail choisi, qui peut etre plus lent que le tempo vise.
   final int tempoBpm;
+
+  final ExerciseMode mode;
 }
 
 /// Le catalogue de gammes et d'exercices.
@@ -36,8 +55,9 @@ class ExercisesScreen extends StatelessWidget {
   /// La carte de la prochaine tache, pour les tests.
   static const Key prochaineTacheKey = Key('prochaine-tache');
 
-  /// Bouton de lancement dans la feuille de choix du tempo.
+  /// Boutons de lancement dans la feuille de choix du tempo.
   static const Key travaillerKey = Key('travailler');
+  static const Key passerKey = Key('passer');
 
   /// Reglage du tempo de travail, dans la feuille.
   static const Key tempoKey = Key('tempo-de-travail');
@@ -102,22 +122,23 @@ class ExercisesScreen extends StatelessWidget {
     );
   }
 
-  /// Demande le tempo, puis rend le choix a l'appelant.
+  /// Demande le tempo et la facon d'aborder l'exercice, puis rend le choix.
   Future<void> _choisir(BuildContext context, Exercise exercise) async {
     final NavigatorState navigator = Navigator.of(context);
-    final int? tempo = await showModalBottomSheet<int>(
+    final ExerciseChoice? choix = await showModalBottomSheet<ExerciseChoice>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (BuildContext context) => _FeuilleTempo(
         exercise: exercise,
         best: progress.bestFor(exercise.id),
+        tempoPropose: progress.tempoPropose(exercise),
       ),
     );
-    if (tempo == null) {
+    if (choix == null) {
       return;
     }
-    navigator.pop(ExerciseChoice(exercise: exercise, tempoBpm: tempo));
+    navigator.pop(choix);
   }
 }
 
@@ -165,7 +186,7 @@ class _ProchaineTache extends StatelessWidget {
             FilledButton.icon(
               onPressed: onChoisir,
               icon: const Icon(Icons.play_arrow),
-              label: Text('Travailler a ${exercise.tempoVise}'),
+              label: Text('Travailler a ${progress.tempoPropose(exercise)}'),
             ),
           ],
         ),
@@ -288,22 +309,42 @@ class _TuileExercice extends StatelessWidget {
 /// exercice ne compte comme acquis qu'au tempo vise, mais rien n'oblige a y
 /// aller tout de suite : le tempo est le seul reglage de cette feuille.
 class _FeuilleTempo extends StatefulWidget {
-  const _FeuilleTempo({required this.exercise, required this.best});
+  const _FeuilleTempo({
+    required this.exercise,
+    required this.best,
+    required this.tempoPropose,
+  });
 
   final Exercise exercise;
   final ExerciseBest? best;
+
+  /// Le tempo que la progression propose : le tempo vise tant que l'exercice
+  /// n'est pas acquis, le cran au-dessus une fois qu'il l'est.
+  final int tempoPropose;
 
   @override
   State<_FeuilleTempo> createState() => _FeuilleTempoState();
 }
 
 class _FeuilleTempoState extends State<_FeuilleTempo> {
-  late int _tempo = widget.exercise.tempoVise;
+  late int _tempo = widget.tempoPropose;
 
-  /// En dessous de 40 un metronome ne sert plus a rien, et au-dela du tempo
-  /// vise il reste de la marge pour celui qui veut pousser.
+  /// En dessous de 40 un metronome ne sert plus a rien, et au-dessus du tempo
+  /// propose il reste de la marge pour celui qui veut pousser.
   int get _min => 40;
-  int get _max => widget.exercise.tempoVise + 20;
+  int get _max {
+    final int vise = widget.exercise.tempoVise + 20;
+    final int propose = widget.tempoPropose + 12;
+    return vise > propose ? vise : propose;
+  }
+
+  void _partir(ExerciseMode mode) => Navigator.of(context).pop(
+        ExerciseChoice(
+          exercise: widget.exercise,
+          tempoBpm: _tempo,
+          mode: mode,
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -348,6 +389,12 @@ class _FeuilleTempoState extends State<_FeuilleTempo> {
               '${_tempo < exercise.tempoVise ? " (vise : ${exercise.tempoVise})" : ""}',
               style: theme.textTheme.titleMedium,
             ),
+            if (widget.tempoPropose > exercise.tempoVise)
+              Text(
+                'Deja tenu a ${widget.best?.meilleurTempoPropre}. '
+                'On monte d un cran ?',
+                style: theme.textTheme.bodySmall,
+              ),
             Slider(
               key: ExercisesScreen.tempoKey,
               value: _tempo.toDouble(),
@@ -362,10 +409,26 @@ class _FeuilleTempoState extends State<_FeuilleTempo> {
               width: double.infinity,
               child: FilledButton.icon(
                 key: ExercisesScreen.travaillerKey,
-                onPressed: () => Navigator.of(context).pop(_tempo),
-                icon: const Icon(Icons.play_arrow),
+                onPressed: () => _partir(ExerciseMode.travailler),
+                icon: const Icon(Icons.blur_on),
                 label: Text('Travailler a $_tempo'),
               ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                key: ExercisesScreen.passerKey,
+                onPressed: () => _partir(ExerciseMode.passer),
+                icon: const Icon(Icons.mic),
+                label: Text('Le passer a $_tempo'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Travailler : bourdon et metronome, rien n est note. '
+              'Le passer : silence, elle ecoute et elle note.',
+              style: theme.textTheme.bodySmall,
             ),
           ],
         ),

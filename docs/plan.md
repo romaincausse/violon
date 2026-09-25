@@ -52,19 +52,19 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 6 | 0 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 7 | 1 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 0 | L'application sert avant meme de jouer un morceau |
-| 3 | Les gammes et les exercices | 2 | 0 | Utile **tous les jours**, sans rien preparer |
+| 3 | Les gammes et les exercices | 4 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 18 | Le progres devient visible |
+| 9 | La memoire | 8 | 16 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**60 lots, 76 soirees restantes**, dont **28 de *must*** -- le reste
+**63 lots, 75 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -78,9 +78,12 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Jalon termine.** Les six lots tournent sur le code deja livre, sans
+**Les six lots sont livres.** Ils tournent sur le code deja livre, sans
 dependance nouvelle, et deux d'entre eux -- I1 et I2 -- corrigeaient des
 defauts en production plutot que d'ajouter une fonctionnalite.
+
+**Un septieme est apparu apres coup**, a l'usage sur le telephone : le ruban
+d'ecart livre en D2 fait son travail mais n'est pas beau. C'est D8.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -90,6 +93,7 @@ defauts en production plutot que d'ajouter une fonctionnalite.
 | ~~D2~~ | ~~Ruban de justesse~~ | | ★★★ | fait |
 | ~~D4~~ | ~~Profils d'affichage~~ | | ★★ | fait |
 | ~~D5~~ | ~~Halo de fin de mesure~~ | | ★★ | fait |
+| D8 | Refonte graphique du ruban d'ecart | | ★★ | 1 |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -267,11 +271,11 @@ et un seul appui lance la prise.
 Dix secondes, c'est la duree au-dela de laquelle un enfant de onze ans repose
 le violon.
 
-**Fait a moitie (PR #39), et il faut le dire.** L'application n'a plus
-d'ecran d'accueil et s'ouvre sur le travail, un appui lance la prise. Mais
-"ce qu'il faisait hier, avec le tempo atteint" suppose de se souvenir de la
-veille : **cette moitie-la attend la persistance (H1)**, et le passage de
-demonstration en tient lieu jusque-la.
+**Fait a moitie en PR #39, termine depuis.** L'application n'a plus d'ecran
+d'accueil et s'ouvre sur le travail, un appui lance la prise. La seconde
+moitie -- "ce qu'il faisait hier, avec le tempo atteint" -- supposait de se
+souvenir de la veille : c'est fait depuis que H1 a ete remonte. A l'ouverture,
+l'application reprend l'exercice travaille en dernier, au tempo choisi.
 
 ### L2 - Refonte de la navigation
 
@@ -384,6 +388,8 @@ Or c'est le cas d'usage ideal pour cette application :
 |----|-----|------|-----|------|
 | ~~E1~~ | ~~Catalogue d'exercices issus des methodes~~ | | ★★★ | fait |
 | ~~E2~~ | ~~Progression de difficulte et score~~ | | ★★★ | fait |
+| ~~E3~~ | ~~Travailler au bourdon et au metronome~~ | | ★★★ | fait |
+| ~~E4~~ | ~~Le cran de tempo suivant~~ | | ★★★ | fait |
 
 ### E1 - Catalogue d'exercices issus des methodes
 
@@ -459,6 +465,35 @@ declarerait un exercice acquis en l'abandonnant apres trois notes justes.
 
 Et un choix de produit, qui a valu une ADR : **la progression guide, elle ne
 verrouille pas** (ADR-011).
+
+### E3 - Travailler au bourdon et au metronome
+
+**Ajoute apres coup, parce que ce qui venait d'etre livre ne tenait pas
+ensemble.** Le catalogue connaissait la tonique de chaque gamme, le bourdon
+connaissait une note, et pour travailler sa gamme de sol au bourdon il fallait
+aller dans les outils choisir Sol a la main.
+
+Un exercice s'aborde maintenant de deux facons, et la distinction vient de
+l'ADR-008 -- l'application emet **ou** elle ecoute -- mais elle se trouve etre
+celle d'un cours de violon (ADR-013) :
+
+| | |
+|---|---|
+| **Travailler** | Bourdon pose sur la tonique, metronome au tempo choisi. Rien n'est note. |
+| **Passer** | Silence. Elle ecoute, elle note, elle designe quoi rejouer. |
+
+On travaille avec l'oreille, on se controle ensuite.
+
+Un motif de doigts n'a pas de bourdon, et l'ecran le dit : le motif traverse
+les quatre cordes, aucune note tenue ne lui sert de reference.
+
+### E4 - Le cran de tempo suivant
+
+La progression retenait le meilleur tempo tenu proprement, et n'en faisait
+rien. Apres une gamme propre a 60, l'application propose maintenant **66** --
+le pas d'un metronome mecanique dans cette region. C'est la seule facon dont
+une donnee qui monte devient une invitation, et c'est la seule recompense que
+le projet s'autorise.
 
 ---
 
@@ -659,9 +694,20 @@ projet cherche depuis le debut.
 
 ## Jalon 9 - La memoire
 
+**H1 a ete remonte ici, et fait tout de suite.** Le jalon 3 avait livre une
+progression dont toute la valeur est de **s'accumuler** -- dix-neuf exercices,
+six paliers, des donnees qui montent -- et elle repartait de zero a chaque
+lancement. Le diapason mesure aussi. Tant que rien ne survivait a la
+fermeture, le catalogue etait une demonstration et pas un outil, et
+"demarrer en dix secondes" (L1) restait a moitie fait faute de se rappeler la
+veille.
+
+Le reste du jalon -- courbes, heatmap, erreurs par doigt -- demande le suiveur
+et la notation du rythme, et attend donc sa place.
+
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| H1 | Persistance passages et seances | **Must** | ★★ | 2 |
+| ~~H1~~ | ~~Persistance passages et seances~~ | **Must** | ★★ | fait |
 | H3 | Erreurs systematiques par doigt | | ★★★ | 3 |
 | H4 | Courbes de progression | | ★★★ | 2 |
 | H5 | Journal de seance | | ★★ | 1 |
