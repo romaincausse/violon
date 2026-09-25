@@ -55,7 +55,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 1 | Le retour qui se voit | 6 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 2 | 0 | Utile **tous les jours**, sans rien preparer |
-| 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
+| 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**60 lots, 80 soirees restantes**, dont **28 de *must*** -- le reste
+**60 lots, 76 soirees restantes**, dont **28 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -464,14 +464,34 @@ verrouille pas** (ADR-011).
 
 ## Jalon 4 - Le son
 
+**Jalon termine (PR #41).** L'application emet enfin, et l'arbitrage du moteur
+audio est tranche : `flutter_soloud`, en 4.x, avec ce qu'on s'autorise a en
+utiliser ecrit noir sur blanc (ADR-012).
+
 **Le jalon qui oblige a trancher le moteur audio**, bien plus tot que dans
 l'ancien plan. Ce qu'on achete avec cette dependance :
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| J1 | Moteur audio pre-planifie **<- dependance a choisir** | | ★★ | 2 |
-| O1 | Bourdon sur la tonique | | ★★★ | 1 |
-| J3 | Metronome sonore | | ★★ | 1 |
+| ~~J1~~ | ~~Moteur audio pre-planifie~~ | | ★★ | fait |
+| ~~O1~~ | ~~Bourdon sur la tonique~~ | | ★★★ | fait |
+| ~~J3~~ | ~~Metronome sonore~~ | | ★★ | fait |
+
+### J1 - Moteur audio pre-planifie
+
+**Fait (PR #41), avec deux choses apprises en chemin.**
+
+*La version comptait autant que le paquet.* `flutter_soloud` 5.x compile son
+C++ sur la machine de developpement : `flutter test` reclame alors clang et
+echoue sans lui, ici comme sur la CI. La 4.x livre ses binaires deja compiles,
+et expose les memes appels. `make check` doit marcher sans chaine de
+compilation C.
+
+*Construire le moteur chargeait la bibliotheque native.* Assez pour faire
+echouer tout test de widget montant l'application -- et, cote produit, pour
+reveiller le haut-parleur au lancement d'une seance entierement silencieuse.
+Le moteur ne resout plus rien tant qu'on ne lui a pas demande de son, et un
+test le verifie.
 
 ### O1 - Bourdon sur la tonique
 
@@ -492,10 +512,31 @@ Une note tenue est par ailleurs la sortie audio la plus simple imaginable :
 c'est le meilleur premier usage possible du moteur, et une facon peu risquee
 de le mettre a l'epreuve avant l'accompagnement.
 
+**Fait (PR #41).** Les douze notes, la quinte **pure** en option, le volume, et
+la frequence prise sur le diapason mesure. Changer de note ne coupe pas le son :
+on cherche sa tonalite en glissant, pas en rallumant.
+
+Propriete heureuse, decouverte en choisissant l'octave : le bourdon de sol
+sonne **exactement la corde de sol a vide**. L'enfant peut donc verifier le
+bourdon contre son propre instrument -- et une corde a vide ne peut pas etre
+jouee faux.
+
 ### J3 - Metronome sonore
 
 Reserve au mode accompagnement et au mode bourdon, jamais pendant la notation
 (ADR-008). Complete O2, qui en est la version visuelle.
+
+**Fait (PR #41), dans le tiroir d'outils.** Tempo, subdivision, temps par
+mesure, et les clics synthetises plutot qu'enregistres : trois fichiers de
+moins a versionner, et surtout un accent obtenu **en montant la hauteur, pas le
+volume** -- un accent plus fort fatigue, un accent plus aigu s'entend aussi bien
+et se laisse oublier.
+
+Le clic n'est jamais declenche par l'interface : a chaque image, l'ecran demande
+au planificateur ce qui reste a poser dans la seconde et demie qui vient. Si
+l'interface bloque un quart de seconde, les clics deja poses sonnent quand meme,
+a l'heure. L'interdiction du `Timer` visait le declenchement, pas le
+remplissage -- voir ADR-012.
 
 ---
 

@@ -89,12 +89,14 @@ Quatre regles structurantes :
    pur, testable sans `pumpWidget` et sans telephone. La mise en page de la
    portee y vit aussi : elle calcule des coordonnees, elle ne peint pas.
    C'est verifie par la CI et par `make core-pur`.
-2. **`AudioCapture` et `PitchSource` sont les seules frontieres avec le
-   materiel audio.** `AudioCapture` ne connait que des octets et vit dans
-   `lib/platform/` cote implementation ; `PitchSource` rend des hauteurs.
+2. **`AudioCapture`, `PitchSource` et `AudioEngine` sont les seules frontieres
+   avec le materiel audio.** `AudioCapture` ne connait que des octets et vit
+   dans `lib/platform/` cote implementation ; `PitchSource` rend des hauteurs ;
+   `AudioEngine` est la sortie, et n'expose que deux choses -- tenir une note a
+   une frequence exacte, poser un clic a un instant exact (ADR-012).
    Ce sont les seules couches a reecrire pour porter sur iOS, et les seules a
    remplacer pour developper l'interface sous Flutter Web. Rien au-dessus ne
-   connait le micro.
+   connait le micro ni le haut-parleur.
 3. **`ScoreNote` est le modele pivot.** Le rendu de partition et la source des
    notes sont interchangeables ; le modele interne ne l'est pas.
 4. **Le rendu de partition est natif** (`CustomPainter` + police Bravura), et
@@ -115,7 +117,10 @@ Quatre regles structurantes :
   `AUDIO_SOURCE_UNPROCESSED` pendant la capture. Le repli sert donc aux autres
   appareils, pas a celui-la.
 - **Jamais de `Timer` Dart pour le metronome.** La derive est audible. Les
-  clics doivent etre pre-planifies dans le moteur audio natif.
+  clics doivent etre pre-planifies dans le moteur audio natif. L'interdiction
+  vise le **declenchement**, pas le remplissage : un minuteur qui se contente
+  de poser d'avance des clics dont l'instant est deja calcule ne derive pas,
+  meme s'il se reveille en retard (ADR-012).
 - **Le YIN tourne dans un isolate**, sur des buffers de 2048 echantillons.
 - **Tolerer le vibrato** : il fait varier la hauteur de +/- 20 a 50 cents
   volontairement. Un detecteur naif le note comme faux.

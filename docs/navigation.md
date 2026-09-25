@@ -97,7 +97,12 @@ se saisit note par note. Les devoirs du professeur attendent le jalon 10.
 
 Le catalogue s'ouvre en plein ecran plutot que dans le tiroir d'outils : on n'y
 passe pas violon en main au milieu d'une prise, on y va pour choisir ce qu'on
-va travailler. Il se referme en rendant l'exercice choisi, qui devient
+va travailler.
+
+Le **bourdon** et le **metronome sonore**, eux, sont bien des outils (PR #41) :
+on les allume violon en main, au milieu d'une seance. Le tiroir en compte donc
+cinq, et il defile -- a cinq entrees il depasse deja la moitie d'un ecran de
+telephone en portrait. Il se referme en rendant l'exercice choisi, qui devient
 directement le passage a jouer -- choisir un exercice, c'est vouloir le
 travailler tout de suite, pas revenir a une liste.
 

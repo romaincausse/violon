@@ -354,3 +354,78 @@ travailler ce soir ; le catalogue entier est en dessous, pour qui veut choisir.
 rejouer : l'application **designe**, elle n'impose pas. Et c'est la regle
 produit prise au serieux -- "voila ta prochaine tache", jamais "voila ce que tu
 n'as pas le droit de jouer".
+
+---
+
+## ADR-012 : Le moteur de son, et ce qu'on lui demande
+
+**Contexte.** Le bourdon (O1) et le metronome sonore (J3) obligent enfin
+l'application a **emettre**. C'est la premiere dependance nouvelle du projet
+depuis la capture micro, et `CLAUDE.md` demande qu'elle soit discutee avant
+d'etre ajoutee.
+
+Deux exigences la determinent, et elles sont plus etroites qu'il n'y parait :
+
+1. **Un clic ne se declenche pas, il se planifie.** Le projet interdit un
+   `Timer` Dart pour le metronome parce que sa derive s'entend : un minuteur se
+   reveille en retard des que l'interface travaille.
+2. **Une frequence exacte, pas une note.** Le bourdon doit sonner au diapason
+   **mesure sur les cordes a vide**. Un bourdon a 440 contre un violon accorde
+   a 442 ferait battre l'instrument contre la reference : l'enfant corrigerait
+   vers le faux, en toute bonne foi, en faisant exactement ce qu'on lui demande.
+
+**Decision. `flutter_soloud`**, moteur SoLoud, mixage en C++.
+
+Les deux appels ont ete verifies **avant** d'ajouter la dependance :
+`setDelaySamples` pose un son a l'echantillon pres, `setWaveformFreq` fixe la
+frequence d'un oscillateur. Le mixage se faisant hors de Dart, un a-coup de
+l'interface ne troue pas le son.
+
+**L'alternative serieuse etait `flutter_pcm_sound`** : on synthetise chaque
+echantillon en Dart pur, et le plugin ne fait que livrer le tampon. Toute la
+synthese serait alors dans `lib/core/`, testable sans appareil, et la derive
+serait impossible par construction -- c'est le choix le plus elegant au regard
+de l'architecture. Il a ete ecarte sur un point : un ramasse-miettes Dart au
+mauvais moment s'entend, et le paquet est nettement moins maintenu.
+
+### La version compte autant que le paquet : 4.x, pas 5.x
+
+La 5 compile son C++ sur la machine de developpement, par le mecanisme des
+*native assets*. Consequence immediate et non annoncee : **`flutter test`
+reclame clang**, et echoue sans lui -- sur la machine de developpement comme
+sur le coureur de la CI. La 4 livre ses binaires deja compiles.
+
+`make check` doit marcher sur une machine sans chaine de compilation C, sans
+quoi la regle "make check avant chaque push" ne tient plus. Les deux appels qui
+justifient la dependance existent en 4.1.7, avec la meme signature.
+
+### Ce qu'on s'autorise a en utiliser
+
+Le moteur sait faire bien davantage : fichiers, effets, spatialisation, voix
+par dizaines. L'interface `AudioEngine`, dans `lib/core/play/`, n'en expose que
+**deux choses** : tenir une note a une frequence exacte, et poser un clic a un
+instant exact. C'est la frontiere de sortie, symetrique de `PitchSource` en
+entree, et la seule couche a reecrire pour porter sur iOS.
+
+`SoloudAudioEngine` est donc la seule classe du projet qui connaisse
+`flutter_soloud`, comme `RecordAudioCapture` est la seule a connaitre `record`.
+
+### Un corollaire qui leve une interdiction mal comprise
+
+L'interdiction du `Timer` visait le **declenchement**, pas la planification. Un
+minuteur -- ou ici un `Ticker` -- qui se contente de **remplir la file a
+l'avance** reste permis : s'il se reveille cinquante millisecondes trop tard,
+il pose les memes clics aux memes instants. Sa gigue ne deplace rien, parce que
+l'instant de chaque clic est calcule depuis le depart et fige dans le moteur
+des la planification.
+
+C'est ce que fait `MetronomeScheduler`, et c'est pour ca que la derive y est
+structurellement impossible plutot que simplement improbable.
+
+### Et ADR-008 tient toujours
+
+L'application emet **ou** elle ecoute, jamais les deux : le haut-parleur est a
+dix centimetres du micro. Le bourdon et le metronome sonore vivent donc dans le
+tiroir d'outils, micro ferme et rien de note. Pendant une prise notee, le
+metronome reste visuel. Aucun ecran ne recoit a la fois une source de hauteurs
+et un moteur de son.
