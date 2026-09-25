@@ -56,6 +56,7 @@ suivant : on change d'algorithme ou on change de plan.
 - [ ] Suiveur en ligne : position et tempo local, a chaque note
 - [ ] Re-ancrage : arret, reprise, saut, mesure rejouee dix fois
 - [ ] La partition a l'ecran se cale sur la position suivie
+- [ ] Confiance du suiveur visible : quand il ne sait plus, il le dit
 - [ ] Le curseur a l'horloge survit comme mode secondaire
 
 **Critere de sortie :** il joue ses quatre mesures depuis sa partition papier,
@@ -219,8 +220,13 @@ casque, l'annulation d'echo, ou renoncer a ce lot. Aucune n'est choisie.
 
 ## Etat au 25 septembre 2026
 
-Le jalon V2 est a moitie fait et **V1 est a refaire dans l'autre sens.** Ce
-qui existe et qui sert tel quel :
+**Dix-huit lots sont livres, et le plan qui les encadre vient de changer de
+sens.** Rapporte au nouveau decoupage, un seul lot est fait (N1, la justesse
+par note) : tout le reste de l'acquis sert d'infrastructure aux jalons a
+venir, sans etre un jalon a lui seul. Le releve complet est dans
+`docs/backlog.md`, section *Deja fait*.
+
+Ce qui existe et ce que ca devient :
 
 | Acquis | Devient |
 |---|---|

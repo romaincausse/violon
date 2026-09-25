@@ -30,7 +30,7 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 
 | ID | Titre | P | Est. | Depend de | Notes |
 |----|-------|---|------|-----------|-------|
-| ~~N1~~ | ~~Score de justesse par note~~ | P0 | 2 | - | **Fait.** Cents medians sur la partie tenue, attaque exclue, courbe genereuse. A rebrancher sur le suiveur : la note jugee devient celle qu'il joue, pas celle que l'horloge attendait. |
+| ~~N1~~ | ~~Score de justesse par note~~ | P0 | 2 | - | **Fait** (voir *Deja fait*). Reste a rebrancher sur le suiveur : la note jugee devient celle qu'il joue, pas celle que l'horloge attendait. |
 | N2 | Tempo reellement tenu | P0 | 2 | S2 | Courbe de tempo ajustee sur les attaques alignees. "74 au lieu de 92" est une information, pas une faute. |
 | N3 | Score de rythme par note | P0 | 2 | N2 | Ecart residuel a la grille metrique, **au tempo tenu** (ADR-010). Ne depend ni de la calibration de latence ni d'un moteur audio : une latence constante disparait de la soustraction. |
 | N4 | Detection des hesitations | P1 | 2 | N2 | Un trou anormal avant une note n'est ni un probleme de rythme ni de justesse. C'est souvent le diagnostic le plus utile a onze ans. |
@@ -75,6 +75,38 @@ Priorite : **P0** bloquant pour le jalon, **P1** important, **P2** confort.
 | J3 | Metronome sonore | P1 | 1 | J1 | Mode accompagnement uniquement (ADR-008). |
 | J4 | Accompagnement deduit du passage | P0 | 3 | J1 | Basse et accords simples derives des notes. Pas d'arrangement savant. |
 | J5 | Accompagnement qui suit | P1 | 5 | J4, S2 | Le seul qui vaille musicalement : il attend l'eleve. **Bute frontalement sur l'ADR-008**, qui interdit d'ecouter pendant que l'application joue. Casque, annulation d'echo, ou renoncement. |
+
+## Deja fait
+
+Dix-huit lots livres avant la refonte du plan. **Aucun n'est perdu** : le
+pivot de l'ADR-009 change ce qui les alimente et le moment ou ils servent,
+pas ce qu'ils font. Ils sont listes ici pour que le backlog reste le releve
+complet, lot par lot.
+
+| ID | Titre | PR | Devient |
+|----|-------|----|---------|
+| Z1 | Suppression du boucleur a cartes | #7 | - |
+| - | Saisie manuelle d'un passage | #5 | Seule entree de partition jusqu'a H6 |
+| G1 | Police Bravura et metriques SMuFL | #15 | Inchange |
+| G2 | Mise en page d'une portee monodique | #6 | Inchange |
+| G3 | Hampes, crochets, ligatures | #9 | Inchange |
+| G4 | Widget de partition et coloration | #12 | Surface de **retour**, plus de lecture |
+| G5 | La partition passe a la ligne | #19 | Idem |
+| G6 | Mode paysage | #20 | Idem |
+| G7 | Choix defilement / plusieurs lignes | #19 | Idem |
+| G8 | Zoom sur la partition | #19 | Idem |
+| M1 | Metronome visuel | #11 | Rattache au mode secondaire (S6) |
+| F1 | Curseur pilote au tempo | #13 | **Retrograde** en mode secondaire (S6) |
+| F2 | Coloration en direct de la justesse | #18 | A rebrancher sur le suiveur (S2) |
+| A1 | Capture micro en `UNPROCESSED` | #16 | Entree du suiveur |
+| A2 | YIN dans un isolate | #17 | Entree du suiveur |
+| A3 | Detecteur d'attaques | #21 | Entree du suiveur **et** du juge de rythme |
+| A5 | Lissage et tolerance vibrato | #22 | Inchange |
+| A6 | Accordeur sol-re-la-mi | #23 | Inchange |
+| N1 | Score de justesse par note | #24 | Alimente par le suiveur, plus par l'horloge |
+
+Le diapason mesure (#26) et le bilan affiche (#25) sont des complements de
+A6 et N1, sans lot propre.
 
 ## Dependances a arbitrer
 

@@ -40,8 +40,8 @@ lib/
     play/              metronome et accompagnement pre-planifies
   ui/                  ecrans et widgets
 test/                  miroir de lib/
-tool/                  script Verovio (import de morceaux entiers, hors app)
-docs/                  roadmap, backlog, decisions d'architecture
+tool/                  script Verovio, dormant depuis l'ADR-009
+docs/                  roadmap, backlog, decisions, journal
 ```
 
 ## Commandes
@@ -50,7 +50,7 @@ docs/                  roadmap, backlog, decisions d'architecture
 make check     # format + analyse + tests + verification d'architecture
 make test
 make apk
-make scores    # regenere les partitions depuis tool/sources/
+make scores    # dormant : voir ADR-002, marquee caduque
 ```
 
 ## Documentation
@@ -60,7 +60,8 @@ make scores    # regenere les partitions depuis tool/sources/
 | `CLAUDE.md` | contexte et regles pour Claude Code |
 | `docs/roadmap.md` | les six jalons |
 | `docs/backlog.md` | une ligne = une PR |
-| `docs/decisions.md` | pourquoi Flutter, pourquoi Verovio, pourquoi pas de backend |
+| `docs/decisions.md` | pourquoi Flutter, pourquoi ce sens de suivi, pourquoi pas de backend |
+| `docs/journal.md` | les trois retournements du projet, et les tensions ouvertes |
 | `docs/professeur.md` | ce qu'un professeur de violon peut en faire |
 | `docs/definition-of-done.md` | ce qu'il faut avant de merger |
 | `CONTRIBUTING.md` | branches, commits, protection de `main` |

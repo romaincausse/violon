@@ -23,20 +23,25 @@ gh pr create --fill
 | `test/` | tests seuls |
 | `refactor/` | reorganisation sans changement de comportement |
 
-Description en kebab-case : `feat/boucleur-variations`, `fix/octave-yin`.
+Description en kebab-case : `feat/suiveur-en-ligne`, `fix/octave-yin`.
 
 ## Messages de commit
 
 Conventional Commits, en francais.
 
 ```
-feat(practice): montee de tempo automatique apres un tour propre
+feat(follow): le suiveur encaisse une mesure rejouee
 fix(audio): corrige l'erreur d'octave sur les harmoniques aigues
 chore(ci): epingle la version de Flutter
-docs(adr): justifie le choix de Verovio
+docs(adr): acte que l'application suit l'eleve
 ```
 
-Portees usuelles : `audio`, `music`, `practice`, `ui`, `ci`, `docs`, `tool`.
+Portees usuelles, calquees sur l'arborescence : `audio`, `music`, `score`,
+`follow`, `scoring`, `play`, `ui`, `platform`, `android`, `ci`, `docs`,
+`tool`.
+
+> `practice` n'existe plus : `lib/core/practice/` a ete supprime avec le
+> boucleur a cartes (lot Z1).
 
 ## Avant de pousser
 
