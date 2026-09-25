@@ -319,3 +319,38 @@ a la fois : les hauteurs et les attaques. Le probleme signale dans l'ancien
 lot N2 -- le detecteur d'attaques a besoin d'un flux sans trou, l'analyse de
 hauteur jette des trames sous pression -- n'est donc plus reportable. Il est
 au premier jalon.
+
+---
+
+## ADR-011 : La progression guide, elle ne verrouille pas
+
+**Contexte.** Le catalogue d'exercices (E1) est ordonne par difficulte, et la
+progression (E2) ouvre un palier quand le precedent est acquis. La question
+suit tout de suite : un palier non ouvert doit-il etre **jouable** ?
+
+Verrouiller est ce que font la plupart des applications de musique, et ca
+marche : voir le palier suivant grise donne envie de finir celui-ci. L'argument
+n'est pas mauvais.
+
+**Decision.** **Un palier non ouvert porte un cadenas, et reste jouable.** Le
+cadenas dit ou en est la progression ; il ne ferme pas la porte.
+
+**Pourquoi.** Parce que ce n'est pas l'application qui decide du programme de
+l'eleve, c'est son professeur. Si le cours de mardi a donne la gamme de si
+bemol majeur, l'application n'a aucune raison valable de la refuser -- et la
+refuser serait la meilleure facon de faire desinstaller l'application, par le
+parent ou par l'enfant.
+
+L'ordre des methodes est un **conseil eprouve**, pas un reglement : Hrimaly
+n'a jamais interdit de sauter une page.
+
+**Ce que ca coute.** Le ressort de motivation du deverrouillage. On le remplace
+par ce que le projet s'est deja engage a montrer : des donnees qui montent --
+le meilleur score, le tempo tenu, le nombre d'exercices acquis -- et **une
+seule prochaine tache mise en avant**. La carte du haut de l'ecran dit quoi
+travailler ce soir ; le catalogue entier est en dessous, pour qui veut choisir.
+
+**Coherence avec le reste.** C'est la meme regle que pour les mesures a
+rejouer : l'application **designe**, elle n'impose pas. Et c'est la regle
+produit prise au serieux -- "voila ta prochaine tache", jamais "voila ce que tu
+n'as pas le droit de jouer".

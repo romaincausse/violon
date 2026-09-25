@@ -66,6 +66,30 @@ enum _MicState { arrete, ecoute, refuse, indisponible }
 int maxSystemsFor(Orientation orientation) =>
     orientation == Orientation.portrait ? 4 : 2;
 
+/// Ce qu'un passage note a produit, une fois joue jusqu'au bout.
+///
+/// Rendu a l'appelant plutot qu'affiche : c'est lui qui sait si le passage
+/// etait un exercice du catalogue, et qui tient la progression.
+class SessionResult {
+  const SessionResult({
+    required this.score,
+    required this.coverage,
+    required this.tempoBpm,
+  });
+
+  /// Note d'ensemble du passage, de 0 a 100.
+  final int score;
+
+  /// Part des notes du passage reellement entendues, entre 0 et 1.
+  ///
+  /// Le score ne compte que ce qui a ete entendu : sans cette part, quatre
+  /// notes justes sur vingt-neuf vaudraient cent.
+  final double coverage;
+
+  /// Tempo auquel le passage etait ecrit.
+  final int tempoBpm;
+}
+
 /// Ecran de travail : le passage, le curseur, et ce qu'on entend.
 ///
 /// **Mode notation** au sens de l'ADR-008 : le micro est ouvert et
@@ -77,6 +101,7 @@ class SessionScreen extends StatefulWidget {
     required this.onTune,
     this.a4 = PitchUtils.defaultA4,
     this.pitchSourceFactory = defaultPitchSource,
+    this.onResult,
     super.key,
   });
 
@@ -95,6 +120,14 @@ class SessionScreen extends StatefulWidget {
   final double a4;
 
   final PitchSourceFactory pitchSourceFactory;
+
+  /// Appele quand le passage a ete joue **jusqu'au bout**, avec un score.
+  ///
+  /// **Seulement au bout, jamais sur un arret manuel.** Un passage interrompu
+  /// apres trois notes justes rendrait un score de cent sur trois notes : de
+  /// quoi declarer un exercice acquis en l'abandonnant, ce qui est exactement
+  /// l'inverse du travail.
+  final ValueChanged<SessionResult>? onResult;
 
   /// Bouton de changement de profil d'affichage, pour les tests.
   static const Key profilKey = Key('profil-affichage');
@@ -191,7 +224,7 @@ class _SessionScreenState extends State<SessionScreen>
     // La lecture s'arrete d'elle-meme sur la derniere note : on termine sur
     // la fin du passage, pas sur un bouton qu'il faudrait penser a presser.
     if (_cursor.isFinishedAt(elapsed - _decompte.duration)) {
-      _stop();
+      _stop(termine: true);
       return;
     }
     setState(() => _depuisLeDepart = elapsed);
@@ -328,13 +361,23 @@ class _SessionScreenState extends State<SessionScreen>
         (widget.passage.writtenTempoBpm * widget.passage.ticksPerBeat);
   }
 
-  void _stop() {
+  void _stop({bool termine = false}) {
     _ticker.stop();
     unawaited(_fermerLeMicro());
+    final int? score = termine ? _tuning.overallScore : null;
     setState(() {
       _running = false;
       _depuisLeDepart = Duration.zero;
     });
+    if (score != null) {
+      widget.onResult?.call(
+        SessionResult(
+          score: score,
+          coverage: _tuning.heardNoteIds.length / widget.passage.notes.length,
+          tempoBpm: widget.passage.writtenTempoBpm,
+        ),
+      );
+    }
   }
 
   Future<void> _fermerLeMicro() async {

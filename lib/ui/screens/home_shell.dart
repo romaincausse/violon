@@ -2,8 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/exercises/exercise.dart';
+import '../../core/exercises/exercise_catalog.dart';
+import '../../core/exercises/exercise_progress.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
+import 'exercises_screen.dart';
 import 'free_play_screen.dart';
 import 'mic_check_screen.dart';
 import 'passage_editor_screen.dart';
@@ -41,6 +45,9 @@ class HomeShell extends StatefulWidget {
   static const Key outilsKey = Key('ouvrir-les-outils');
   static const Key navKey = Key('navigation');
 
+  /// Entree du catalogue de gammes et d'exercices, pour les tests.
+  static const Key exercicesKey = Key('ouvrir-les-exercices');
+
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
@@ -48,6 +55,78 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   /// L'application s'ouvre sur *Jouer*, jamais sur un menu.
   int _destination = 0;
+
+  /// Ou en est l'eleve dans le catalogue.
+  ///
+  /// **Volatile, tant que la persistance n'existe pas** (lot H1) : la
+  /// progression vit le temps d'une seance. C'est assez pour que l'application
+  /// designe la prochaine tache pendant qu'on travaille, et c'est ce qui
+  /// compte ce soir.
+  final ExerciseProgress _progres = ExerciseProgress();
+
+  /// L'exercice d'ou vient le passage en cours, s'il en vient d'un.
+  ///
+  /// Un passage saisi a la main n'est pas un exercice du catalogue : il ne
+  /// doit rien faire avancer, sinon n'importe quelles quatre mesures
+  /// ouvriraient les paliers.
+  Exercise? _exercice;
+
+  /// Note la prise dans la progression.
+  ///
+  /// Un exercice fraichement acquis se dit -- une fois, discretement. C'est
+  /// une donnee qui monte, pas une recompense : un chiffre et un tempo, pas
+  /// une fanfare.
+  void _noterLExercice(SessionResult resultat) {
+    final Exercise? exercice = _exercice;
+    if (exercice == null) {
+      return;
+    }
+    final bool acquisAvant = _progres.estAcquis(exercice);
+    final int palierAvant = _progres.palierOuvert;
+    setState(() {
+      _progres.record(
+        ExerciseAttempt(
+          exerciseId: exercice.id,
+          score: resultat.score,
+          tempoBpm: resultat.tempoBpm,
+          coverage: resultat.coverage,
+        ),
+      );
+    });
+    if (acquisAvant || !_progres.estAcquis(exercice)) {
+      return;
+    }
+    final int palier = _progres.palierOuvert;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          palier > palierAvant
+              ? '${exercice.titre} : acquis a ${resultat.tempoBpm}. '
+                  'Palier $palier ouvert.'
+              : '${exercice.titre} : acquis a ${resultat.tempoBpm}.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _ouvrirLesExercices() async {
+    final ExerciseChoice? choix =
+        await Navigator.of(context).push<ExerciseChoice>(
+      MaterialPageRoute<ExerciseChoice>(
+        builder: (BuildContext context) => ExercisesScreen(progress: _progres),
+      ),
+    );
+    if (choix == null) {
+      return;
+    }
+    _exercice = choix.exercise;
+    widget.onPassageChanged(
+      choix.exercise.toPassage(tempoBpm: choix.tempoBpm),
+    );
+    // On va jouer : choisir un exercice, c'est vouloir le travailler tout de
+    // suite -- pas revenir a une liste.
+    setState(() => _destination = 0);
+  }
 
   Future<void> _ouvrirLesOutils() async {
     await showModalBottomSheet<void>(
@@ -116,6 +195,9 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
     if (saisi != null) {
+      // Un passage saisi n'est plus l'exercice d'avant : sans cet oubli, une
+      // prise sur un tout autre passage serait comptee pour lui.
+      _exercice = null;
       widget.onPassageChanged(saisi);
       // On revient jouer : saisir un passage, c'est vouloir le travailler.
       setState(() => _destination = 0);
@@ -130,6 +212,7 @@ class _HomeShellState extends State<HomeShell> {
               passage: widget.passage,
               a4: widget.a4,
               pitchSourceFactory: widget.pitchSourceFactory,
+              onResult: _noterLExercice,
               onChangePassage: () => unawaited(_saisirUnPassage()),
               // Accorder est la premiere chose de chaque seance : elle
               // merite son raccourci, en plus du tiroir.
@@ -148,7 +231,10 @@ class _HomeShellState extends State<HomeShell> {
           : _Repertoire(
               passage: widget.passage,
               a4: widget.a4,
+              progres: _progres,
+              exercice: _exercice,
               onSaisir: () => unawaited(_saisirUnPassage()),
+              onExercices: () => unawaited(_ouvrirLesExercices()),
             ),
       bottomNavigationBar: NavigationBar(
         key: HomeShell.navKey,
@@ -180,24 +266,38 @@ class _HomeShellState extends State<HomeShell> {
 
 /// Ce qu'on peut choisir de travailler.
 ///
-/// **Encore maigre, et c'est normal.** Les gammes et les exercices arrivent au
-/// jalon 3, les devoirs du professeur au jalon 10. La troisieme destination
-/// prevue par `docs/navigation.md` -- *Progres* -- attend la persistance (lot
-/// H1) : un onglet vide serait pire que pas d'onglet du tout.
+/// **Les gammes d'abord, le passage saisi ensuite.** Un exercice ne demande
+/// aucune preparation : il se genere, il est pret ce soir. Un passage de
+/// morceau se saisit note par note, ce qui est un travail en soi -- donc un
+/// geste plus rare, et plus bas dans la liste.
+///
+/// La troisieme destination prevue par `docs/navigation.md` -- *Progres* --
+/// attend la persistance (lot H1) : un onglet vide serait pire que pas
+/// d'onglet du tout. Les devoirs du professeur arrivent au jalon 10.
 class _Repertoire extends StatelessWidget {
   const _Repertoire({
     required this.passage,
     required this.a4,
+    required this.progres,
+    required this.exercice,
     required this.onSaisir,
+    required this.onExercices,
   });
 
   final Passage passage;
   final double a4;
+  final ExerciseProgress progres;
+
+  /// L'exercice d'ou vient le passage en cours, s'il en vient d'un.
+  final Exercise? exercice;
+
   final VoidCallback onSaisir;
+  final VoidCallback onExercices;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final Exercise? tache = progres.prochaineTache;
     return Scaffold(
       appBar: AppBar(title: const Text('Repertoire')),
       body: SafeArea(
@@ -205,15 +305,41 @@ class _Repertoire extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             Card(
+              color: theme.colorScheme.primaryContainer,
+              child: ListTile(
+                key: HomeShell.exercicesKey,
+                leading: const Icon(Icons.straighten),
+                title: const Text('Gammes et exercices'),
+                subtitle: Text(
+                  tache == null
+                      ? 'Tout le catalogue est acquis'
+                      : 'A travailler : ${tache.titre}',
+                ),
+                trailing: Text(
+                  '${progres.acquis}/${ExerciseCatalog.all.length}',
+                  style: theme.textTheme.titleMedium,
+                ),
+                onTap: onExercices,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text('Le passage en cours', style: theme.textTheme.titleSmall),
+            const SizedBox(height: 4),
+            Card(
               child: ListTile(
                 title: Text(passage.title),
                 subtitle: Text(
-                  passage.measureCount == 1
-                      ? 'Mesure ${passage.firstMeasure} - '
+                  exercice != null
+                      // Un exercice ne se decrit pas par ses numeros de
+                      // mesure : ils ne sont ecrits sur aucune partition.
+                      ? '${exercice!.source.court} - '
                           '${passage.writtenTempoBpm} bpm'
-                      : 'Mesures ${passage.firstMeasure} a '
-                          '${passage.lastMeasure} - '
-                          '${passage.writtenTempoBpm} bpm',
+                      : passage.measureCount == 1
+                          ? 'Mesure ${passage.firstMeasure} - '
+                              '${passage.writtenTempoBpm} bpm'
+                          : 'Mesures ${passage.firstMeasure} a '
+                              '${passage.lastMeasure} - '
+                              '${passage.writtenTempoBpm} bpm',
                 ),
                 trailing: const Icon(Icons.check_circle_outline),
               ),
@@ -229,11 +355,6 @@ class _Repertoire extends StatelessWidget {
               a4 == PitchUtils.defaultA4
                   ? 'Diapason : 440 Hz (par defaut)'
                   : 'Diapason mesure : ${a4.toStringAsFixed(1)} Hz',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Les gammes et les exercices arrivent au jalon suivant.',
               style: theme.textTheme.bodySmall,
             ),
           ],

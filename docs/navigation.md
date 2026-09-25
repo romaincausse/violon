@@ -90,6 +90,17 @@ Dans cet ordre, qui est celui de la priorite reelle :
 3. Les morceaux et passages deja saisis
 4. Nouveau passage : saisie ou import
 
+**Etat (PR #40).** Les points 2 et 3 sont la, dans cet ordre. Les gammes
+passent devant le passage en cours pour une raison simple : un exercice ne
+demande aucune preparation, il est pret ce soir, alors qu'un passage de morceau
+se saisit note par note. Les devoirs du professeur attendent le jalon 10.
+
+Le catalogue s'ouvre en plein ecran plutot que dans le tiroir d'outils : on n'y
+passe pas violon en main au milieu d'une prise, on y va pour choisir ce qu'on
+va travailler. Il se referme en rendant l'exercice choisi, qui devient
+directement le passage a jouer -- choisir un exercice, c'est vouloir le
+travailler tout de suite, pas revenir a une liste.
+
 ### Progres -- regarder ou on en est
 
 Consulte en fin de seance, ou avec le professeur pendant le cours. Courbes de
