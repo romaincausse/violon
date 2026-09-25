@@ -157,8 +157,9 @@ Quatre regles structurantes :
 
 - Une branche par sujet, une PR par branche. Jamais de commit direct sur `main`.
 - Nommage : `feat/`, `fix/`, `chore/`, `docs/`, `test/` + description en
-  kebab-case. Exemple : `feat/curseur-au-tempo`.
-- Messages de commit en Conventional Commits : `feat(practice): ...`.
+  kebab-case. Exemple : `feat/suiveur-en-ligne`.
+- Messages de commit en Conventional Commits : `feat(follow): ...`. Les
+  portees suivent l'arborescence ; `practice` n'existe plus.
 - La CI doit etre verte avant merge. Squash merge.
 
 ## Ce que tu ne dois pas faire sans demander

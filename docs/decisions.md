@@ -27,9 +27,17 @@ comme **environnement de developpement** de l'interface, avec une
 
 ## ADR-002 : Partitions pre-gravees par Verovio, hors application
 
-> **Amende par l'ADR-007.** Le pre-rendu reste la voie pour importer un
-> morceau entier du repertoire, mais il ne peut pas servir un passage saisi
-> dans l'application. Voir ADR-007.
+> **Caduque.** Amendee d'abord par l'ADR-007 -- un passage saisi dans
+> l'application ne peut pas etre pre-grave -- puis videe de son dernier usage
+> par l'ADR-009.
+>
+> Le pre-rendu devait rester la voie d'import d'un morceau entier. Mais depuis
+> que l'application **suit** l'eleve, elle a besoin des notes elles-memes
+> (hauteurs et durees, soit un `Passage`), pas d'une image accompagnee d'un
+> timemap. Un SVG ne se suit pas. L'import du lot H6 lit donc directement le
+> MusicXML, ce qui est de l'analyse d'XML et non de la gravure.
+>
+> `tool/build_scores.mjs` et `make scores` sont dormants en consequence.
 
 **Contexte.** Il n'existe pas de moteur de gravure musicale mature en
 Flutter. Trois voies : WebView + OpenSheetMusicDisplay ou alphaTab, moteur

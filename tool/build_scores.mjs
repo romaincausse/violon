@@ -2,6 +2,12 @@
 /**
  * Grave les partitions hors application.
  *
+ * DORMANT depuis l'ADR-009. L'application suit desormais l'eleve, et suivre
+ * demande les notes (hauteurs et durees), pas une image plus un timemap : un
+ * SVG ne se suit pas. L'import prevu au lot H6 lit le MusicXML directement.
+ * Ce script reste la tant qu'on n'a pas tranche s'il sert encore a produire
+ * des gravures de reference. Voir ADR-002, marquee caduque.
+ *
  * MusicXML  ->  un SVG par systeme  +  un timemap JSON
  *
  * Le timemap donne l'onset en millisecondes de chaque note, et chaque glyphe
