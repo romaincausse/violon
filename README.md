@@ -41,7 +41,7 @@ lib/
   ui/                  ecrans et widgets
 test/                  miroir de lib/
 tool/                  script Verovio, dormant depuis l'ADR-009
-docs/                  plan, decisions, journal, professeur
+docs/                  plan, decisions, journal, navigation, professeur
 ```
 
 ## Commandes
@@ -61,6 +61,7 @@ make scores    # dormant : voir ADR-002, marquee caduque
 | `docs/plan.md` | **le plan** : huit jalons, une ligne = une PR, trie par ROI |
 | `docs/decisions.md` | pourquoi Flutter, pourquoi ce sens de suivi, pourquoi pas de backend |
 | `docs/journal.md` | les trois retournements du projet, et les tensions ouvertes |
+| `docs/navigation.md` | comment on s'y retrouve quand tout existera |
 | `docs/professeur.md` | ce qu'un professeur de violon peut en faire |
 | `docs/definition-of-done.md` | ce qu'il faut avant de merger |
 | `CONTRIBUTING.md` | branches, commits, protection de `main` |
