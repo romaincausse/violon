@@ -107,7 +107,17 @@ interdit d'en faire un graveur general. Les deux ne sont pas incompatibles --
 un doigte est un chiffre au-dessus d'une tete de note -- mais rien n'est au
 backlog. Non tranche.
 
-**L'intonation expressive.** `LiveTuning` compare a la note temperee. Un
-violoniste ne joue pas temperee : sensible haute, tierce majeure basse. En 4e
-annee c'est deja enseigne. L'application marque donc faux ce qu'il joue juste,
-sur des notes precises et toujours les memes. Non tranche.
+**~~L'intonation expressive.~~ Tranchee, lot I2.** Le constat etait bon, sa
+formulation exageree : avec 35 cents de tolerance, la couleur n'etait jamais
+fausse -- l'application retirait des points, de 4 a 11 sur cent, toujours sur
+les memes degres.
+
+L'argument retenu est plus solide que celui-ci : les deux references
+d'intonation enseignees, juste et pythagoricienne, **different de 21,5 cents
+sur la tierce majeure**, et vont en sens inverse. Un bareme qui distingue a 10
+cents note donc plus finement que ne different deux reponses correctes.
+`perfectCents` passe a 22.
+
+Reste ouvert : une quinte ne varie que de deux cents d'un systeme a l'autre et
+merite une marge plus serree qu'une tierce. Cela demande le degre dans la
+tonalite -- lot I3, que l'import MusicXML rendra gratuit.

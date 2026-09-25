@@ -139,8 +139,36 @@ class LiveTuning {
     return noteScoreForCents(cents);
   }
 
-  /// Ecart parfait au-dela duquel la note commence a perdre des points.
-  static const double perfectCents = 10;
+  /// Ecart au-dela duquel la note commence a perdre des points.
+  ///
+  /// **Vingt-deux cents, parce qu'un violoniste ne joue pas tempere.** La
+  /// gamme temperee est un compromis de clavier ; sur un instrument a hauteur
+  /// libre, deux references sont enseignees et toutes deux sont justes :
+  ///
+  /// | Intervalle | Juste | Pythagoricienne |
+  /// |---|---|---|
+  /// | tierce mineure | +15,6 | -5,9 |
+  /// | tierce majeure | -13,7 | +7,8 |
+  /// | sixte majeure | -15,6 | +5,9 |
+  /// | septieme majeure | -11,7 | +9,8 |
+  ///
+  /// En jeu melodique on joue les sensibles hautes et les tierces hautes ; en
+  /// double corde ou sur un bourdon, on les joue basses pour que l'accord
+  /// sonne. **Les deux ecarts vont en sens inverse et separent la tierce
+  /// majeure de 21,5 cents.**
+  ///
+  /// Noter a dix cents pres, c'est donc distinguer plus finement que ne
+  /// different deux reponses correctes : on mesure du bruit, et on retire des
+  /// points a un enfant qui fait exactement ce que son professeur lui
+  /// demande. Vingt-deux cents couvre l'eventail des choix legitimes.
+  ///
+  /// **Le prix est assume** : une quinte ou une octave, qui ne varient que de
+  /// deux cents d'un systeme a l'autre, sont desormais jugees aussi
+  /// largement. Corriger ce point demande de connaitre le degre de la note
+  /// dans la tonalite, donc la tonalite -- que ni `Passage` ni `ScoreNote` ne
+  /// portent aujourd'hui. Elle arrivera avec l'import MusicXML, qui la
+  /// transporte.
+  static const double perfectCents = 22;
 
   /// Ecart a partir duquel la note vaut zero : un demi-ton, soit une autre
   /// note.
@@ -187,6 +215,11 @@ class LiveTuning {
   ///
   /// En cas d'egalite, la premiere dans l'ordre d'ecoute : on travaille le
   /// passage dans le sens ou on le joue.
+  ///
+  /// **Rend `null` quand rien n'est a retravailler.** Sans cette garde, un
+  /// passage joue parfaitement designait quand meme une mesure -- la premiere,
+  /// faute de mieux -- et l'application demandait de retravailler ce qui etait
+  /// deja juste. C'est la regle produit prise a l'envers.
   String? get weakestNoteId {
     String? pire;
     int meilleurScore = 101;
@@ -197,7 +230,7 @@ class LiveTuning {
         pire = id;
       }
     }
-    return pire;
+    return meilleurScore >= 100 ? null : pire;
   }
 
   /// Oublie tout : a appeler a chaque nouveau passage sur le morceau.
