@@ -1,4 +1,5 @@
 import 'pitch_estimate.dart';
+import 'pitch_smoother.dart';
 
 /// Frontiere entre l'application et le materiel audio.
 ///
@@ -9,6 +10,16 @@ import 'pitch_estimate.dart';
 abstract class PitchSource {
   /// Flux de hauteurs detectees. Les silences ne produisent rien.
   Stream<PitchEstimate> get pitches;
+
+  /// Le meme flux, avec ce que le lissage a appris au passage : amplitude de
+  /// l'oscillation, et vibrato reconnu ou non.
+  ///
+  /// **Fait partie de la frontiere, et pas d'une implementation.** Tout ce qui
+  /// juge un accord en a besoin -- l'accordeur comme la surveillance de
+  /// derive -- parce qu'une hauteur qui oscille ne mesure rien. L'exposer ici
+  /// evite a l'interface de tester le type reel de la source, ce qui rendait
+  /// l'accordeur muet des qu'on developpait avec une source factice.
+  Stream<SmoothedPitch> get smoothedPitches;
 
   /// Latence entree/sortie mesuree lors de la calibration, en millisecondes.
   /// Necessaire pour noter le rythme : sans elle, tout parait en retard.

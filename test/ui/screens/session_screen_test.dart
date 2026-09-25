@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
@@ -600,6 +602,67 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(find.byKey(const Key('bilan-score')), findsNothing);
+    });
+  });
+
+  group('accord de l instrument', () {
+    /// Un la4 tenu, bas de [cents], repete assez pour etre pris au serieux.
+    List<PitchEstimate> cordeDeLa(double cents, {int fois = 10}) {
+      final double hz =
+          PitchUtils.midiToFrequency(69) * math.pow(2, cents / 1200).toDouble();
+      return <PitchEstimate>[
+        for (int i = 0; i < fois; i++)
+          PitchEstimate(frequencyHz: hz, confidence: 1, timestampMs: i * 46),
+      ];
+    }
+
+    testWidgets('une corde qui a baisse est signalee pendant la seance', (
+      WidgetTester tester,
+    ) async {
+      // Sans ca, l'application reproche a l'enfant, pendant une demi-heure,
+      // une faute qui appartient a l'instrument.
+      final MicroFactice micro = await poser(tester, cordeDeLa(-25));
+      await demarrer(tester);
+
+      micro.derniere.emitAll();
+      await tester.pump();
+
+      expect(find.byKey(const Key('alerte-accord')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('alerte-accord'))).data,
+        contains('baisse'),
+      );
+      await arreter(tester);
+    });
+
+    testWidgets('un instrument juste ne declenche aucune alerte', (
+      WidgetTester tester,
+    ) async {
+      final MicroFactice micro = await poser(tester, cordeDeLa(2));
+      await demarrer(tester);
+
+      micro.derniere.emitAll();
+      await tester.pump();
+
+      expect(find.byKey(const Key('alerte-accord')), findsNothing);
+      await arreter(tester);
+    });
+
+    testWidgets('l alerte ne masque pas le bilan de fin de passage', (
+      WidgetTester tester,
+    ) async {
+      // Defaut trouve en branchant le lot : l'alerte prenait toute la place
+      // et le score disparaissait. Les deux doivent coexister -- le chiffre
+      // parce qu'il est attendu, l'alerte parce que sans elle le chiffre
+      // parlerait de l'instrument sans le dire.
+      final MicroFactice micro = await poser(tester, cordeDeLa(-25));
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+      await arreter(tester);
+
+      expect(find.byKey(const Key('alerte-accord')), findsOneWidget);
+      expect(find.byKey(const Key('bilan-score')), findsOneWidget);
     });
   });
 }
