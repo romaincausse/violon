@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 6 | 6 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 6 | 4 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 8 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**60 lots, 100 soirees restantes**, dont **28 de *must*** -- le reste
+**60 lots, 98 soirees restantes**, dont **28 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -85,7 +85,7 @@ Aucun lot n'attend le suiveur.
 |----|-----|------|-----|------|
 | ~~I1~~ | ~~Cordes a vide comme ancre, alerte de desaccord~~ | | ★★★ | fait |
 | ~~I2~~ | ~~Intonation expressive~~ | | ★★★ | fait |
-| D1 | Bandeau de mesures | | ★★★ | 2 |
+| ~~D1~~ | ~~Bandeau de mesures~~ | | ★★★ | fait |
 | D2 | Ruban de justesse | | ★★★ | 2 |
 | D4 | Profils d'affichage | | ★★ | 1 |
 | D5 | Halo de fin de mesure | | ★★ | 1 |
@@ -165,6 +165,17 @@ mais sait tres bien voir un gros bloc changer de couleur.
 
 Et le meme widget sert deux fois : pendant le passage il montre ou on en est,
 apres le passage **il est le bilan**. Un seul objet, deux moments.
+
+**Fait (PR #36).** Une precision retenue a l'ecriture : l'information est
+portee par la **hauteur de remplissage**, pas seulement par la couleur. La
+teinte est ce qui se degrade en premier en vision peripherique, et elle ne dit
+rien a un daltonien ; une hauteur se voit dans les deux cas. La case se
+remplit donc litteralement -- des donnees qui montent, au sens propre -- et
+une mesure faible est peu remplie, jamais rouge.
+
+Le remplissage tient compte de la part reellement entendue : cent sur cent
+etabli sur une note sur quatre ne s'affiche pas comme une mesure tenue de bout
+en bout.
 
 ### D2 - Ruban de justesse
 

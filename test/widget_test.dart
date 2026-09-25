@@ -4,6 +4,7 @@ import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
 import 'package:violon/main.dart';
+import 'package:violon/ui/widgets/metronome_bar.dart';
 import 'package:violon/ui/widgets/score_view.dart';
 
 /// Micro silencieux. Ces tests portent sur l'ecran, pas sur l'ecoute :
@@ -53,7 +54,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(
       tester
-          .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
+          .widget<FractionallySizedBox>(find.byKey(MetronomeBar.pulseKey))
           .widthFactor,
       greaterThan(0),
     );

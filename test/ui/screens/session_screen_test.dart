@@ -14,6 +14,7 @@ import 'package:violon/core/music/passage_builder.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/ui/screens/session_screen.dart';
+import 'package:violon/ui/widgets/measure_strip.dart';
 import 'package:violon/ui/widgets/score_view.dart';
 import 'package:violon/ui/widgets/tuning_colors.dart';
 
@@ -663,6 +664,53 @@ void main() {
 
       expect(find.byKey(const Key('alerte-accord')), findsOneWidget);
       expect(find.byKey(const Key('bilan-score')), findsOneWidget);
+    });
+  });
+
+  group('bandeau de mesures', () {
+    testWidgets('le passage affiche une case par mesure', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      for (int m = demo.firstMeasure; m <= demo.lastMeasure; m++) {
+        expect(find.byKey(MeasureStrip.keyFor(m)), findsOneWidget);
+      }
+    });
+
+    testWidgets('jouer juste remplit la case de la mesure', (
+      WidgetTester tester,
+    ) async {
+      double remplissage(int m) => tester
+          .widget<FractionallySizedBox>(
+            find.descendant(
+              of: find.byKey(MeasureStrip.keyFor(m)),
+              matching: find.byType(FractionallySizedBox),
+            ),
+          )
+          .heightFactor!;
+
+      final MicroFactice micro = await poser(tester, juste(premiere.midi));
+      expect(remplissage(premiere.measure), 0);
+
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+
+      expect(remplissage(premiere.measure), greaterThan(0),
+          reason: 'la case se remplit a mesure qu on joue');
+      await arreter(tester);
+    });
+
+    testWidgets('le bandeau survit au passage en paysage', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(740, 360));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await poser(tester, <PitchEstimate>[]);
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(MeasureStrip.stripKey), findsOneWidget);
     });
   });
 }

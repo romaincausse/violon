@@ -17,6 +17,13 @@ import '../../core/play/metronome_clock.dart';
 /// un delta a cumuler. Combine a [MetronomeClock], qui ne cumule rien non
 /// plus, la pulsation ne peut pas deriver.
 class MetronomeBar extends StatefulWidget {
+  /// Cle de la barre qui pulse, pour la viser sans ambiguite depuis un test.
+  ///
+  /// Sans elle, un test qui cherchait "le" `FractionallySizedBox` de l'ecran
+  /// s'est casse des qu'un second widget en a utilise un. Un test doit viser
+  /// ce qu'il mesure, pas le seul candidat du moment.
+  static const Key pulseKey = Key('metronome-pulse');
+
   const MetronomeBar({
     required this.tempoBpm,
     required this.running,
@@ -96,6 +103,7 @@ class _MetronomeBarState extends State<MetronomeBar>
             borderRadius: BorderRadius.circular(5),
           ),
           child: FractionallySizedBox(
+            key: MetronomeBar.pulseKey,
             alignment: Alignment.centerLeft,
             widthFactor: phase.clamp(0.0, 1.0),
             child: DecoratedBox(
