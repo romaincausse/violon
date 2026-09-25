@@ -41,7 +41,7 @@ lib/
   ui/                  ecrans et widgets
 test/                  miroir de lib/
 tool/                  script Verovio, dormant depuis l'ADR-009
-docs/                  roadmap, backlog, decisions, journal
+docs/                  plan, decisions, journal, professeur
 ```
 
 ## Commandes
@@ -58,8 +58,7 @@ make scores    # dormant : voir ADR-002, marquee caduque
 | Fichier | Contenu |
 |---------|---------|
 | `CLAUDE.md` | contexte et regles pour Claude Code |
-| `docs/roadmap.md` | les six jalons |
-| `docs/backlog.md` | une ligne = une PR |
+| `docs/plan.md` | **le plan** : huit jalons, une ligne = une PR, trie par ROI |
 | `docs/decisions.md` | pourquoi Flutter, pourquoi ce sens de suivi, pourquoi pas de backend |
 | `docs/journal.md` | les trois retournements du projet, et les tensions ouvertes |
 | `docs/professeur.md` | ce qu'un professeur de violon peut en faire |
@@ -76,9 +75,13 @@ distribution.
 
 ## Etat
 
-Le plan a ete refondu : c'est desormais l'application qui suit l'eleve, et non
-l'inverse (ADR-009). Ce qui existe -- gravure, micro, YIN, detecteur
-d'attaques, justesse, accordeur -- sert tel quel. Le prochain jalon est celui
-de la **preuve** : le suiveur tient-il sur de vraies prises ?
+Dix-huit lots livres. Le plan a ete refondu : c'est desormais l'application
+qui suit l'eleve, et non l'inverse (ADR-009), et il est reordonne par rapport
+effet/cout.
 
-Voir `docs/roadmap.md`.
+Le prochain jalon ne demande donc pas le suiveur : six lots a fort effet qui
+tournent sur le code deja livre -- l'ancre par cordes a vide, l'intonation
+expressive, et les retours visuels qui se lisent du coin de l'oeil pendant
+qu'on lit son papier.
+
+Voir `docs/plan.md`.
