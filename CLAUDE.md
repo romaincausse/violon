@@ -76,6 +76,7 @@ lib/
     follow/        <- suiveur, alignement joue / attendu (le coeur)
     scoring/       <- notation de la justesse et du rythme
     play/          <- metronome et accompagnement pre-planifies
+    exercises/     <- catalogue de gammes et d'exercices, progression
   platform/        <- adaptateurs vers les plugins, une classe par frontiere
   ui/              <- widgets et ecrans, aucune logique metier
 ```

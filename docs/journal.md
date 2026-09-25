@@ -89,6 +89,34 @@ meme simple, l'export vers le professeur.
 Telephone Android d'abord, iOS ensuite. Le web est ecarte pour l'audio, pas
 pour l'interface. Voir ADR-001.
 
+## Les gammes, et la tentation du verrou
+
+Le jalon 3 a rendu l'application utile un soir ou l'on n'a rien prepare : un
+exercice se genere, il ne s'importe pas. Trois points ont demande d'etre
+tranches, et ils se ressemblent tous les trois.
+
+**Verrouiller les paliers non ouverts, ou pas.** C'est ce que font la plupart
+des applications de musique, et ca marche : voir le palier suivant grise donne
+envie de finir celui-ci. Decision inverse quand meme (ADR-011) : ce n'est pas
+l'application qui decide du programme, c'est le professeur. Si le cours de mardi
+a donne la gamme de si bemol, la refuser serait la meilleure facon de faire
+desinstaller l'application.
+
+**Deux records ne font pas une reussite.** Retenir separement le meilleur score
+et le meilleur tempo laissait un 95 obtenu a 50 et un 80 tenu salement
+s'additionner en un exercice declare acquis a 80 -- jamais joue proprement a 80.
+C'est le meilleur tempo **tenu proprement** qui est retenu.
+
+**Un score calcule sur quatre notes n'en est pas un.** La regle "on ne compte
+pas ce qu'on n'a pas entendu" est bonne -- elle empeche de punir un archet rate
+-- mais elle rendait cent sur quatre notes de vingt-neuf, et l'exercice ne
+revenait plus jamais. D'ou une part minimale entendue, et un score qui ne remonte
+que si le passage a ete joue jusqu'au bout.
+
+Le point commun des trois : **une mesure incomplete n'est pas une mesure**, et
+une regle protectrice appliquee sans garde-fou devient une faille. Detail dans
+`docs/exercices.md`.
+
 ## Tensions ouvertes, a trancher un jour
 
 Notees ici plutot que tranchees dans l'urgence, parce que chacune oppose deux

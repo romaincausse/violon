@@ -47,6 +47,7 @@ void main() {
     WidgetTester tester,
     List<PitchEstimate> script, {
     Passage? passage,
+    ValueChanged<SessionResult>? onResult,
   }) async {
     final MicroFactice micro = MicroFactice(script);
     await tester.pumpWidget(
@@ -55,6 +56,7 @@ void main() {
           passage: passage ?? demo,
           onChangePassage: () {},
           onTune: () {},
+          onResult: onResult,
           pitchSourceFactory: micro.creer,
         ),
       ),
@@ -942,6 +944,72 @@ void main() {
         tester.widget<MetronomeBar>(find.byType(MetronomeBar)).subdivision,
         2,
       );
+    });
+  });
+
+  group('le resultat rendu a l appelant', () {
+    /// Duree du passage de demo, au tempo ecrit.
+    final Duration duree = Duration(
+      milliseconds: (demo.notes.last.offsetTicks * 60 * 1000) ~/
+          (demo.writtenTempoBpm * demo.ticksPerBeat),
+    );
+
+    testWidgets('un passage joue jusqu au bout rend un score', (
+      WidgetTester tester,
+    ) async {
+      SessionResult? resultat;
+      final MicroFactice micro = await poser(
+        tester,
+        juste(premiere.midi),
+        onResult: (SessionResult r) => resultat = r,
+      );
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+
+      // La lecture s arrete d elle-meme sur la derniere note.
+      await tester.pump(duree);
+      await tester.pump(const Duration(milliseconds: 60));
+
+      expect(resultat, isNotNull);
+      expect(resultat!.score, 100);
+      expect(resultat!.tempoBpm, demo.writtenTempoBpm);
+      // Une seule note entendue sur les huit du passage : le score est bon, et
+      // la couverture dit qu il ne veut pas dire grand-chose.
+      expect(resultat!.coverage, 1 / demo.notes.length);
+    });
+
+    testWidgets('un arret manuel ne rend rien', (WidgetTester tester) async {
+      // Un passage interrompu apres trois notes justes rendrait cent sur trois
+      // notes : de quoi declarer un exercice acquis en l abandonnant.
+      SessionResult? resultat;
+      final MicroFactice micro = await poser(
+        tester,
+        juste(premiere.midi),
+        onResult: (SessionResult r) => resultat = r,
+      );
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+      await arreter(tester);
+
+      expect(resultat, isNull);
+    });
+
+    testWidgets('sans rien entendre, rien n est rendu', (
+      WidgetTester tester,
+    ) async {
+      SessionResult? resultat;
+      await poser(
+        tester,
+        const <PitchEstimate>[],
+        onResult: (SessionResult r) => resultat = r,
+      );
+      await demarrer(tester);
+      await tester.pump(duree);
+      await tester.pump(const Duration(milliseconds: 60));
+
+      expect(resultat, isNull);
     });
   });
 }

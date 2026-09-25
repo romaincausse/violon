@@ -28,4 +28,28 @@ enum NoteValue {
     final int plain = (beats * ticksPerBeat).round();
     return dotted ? plain * 3 ~/ 2 : plain;
   }
+
+  /// La figure -- avec ou sans point -- qui vaut **exactement** [ticks].
+  ///
+  /// Rend `null` si aucune n'y correspond, et c'est tout l'interet de la
+  /// fonction. Le modele ne stocke qu'une duree en ticks : c'est le graveur
+  /// qui en deduit la tete de note, les crochets et le point. Une duree qui
+  /// n'est la duree d'aucune figure se graverait donc quand meme, en affichant
+  /// n'importe quoi -- une noire et demie dessinee comme une noire.
+  ///
+  /// Un generateur d'exercices, qui calcule des durees au lieu de les saisir,
+  /// doit donc verifier qu'il tombe sur une figure reelle avant de construire.
+  /// Tout se fait en entiers : une tete de note ne doit pas dependre d'un
+  /// arrondi.
+  static ({NoteValue value, bool dotted})? exactly(
+      int ticks, int ticksPerBeat) {
+    for (final NoteValue value in NoteValue.values) {
+      for (final bool dotted in <bool>[false, true]) {
+        if (value.ticksIn(ticksPerBeat, dotted: dotted) == ticks) {
+          return (value: value, dotted: dotted);
+        }
+      }
+    }
+    return null;
+  }
 }

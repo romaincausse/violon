@@ -3,9 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
+import 'package:violon/core/exercises/exercise.dart';
+import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/music/demo_passage.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/main.dart';
+import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/mic_check_screen.dart';
@@ -106,6 +109,82 @@ void main() {
       await tester.tap(find.byTooltip('Accorder'));
       await tester.pumpAndSettle();
       expect(find.byType(TunerScreen), findsOneWidget);
+    });
+
+    testWidgets('le repertoire mene aux gammes et aux exercices', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Gammes et exercices'), findsOneWidget);
+      expect(
+        find.text('A travailler : ${ExerciseCatalog.all.first.titre}'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(HomeShell.exercicesKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(ExercisesScreen), findsOneWidget);
+    });
+
+    testWidgets('un exercice choisi devient le passage a jouer', (
+      WidgetTester tester,
+    ) async {
+      // Choisir un exercice, c'est vouloir le travailler tout de suite : on
+      // revient jouer, pas a une liste.
+      final Exercise premier = ExerciseCatalog.all.first;
+      await poser(tester);
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeShell.exercicesKey));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(ExercisesScreen.prochaineTacheKey),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ExercisesScreen.travaillerKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionScreen), findsOneWidget);
+      expect(find.text(premier.titre), findsOneWidget);
+      expect(
+        tester.widget<SessionScreen>(find.byType(SessionScreen)).passage.title,
+        premier.titre,
+      );
+    });
+
+    testWidgets('le repertoire decrit un exercice par sa methode', (
+      WidgetTester tester,
+    ) async {
+      // Un exercice n'a pas de numeros de mesure : ils ne sont ecrits sur
+      // aucune partition.
+      final Exercise premier = ExerciseCatalog.all.first;
+      await poser(tester);
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeShell.exercicesKey));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(ExercisesScreen.prochaineTacheKey),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ExercisesScreen.travaillerKey));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('${premier.source.court} - ${premier.tempoVise} bpm'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('le diapason par defaut est annonce au repertoire', (

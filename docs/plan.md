@@ -54,7 +54,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 |---|-------|------|-------------------|----------------|
 | 1 | Le retour qui se voit | 6 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 7 | 0 | L'application sert avant meme de jouer un morceau |
-| 3 | Les gammes et les exercices | 2 | 6 | Utile **tous les jours**, sans rien preparer |
+| 3 | Les gammes et les exercices | 2 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 4 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**60 lots, 86 soirees restantes**, dont **28 de *must*** -- le reste
+**60 lots, 80 soirees restantes**, dont **28 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -363,6 +363,11 @@ cumule, donc rien ne derive.
 
 ## Jalon 3 - Les gammes et les exercices
 
+**Jalon termine (PR #40).** Un catalogue de dix-neuf exercices repartis sur
+six paliers, generes et non saisis, et une progression qui designe la
+prochaine tache. Voir `docs/exercices.md` pour le detail de ce qui est fidele
+aux methodes et de ce qui ne l'est pas.
+
 **Le meilleur rapport effet/cout de tout le plan.** Un eleve de 4e annee passe
 une part considerable de son temps sur des gammes, des arpeges et des etudes.
 Or c'est le cas d'usage ideal pour cette application :
@@ -377,8 +382,8 @@ Or c'est le cas d'usage ideal pour cette application :
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| E1 | Catalogue d'exercices issus des methodes | | ★★★ | 3 |
-| E2 | Progression de difficulte et score | | ★★★ | 3 |
+| ~~E1~~ | ~~Catalogue d'exercices issus des methodes~~ | | ★★★ | fait |
+| ~~E2~~ | ~~Progression de difficulte et score~~ | | ★★★ | fait |
 
 ### E1 - Catalogue d'exercices issus des methodes
 
@@ -405,6 +410,21 @@ par construction**. Sevcik est de la combinatoire de doigts, Hrimaly est une
 gamme declinee par tonalite. La plupart se **generent** a partir de quelques
 parametres au lieu d'etre saisis un a un.
 
+**Fait (PR #40).** Dix-neuf exercices, trois formules de motifs de doigts
+croisees avec quatre ecartements de la premiere position, et des gammes et
+arpeges declines par tonalite. Deux ecarts a assumer :
+
+*Les etudes melodiques n'y sont pas.* Wohlfahrt op. 45, Kayser op. 20 et Mazas
+op. 36 sont des **morceaux ecrits** : ils ne se generent pas a partir de
+parametres, il faudrait les transcrire. Transcrire de memoire une etude qu'on
+attribue ensuite a son auteur serait pire que de ne pas la proposer -- elles
+arriveront par l'import (H6), qui lira le vrai texte.
+
+*Rien ne depasse la premiere position.* Une gamme de trois octaves demanderait
+de demancher jusqu'a la septieme position, ce qui n'est pas le programme d'une
+quatrieme annee. Le catalogue se tient sous le si de la corde de mi, et un test
+le verifie exercice par exercice.
+
 ### E2 - Progression de difficulte et score
 
 **La progression existe deja, on ne l'invente pas.** Sevcik, Schradieck et
@@ -417,6 +437,28 @@ exercice, le tempo atteint et les paliers ouverts sont **des donnees qui
 montent** -- pas des badges, pas de mascotte, pas de confettis. La regle
 produit tient : montrer une progression n'est pas de la gamification, offrir
 une recompense en est.
+
+**Fait (PR #40).** Trois decisions ont demande d'etre tranchees en cours de
+route :
+
+*Le score et le tempo ne se combinent pas.* Retenir separement le meilleur
+score et le meilleur tempo laisserait un 95 obtenu a 50 et un tempo de 80 tenu
+a 40 s'additionner en un exercice declare acquis a 80 -- qui n'a jamais ete
+joue proprement a 80. C'est le **meilleur tempo tenu proprement** qui est
+retenu, pas les deux records separement.
+
+*Une prise a peine entendue ne rend rien acquis.* Le score ne compte que les
+notes entendues, parce que compter un silence pour zero punirait un archet
+rate. Mais quatre notes justes sur vingt-neuf donneraient alors cent, et
+l'exercice ne reviendrait plus jamais. Il faut avoir entendu les trois quarts
+de l'exercice pour qu'une prise compte.
+
+*Un passage interrompu ne compte pas du tout.* Le score ne remonte a la
+progression que si le passage a ete joue **jusqu'au bout** : sans ca, on
+declarerait un exercice acquis en l'abandonnant apres trois notes justes.
+
+Et un choix de produit, qui a valu une ADR : **la progression guide, elle ne
+verrouille pas** (ADR-011).
 
 ---
 
