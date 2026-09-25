@@ -11,9 +11,11 @@ import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
+import '../../core/scoring/measure_scores.dart';
 import '../../core/scoring/string_drift_monitor.dart';
 import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
+import '../widgets/measure_strip.dart';
 import '../widgets/metronome_bar.dart';
 import '../widgets/score_view.dart';
 import '../widgets/tuning_colors.dart';
@@ -259,6 +261,15 @@ class _SessionScreenState extends State<SessionScreen>
   ///
   /// Rien pendant la lecture : un chiffre qui bouge pendant qu'on joue
   /// detournerait le regard de la partition, et changerait a chaque note.
+  /// Les cases de mesures, et celle qui est en cours de lecture.
+  Widget _mesures() {
+    final ScoreNote? courante = _running ? _cursor.noteAt(_elapsed) : null;
+    return MeasureStrip(
+      measures: scoreByMeasure(widget.passage, _tuning),
+      currentMeasure: courante?.measure,
+    );
+  }
+
   _Bilan? _bilan() {
     if (_running) {
       return null;
@@ -379,6 +390,8 @@ class _SessionScreenState extends State<SessionScreen>
         _metronome(),
         Expanded(child: _partition(orientation)),
         const SizedBox(height: 8),
+        _mesures(),
+        const SizedBox(height: 8),
         _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
         const SizedBox(height: 16),
         _bouton(),
@@ -407,6 +420,8 @@ class _SessionScreenState extends State<SessionScreen>
               const SizedBox(height: 16),
               _metronome(),
               const SizedBox(height: 16),
+              _mesures(),
+              const SizedBox(height: 12),
               _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
               const SizedBox(height: 16),
               _bouton(),
