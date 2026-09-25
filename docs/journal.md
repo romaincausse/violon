@@ -149,6 +149,36 @@ contre, et les battements lui disent tout. C'est l'exact inverse d'un score --
 et c'est cense etre l'exercice de justesse le plus efficace qui existe pour un
 instrument a cordes.
 
+## Consolider plutot qu'ajouter
+
+Quatre jalons livres d'affilee, et la question posee n'etait pas "quoi de
+plus ?" mais "qu'est-ce qui ne tient pas ensemble ?". Trois choses, toutes nees
+de ce qui venait d'etre livre.
+
+**Le jalon 3 avait livre une progression qui ne progressait pas.** Dix-neuf
+exercices, six paliers, des donnees qui montent -- et tout repartait de zero a
+chaque lancement, puisque la persistance etait au jalon 9. Une progression qui
+s'efface n'est pas une progression, c'est une demonstration. H1 a ete remonte,
+et il achevait au passage "demarrer en dix secondes", laisse a moitie depuis le
+jalon 2.
+
+**Le jalon 4 avait livre un bourdon que les gammes ne pouvaient pas
+utiliser.** Le catalogue connaissait la tonique de chaque gamme, le bourdon
+connaissait une note, et les deux ne se parlaient pas -- il fallait aller
+choisir Sol a la main dans les outils. Le lien manquant a fait apparaitre une
+distinction qui manquait aussi : **travailler** et **passer** (ADR-013). La
+contrainte de l'ADR-008 -- emettre ou ecouter, jamais les deux -- s'est
+revelee etre la distinction d'un cours de violon. Quand une contrainte
+technique tombe juste, il vaut mieux s'en servir que la contourner.
+
+**Et le meilleur tempo tenu ne servait a rien.** Il etait mesure, range,
+affiche, et l'application n'en faisait rien. Apres une gamme propre a 60, elle
+propose maintenant 66. C'est la seule facon dont une donnee qui monte devient
+une invitation -- et la seule recompense que le projet s'autorise.
+
+Le point commun des trois : **rien de neuf, que des liens**. Cinq soirees pour
+qu'une pile de fonctionnalites devienne une routine du soir.
+
 ## Tensions ouvertes, a trancher un jour
 
 Notees ici plutot que tranchees dans l'urgence, parce que chacune oppose deux

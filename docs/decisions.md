@@ -429,3 +429,44 @@ dix centimetres du micro. Le bourdon et le metronome sonore vivent donc dans le
 tiroir d'outils, micro ferme et rien de note. Pendant une prise notee, le
 metronome reste visuel. Aucun ecran ne recoit a la fois une source de hauteurs
 et un moteur de son.
+
+---
+
+## ADR-013 : Travailler et passer sont deux modes distincts
+
+**Contexte.** L'ADR-008 interdit a l'application d'emettre pendant qu'elle
+ecoute : le haut-parleur est a dix centimetres du micro. Le jalon 4 a donne un
+bourdon et un metronome sonore, le jalon 3 un catalogue de gammes -- et les
+deux ne pouvaient pas se rencontrer, puisque travailler une gamme au bourdon
+suppose que l'application emette pendant que l'enfant joue.
+
+La tentation etait de contourner : baisser le bourdon, filtrer, soustraire le
+signal emis. Toutes ces voies coutent cher et marchent mal.
+
+**Decision.** **Un exercice s'aborde de deux facons, et on le dit.**
+
+| | |
+|---|---|
+| **Travailler** | Bourdon pose sur la tonique de l'exercice, metronome au tempo choisi. L'application emet. **Rien n'est note.** |
+| **Passer** | Silence total. Elle ecoute, elle note, elle designera quoi rejouer. |
+
+**Ce n'est pas une concession technique deguisee en fonctionnalite.** C'est
+ainsi qu'un professeur fait travailler : on installe la gamme au bourdon et au
+metronome, on la passe ensuite pour voir ou on en est. Noter avant d'avoir
+travaille est exactement ce qui degoute un enfant de ses gammes.
+
+La contrainte de l'ADR-008 a donc produit une distinction pedagogique juste.
+C'est rare, et ca vaut d'etre note : quand une contrainte technique tombe bien,
+il faut s'en servir plutot que la contourner.
+
+**Consequences.**
+
+- L'ecran d'entrainement n'ouvre jamais le micro, et n'affiche ni score, ni
+  couleur, ni curseur. Il montre la partition et fait sonner les references.
+- Pas de curseur, et c'est voulu : le suiveur n'existe pas encore (jalon 6), et
+  un curseur d'horloge contredirait l'ADR-009.
+- Une prise d'entrainement ne compte pas dans la progression. Seul ce qui est
+  **passe** fait avancer les paliers.
+- Un motif de doigts ne recoit pas de bourdon : il traverse les quatre cordes,
+  aucune note tenue ne lui sert de reference. L'ecran le dit plutot que de
+  griser un interrupteur sans explication.

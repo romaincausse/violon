@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/play/fake_audio_engine.dart';
+import 'package:violon/core/store/session_store.dart';
 import 'package:violon/main.dart';
 import 'package:violon/ui/screens/passage_editor_screen.dart';
 import 'package:violon/ui/widgets/note_keyboard.dart';
@@ -184,7 +186,13 @@ void main() {
   testWidgets('le passage saisi remplace la demo sur l\'ecran de travail', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const ViolonApp());
+    await tester.pumpWidget(
+      const ViolonApp(
+        audioEngineFactory: FakeAudioEngine.new,
+        sessionStoreFactory: FakeSessionStore.new,
+      ),
+    );
+    await tester.pump();
     expect(find.text('Demo - mesures 12 a 13'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.edit_note));

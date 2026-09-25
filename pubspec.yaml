@@ -37,12 +37,25 @@ dependencies:
   # ci-dessus existent en 4.1.7, avec la meme signature.
   flutter_soloud: ^4.1.7
 
+  # Memoire d'une seance a l'autre (lot H1). Progression dans le catalogue,
+  # diapason mesure, et ce qui etait travaille la veille.
+  #
+  # Il n'existe pas de stockage persistant sans paquet en Flutter. Retenu
+  # plutot qu'un fichier JSON ecrit a la main, qui aurait demande
+  # `path_provider` de toute facon -- une dependance pour une dependance, avec
+  # la gestion d'erreurs de fichier en plus.
+  #
+  # Ce qu'on y met tient en quelques kilo-octets : dix-neuf records
+  # d'exercice, un diapason, un identifiant d'exercice. Une base de donnees
+  # (drift, sqflite) viendra si l'historique seance par seance le demande --
+  # pas avant.
+  shared_preferences: ^2.5.3
+
   # --- A ajouter au fur et a mesure, via `flutter pub add <paquet>` ---
   # Volontairement absents pour que le squelette compile et que la CI soit
   # verte des le premier commit, sans risque de conflit de versions.
   #
-  # shared_preferences: preferences locales (lot H1)
-  # drift ou sqflite  : historique des seances et heatmap (lot H1)
+  # drift ou sqflite  : historique detaille des seances et heatmap (lot H2)
   #
   # flutter_svg a disparu de cette liste : il servait a afficher des
   # partitions pre-gravees par Verovio, voie rendue caduque par l'ADR-009.

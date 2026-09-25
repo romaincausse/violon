@@ -138,6 +138,27 @@ construction echoue au lieu d'arrondir en silence.
 **Un palier s'ouvre quand le precedent est acquis**, et **il reste jouable
 avant** : la progression guide, elle ne verrouille pas (ADR-011).
 
+### Travailler, puis passer
+
+Un exercice s'aborde de deux facons (ADR-013), et c'est celle d'un cours de
+violon :
+
+| | |
+|---|---|
+| **Travailler** | Bourdon pose sur la tonique de l'exercice, metronome au tempo choisi. L'application emet, **rien n'est note**. |
+| **Passer** | Silence. Elle ecoute, elle note, elle designe quoi rejouer. |
+
+Seul ce qui est **passe** fait avancer les paliers. Un motif de doigts n'a pas
+de bourdon : il traverse les quatre cordes, aucune note tenue ne lui sert de
+reference.
+
+### Le cran suivant
+
+Une fois l'exercice acquis au tempo vise, l'application propose **six
+battements de plus** -- a peu pres le cran d'un metronome mecanique dans cette
+region. Le tempo propose part du meilleur tempo reellement tenu, jamais du
+tempo vise : une progression ne redescend pas.
+
 ### Ce qui compte comme acquis
 
 Trois conditions, et chacune vient d'un piege qu'on a failli laisser passer.

@@ -66,6 +66,14 @@ sealed class Exercise {
   /// Les hauteurs de l'exercice, dans l'ordre.
   List<int> get midis;
 
+  /// La note sur laquelle poser un bourdon, ou `null` s'il n'y en a pas.
+  ///
+  /// **Une gamme a une tonique, un motif de doigts n'en a pas.** Le motif
+  /// traverse les quatre cordes : aucune note tenue ne lui sert de reference,
+  /// et un bourdon pose au hasard sonnerait faux la moitie du temps. Mieux vaut
+  /// ne pas proposer le bourdon que de proposer le mauvais.
+  int? get tonicPitchClass;
+
   /// Ce qui distingue cet exercice des autres, en une ligne.
   String get detail;
 
@@ -117,6 +125,9 @@ final class ScaleExercise extends Exercise {
       pattern.midis(tonicMidi: tonicMidi, octaves: octaves, retour: true);
 
   @override
+  int? get tonicPitchClass => tonicMidi % 12;
+
+  @override
   String get detail => octaves == 1
       ? '${pattern.label} - une octave'
       : '${pattern.label} - $octaves octaves';
@@ -147,6 +158,9 @@ final class MotifExercise extends Exercise {
 
   @override
   List<int> get midis => motif.midis(pattern: pattern, strings: strings);
+
+  @override
+  int? get tonicPitchClass => null;
 
   @override
   String get detail => '${pattern.label} - ${motif.label}';

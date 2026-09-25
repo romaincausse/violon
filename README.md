@@ -41,10 +41,11 @@ lib/
     follow/            suiveur, alignement joue / attendu (le coeur, a venir)
     scoring/           justesse, accordeur, diapason mesure, derive des cordes
     play/              horloge de metronome, depart compte, bourdon, clics
+    store/             ce qu'on se rappelle d'une seance a l'autre
     exercises/         catalogue de gammes et d'exercices, progression
   platform/            adaptateurs vers les plugins, une classe par frontiere
   ui/                  ecrans et widgets, aucune logique metier
-test/                  miroir de lib/, 553 tests
+test/                  miroir de lib/, 580 tests
 assets/fonts/          Bravura (SIL OFL), livree non modifiee
 tool/                  script Verovio -- mort-ne, voir Etat
 docs/                  plan, decisions, journal, navigation, professeur
@@ -74,7 +75,7 @@ make scores    # mort-ne : voir Etat, et ADR-002 marquee caduque
 | Fichier | Contenu |
 |---------|---------|
 | `docs/plan.md` | **le plan** : onze jalons, une ligne = une PR, trie par ROI |
-| `docs/decisions.md` | les douze ADR : pourquoi Flutter, pourquoi ce sens de suivi, pourquoi pas de backend, quel moteur de son |
+| `docs/decisions.md` | les treize ADR : pourquoi Flutter, pourquoi ce sens de suivi, pourquoi pas de backend, quel moteur de son |
 | `docs/journal.md` | les trois retournements du projet, et les tensions ouvertes |
 | `docs/navigation.md` | comment on s'y retrouve quand tout existera |
 | `docs/exercices.md` | d'ou viennent les gammes et les exercices, et ou s'arrete la fidelite aux methodes |
@@ -103,8 +104,9 @@ Deux exclusions fermes :
 
 ## Etat
 
-**553 tests, trente-six lots livres** -- dix-huit avant la refonte du plan,
-dix-huit depuis (jalons 1 a 4). Le plan a ete refondu : c'est desormais
+**580 tests, quarante lots livres** -- dix-huit avant la refonte du plan,
+vingt-deux depuis (jalons 1 a 4, plus H1 remonte et deux lots de
+consolidation). Le plan a ete refondu : c'est desormais
 l'application qui suit l'eleve, et non l'inverse (ADR-009), et il est
 reordonne par rapport effet/cout.
 
@@ -128,17 +130,19 @@ mesure -- avec un metronome visuel et muet, precede d'un depart compte.
 
 **Dix-neuf exercices**, six paliers, generes a partir des methodes du domaine
 public : aucune saisie, aucun import. L'application designe la prochaine tache
-et n'interdit rien (ADR-011).
+et n'interdit rien (ADR-011). Un exercice se **travaille** -- bourdon pose sur
+sa tonique, metronome, rien de note -- puis se **passe**, en silence et sous
+notation (ADR-013).
+
+**Ce qui est appris survit a la fermeture** : la progression dans le
+catalogue, le diapason mesure, et l'exercice travaille en dernier. On rouvre
+l'application, et c'est deja ce qu'on faisait hier, au tempo atteint.
 
 ### Ce qui est ecrit mais ne tourne pas
 
 **Le detecteur d'attaques et sa FFT** (341 lignes) ne sont appeles par
 personne : ils attendent le suiveur. Consequence a garder en tete, **ils n'ont
 jamais vu un vrai signal de violon** -- uniquement des signaux de synthese.
-
-**Rien n'est persiste** : ni la progression dans le catalogue, ni le diapason
-mesure, ni le travail de la veille. C'est le lot H1, et c'est aussi ce qui
-laisse "demarrer en dix secondes" a moitie fait.
 
 `tool/build_scores.mjs` ecrit dans `assets/scores/`, qui n'existe pas. Il n'a
 donc jamais rien produit : mort-ne plutot que dormant.
