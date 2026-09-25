@@ -7,8 +7,11 @@ import '../../core/exercises/exercise_catalog.dart';
 import '../../core/exercises/exercise_progress.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
+import '../../core/play/audio_engine.dart';
+import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
+import 'metronome_screen.dart';
 import 'mic_check_screen.dart';
 import 'passage_editor_screen.dart';
 import 'session_screen.dart';
@@ -33,10 +36,18 @@ class HomeShell extends StatefulWidget {
     required this.a4,
     required this.onPassageChanged,
     required this.onA4Changed,
+    required this.audioEngineFactory,
     super.key,
   });
 
   final PitchSourceFactory pitchSourceFactory;
+
+  /// Fabrique du moteur de son.
+  ///
+  /// **Un seul moteur pour toute l'application**, tenu ici. Deux ecrans qui
+  /// ouvriraient chacun le materiel audio se marcheraient dessus, et un
+  /// bourdon lance depuis un ecran ferme continuerait de sonner.
+  final AudioEngineFactory audioEngineFactory;
   final Passage passage;
   final double a4;
   final ValueChanged<Passage> onPassageChanged;
@@ -47,6 +58,9 @@ class HomeShell extends StatefulWidget {
 
   /// Entree du catalogue de gammes et d'exercices, pour les tests.
   static const Key exercicesKey = Key('ouvrir-les-exercices');
+
+  static const Key bourdonKey = Key('ouvrir-le-bourdon');
+  static const Key metronomeKey = Key('ouvrir-le-metronome');
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -63,6 +77,13 @@ class _HomeShellState extends State<HomeShell> {
   /// designe la prochaine tache pendant qu'on travaille, et c'est ce qui
   /// compte ce soir.
   final ExerciseProgress _progres = ExerciseProgress();
+
+  /// Le moteur de son, cree une fois et partage.
+  ///
+  /// Le construire n'ouvre rien : le materiel audio ne s'ouvre qu'au premier
+  /// son demande. Une application qu'on lance pour travailler en silence ne
+  /// doit pas reveiller le haut-parleur.
+  late final AudioEngine _son = widget.audioEngineFactory();
 
   /// L'exercice d'ou vient le passage en cours, s'il en vient d'un.
   ///
@@ -109,6 +130,12 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  @override
+  void dispose() {
+    unawaited(_son.dispose());
+    super.dispose();
+  }
+
   Future<void> _ouvrirLesExercices() async {
     final ExerciseChoice? choix =
         await Navigator.of(context).push<ExerciseChoice>(
@@ -133,46 +160,72 @@ class _HomeShellState extends State<HomeShell> {
       context: context,
       showDragHandle: true,
       builder: (BuildContext context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.tune),
-              title: const Text('Accorder'),
-              subtitle: const Text('Les quatre cordes, et les quintes'),
-              onTap: () => _ouvrir(
-                context,
-                (BuildContext c) => TunerScreen(
-                  pitchSourceFactory: widget.pitchSourceFactory,
-                  a4: widget.a4,
-                  onA4Changed: widget.onA4Changed,
+        // Defilant, et pas seulement "au cas ou" : a cinq outils le tiroir
+        // depasse deja la moitie d'un ecran de telephone en portrait. Une
+        // colonne qui ne defile pas rognerait le dernier outil au lieu de le
+        // laisser atteindre.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.tune),
+                title: const Text('Accorder'),
+                subtitle: const Text('Les quatre cordes, et les quintes'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => TunerScreen(
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    a4: widget.a4,
+                    onA4Changed: widget.onA4Changed,
+                  ),
                 ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.graphic_eq),
-              title: const Text('Jouer librement'),
-              subtitle: const Text('Elle ecoute, elle ne note rien'),
-              onTap: () => _ouvrir(
-                context,
-                (BuildContext c) => FreePlayScreen(
-                  pitchSourceFactory: widget.pitchSourceFactory,
-                  a4: widget.a4,
+              ListTile(
+                leading: const Icon(Icons.graphic_eq),
+                title: const Text('Jouer librement'),
+                subtitle: const Text('Elle ecoute, elle ne note rien'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => FreePlayScreen(
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    a4: widget.a4,
+                  ),
                 ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.mic),
-              title: const Text('Est-ce qu elle m entend ?'),
-              subtitle: const Text('Verifier le micro'),
-              onTap: () => _ouvrir(
-                context,
-                (BuildContext c) => MicCheckScreen(
-                  pitchSourceFactory: widget.pitchSourceFactory,
+              ListTile(
+                key: HomeShell.bourdonKey,
+                leading: const Icon(Icons.blur_on),
+                title: const Text('Bourdon'),
+                subtitle: const Text('Une note tenue, pour s accorder dessus'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => DroneScreen(engine: _son, a4: widget.a4),
                 ),
               ),
-            ),
-          ],
+              ListTile(
+                key: HomeShell.metronomeKey,
+                leading: const Icon(Icons.timer_outlined),
+                title: const Text('Metronome'),
+                subtitle: const Text('Celui qui fait du bruit'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => MetronomeScreen(engine: _son),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.mic),
+                title: const Text('Est-ce qu elle m entend ?'),
+                subtitle: const Text('Verifier le micro'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => MicCheckScreen(
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

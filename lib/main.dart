@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'core/music/demo_passage.dart';
 import 'core/music/passage.dart';
 import 'core/music/pitch_utils.dart';
+import 'core/play/audio_engine.dart';
 import 'platform/audio/default_pitch_source.dart';
+import 'platform/audio/soloud_audio_engine.dart';
 import 'ui/screens/home_shell.dart';
 import 'ui/screens/session_screen.dart' show PitchSourceFactory;
 
@@ -12,7 +14,11 @@ void main() {
 }
 
 class ViolonApp extends StatefulWidget {
-  const ViolonApp({this.pitchSourceFactory = defaultPitchSource, super.key});
+  const ViolonApp({
+    this.pitchSourceFactory = defaultPitchSource,
+    this.audioEngineFactory = defaultAudioEngine,
+    super.key,
+  });
 
   /// Fabrique de la source de hauteurs, traversee jusqu'aux ecrans qui
   /// ecoutent.
@@ -21,6 +27,10 @@ class ViolonApp extends StatefulWidget {
   /// de micro, et faire tourner la vraie chaine audio a chaque `pumpWidget`
   /// lancerait un isolate pour rien.
   final PitchSourceFactory pitchSourceFactory;
+
+  /// Fabrique du moteur de son, injectable pour la meme raison : un test de
+  /// widget n'a pas de haut-parleur.
+  final AudioEngineFactory audioEngineFactory;
 
   @override
   State<ViolonApp> createState() => _ViolonAppState();
@@ -55,6 +65,7 @@ class _ViolonAppState extends State<ViolonApp> {
       // Aucun ecran d'accueil : l'application s'ouvre sur le travail en cours.
       home: HomeShell(
         pitchSourceFactory: widget.pitchSourceFactory,
+        audioEngineFactory: widget.audioEngineFactory,
         passage: _passage,
         a4: _a4,
         onPassageChanged: (Passage p) => setState(() => _passage = p),

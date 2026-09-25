@@ -16,12 +16,31 @@ dependencies:
   # calibree pour la voix, et un son tenu de violon la fait deraper.
   record: ^7.1.1
 
+  # Sortie audio (lot J1, ADR-012). Moteur SoLoud, mixage en C++.
+  #
+  # Retenu pour deux appels precis, verifies avant de l'ajouter :
+  #  - `setDelaySamples` planifie un clic **a l'echantillon pres**. Le projet
+  #    interdit un Timer Dart pour le metronome parce que la derive s'entend ;
+  #    ici le clic ne derive pas, quoi que fasse l'interface.
+  #  - `setWaveformFreq` fixe la frequence exacte d'un oscillateur. Le bourdon
+  #    sonne donc au diapason **mesure** sur les cordes a vide, pas a 440 par
+  #    defaut -- un bourdon faux serait pire que pas de bourdon.
+  #
+  # Le mixage se fait en C++ : un a-coup du cote Dart ne troue pas le son.
+  #
+  # **Volontairement en 4.x, pas en 5.x.** La 5 compile son C++ sur la machine
+  # de developpement, par le mecanisme des native assets : `flutter test`
+  # reclame alors clang, et echoue sans lui -- sur cette machine comme sur le
+  # coureur de la CI. La 4 livre ses binaires deja compiles. `make check` doit
+  # marcher sur une machine qui n'a pas de chaine de compilation C, sans quoi
+  # la regle "make check avant chaque push" ne tient plus. Les deux appels
+  # ci-dessus existent en 4.1.7, avec la meme signature.
+  flutter_soloud: ^4.1.7
+
   # --- A ajouter au fur et a mesure, via `flutter pub add <paquet>` ---
   # Volontairement absents pour que le squelette compile et que la CI soit
   # verte des le premier commit, sans risque de conflit de versions.
   #
-  # soloud            : moteur audio bas niveau, pre-planifie (lot J1,
-  #                     tire par le bourdon -- jalon 4)
   # shared_preferences: preferences locales (lot H1)
   # drift ou sqflite  : historique des seances et heatmap (lot H1)
   #

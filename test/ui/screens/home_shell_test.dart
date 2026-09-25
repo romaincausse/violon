@@ -7,20 +7,38 @@ import 'package:violon/core/exercises/exercise.dart';
 import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/music/demo_passage.dart';
 import 'package:violon/core/music/pitch_utils.dart';
+import 'package:violon/core/play/audio_engine.dart';
+import 'package:violon/core/play/fake_audio_engine.dart';
 import 'package:violon/main.dart';
+import 'package:violon/ui/screens/drone_screen.dart';
 import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
+import 'package:violon/ui/screens/metronome_screen.dart';
 import 'package:violon/ui/screens/mic_check_screen.dart';
 import 'package:violon/ui/screens/session_screen.dart';
 import 'package:violon/ui/screens/tuner_screen.dart';
 
 Future<PitchSource> micMuet() async => FakePitchSource(const <PitchEstimate>[]);
 
+/// Le moteur de son de la derniere application posee.
+///
+/// Un test de widget n'a pas de haut-parleur : on injecte le moteur factice
+/// plutot que SoLoud, qui ouvrirait le materiel audio a chaque `pumpWidget`.
+late FakeAudioEngine sonFactice;
+
+AudioEngine sonInjecte() => sonFactice;
+
 Future<void> poser(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(const Size(400, 800));
   addTearDown(() => tester.binding.setSurfaceSize(null));
-  await tester.pumpWidget(const ViolonApp(pitchSourceFactory: micMuet));
+  sonFactice = FakeAudioEngine();
+  await tester.pumpWidget(
+    const ViolonApp(
+      pitchSourceFactory: micMuet,
+      audioEngineFactory: sonInjecte,
+    ),
+  );
   await tester.pump();
 }
 
@@ -109,6 +127,38 @@ void main() {
       await tester.tap(find.byTooltip('Accorder'));
       await tester.pumpAndSettle();
       expect(find.byType(TunerScreen), findsOneWidget);
+    });
+
+    testWidgets('le tiroir mene au bourdon', (WidgetTester tester) async {
+      await poser(tester);
+      await ouvrirLesOutils(tester);
+      await tester.tap(find.text('Bourdon'));
+      await tester.pumpAndSettle();
+      expect(find.byType(DroneScreen), findsOneWidget);
+      // Rien ne sonne tant qu'on ne l'a pas demande : ouvrir l'ecran n'ouvre
+      // pas le materiel audio.
+      expect(sonFactice.drones, isEmpty);
+    });
+
+    testWidgets('le tiroir mene au metronome sonore', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await ouvrirLesOutils(tester);
+      await tester.tap(find.text('Metronome'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MetronomeScreen), findsOneWidget);
+      expect(sonFactice.clicks, isEmpty);
+    });
+
+    testWidgets('lancer l application n ouvre aucun son', (
+      WidgetTester tester,
+    ) async {
+      // Une application qu'on ouvre pour travailler en silence ne doit pas
+      // reveiller le haut-parleur. Le moteur est cree, il n'est pas demarre.
+      await poser(tester);
+      expect(sonFactice.starts, 0);
+      expect(sonFactice.isRunning, isFalse);
     });
 
     testWidgets('le repertoire mene aux gammes et aux exercices', (

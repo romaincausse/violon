@@ -117,6 +117,38 @@ Le point commun des trois : **une mesure incomplete n'est pas une mesure**, et
 une regle protectrice appliquee sans garde-fou devient une faille. Detail dans
 `docs/exercices.md`.
 
+## Le son, et une interdiction mal comprise
+
+L'application emet enfin. La dependance audio etait annoncee comme le morceau
+delicat du jalon 4 ; ce n'est pas la qu'etaient les surprises.
+
+**La version du paquet comptait autant que le paquet.** `flutter_soloud` 5.x
+compile son C++ sur la machine de developpement : `flutter test` reclame alors
+clang et echoue sans lui, ici comme sur la CI. La 4.x livre ses binaires deja
+compiles et expose exactement les memes appels. Une dependance ne se juge pas
+seulement sur son API.
+
+**Construire le moteur chargeait deja la bibliotheque native**, avant meme
+qu'on lui demande le moindre son. Assez pour faire echouer tout test de widget
+montant l'application -- et surtout, cote produit, pour reveiller le
+haut-parleur au lancement d'une seance qu'on ouvre pour travailler en silence.
+J'avais ecrit dans un commentaire que "le construire n'ouvre rien" avant que ce
+soit vrai ; c'est le test qui l'a dit.
+
+**Et une interdiction du projet s'est revelee plus etroite qu'elle n'en avait
+l'air.** "Jamais de `Timer` Dart pour le metronome" visait le **declenchement**,
+pas la planification. Un minuteur qui se contente de remplir la file a l'avance
+reste permis : s'il se reveille cinquante millisecondes trop tard, il pose les
+memes clics aux memes instants, parce que chaque instant est calcule depuis le
+depart et fige dans le moteur des la planification. La derive devient alors
+structurellement impossible, et non plus simplement improbable. Voir ADR-012.
+
+Un dernier point, moins technique : le bourdon est le seul endroit de
+l'application ou elle **ne juge rien**. Elle tient une note, l'enfant joue
+contre, et les battements lui disent tout. C'est l'exact inverse d'un score --
+et c'est cense etre l'exercice de justesse le plus efficace qui existe pour un
+instrument a cordes.
+
 ## Tensions ouvertes, a trancher un jour
 
 Notees ici plutot que tranchees dans l'urgence, parce que chacune oppose deux
