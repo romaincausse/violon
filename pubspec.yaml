@@ -50,6 +50,23 @@ dependencies:
   # (drift, sqflite) viendra si l'historique seance par seance le demande --
   # pas avant.
   shared_preferences: ^2.5.3
+  # L'ecran reste allume pendant qu'on joue (lot L3). Le telephone est pose
+  # sur un pupitre et l'enfant a les deux mains prises : un ecran qui s'eteint
+  # au milieu d'une gamme demande de poser l'archet.
+  #
+  # Cote Android, ce paquet pose `FLAG_KEEP_SCREEN_ON` sur la fenetre de
+  # l'activite. Aucune permission, et le drapeau ne vaut que pour une fenetre
+  # visible : l'application en arriere-plan laisse l'ecran s'eteindre sans
+  # qu'on ait a le demander.
+  #
+  # **Il amene neuf paquets transitifs** (dbus, win32, xml, petitparser,
+  # package_info_plus) pour un seul drapeau de fenetre. Aucun ne compile de
+  # C++ -- verifie, c'etait la lecon de flutter_soloud 5.x -- donc
+  # `make check` tourne toujours sans chaine de compilation. Une quinzaine de
+  # lignes de Kotlin auraient evite les neuf paquets ; le paquet est retenu
+  # pour ne pas maintenir de code natif, et parce qu'il reapplique le drapeau
+  # quand l'activite se rattache apres une mise en arriere-plan.
+  wakelock_plus: ^1.8.0
 
   # --- A ajouter au fur et a mesure, via `flutter pub add <paquet>` ---
   # Volontairement absents pour que le squelette compile et que la CI soit

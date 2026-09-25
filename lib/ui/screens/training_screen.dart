@@ -10,6 +10,7 @@ import '../../core/play/drone.dart';
 import '../../core/play/metronome_clock.dart';
 import '../../core/play/metronome_scheduler.dart';
 import '../widgets/score_view.dart';
+import '../widgets/keep_screen_awake.dart';
 
 /// Travailler un exercice, avec le bourdon et le metronome.
 ///
@@ -145,67 +146,71 @@ class _TrainingScreenState extends State<TrainingScreen>
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final Drone? tonique = _tonique;
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.exercise.titre)),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: <Widget>[
-            Text(
-              '${widget.exercise.detail} - ${widget.tempoBpm} bpm',
-              style: theme.textTheme.bodyMedium,
-            ),
-            if (widget.exercise.conseil != null) ...<Widget>[
-              const SizedBox(height: 8),
+    return KeepScreenAwake(
+      // Tant que cet ecran est ouvert, et pas seulement quand le bourdon
+      // sonne : on travaille aussi bourdon coupe, la partition sous les yeux.
+      child: Scaffold(
+        appBar: AppBar(title: Text(widget.exercise.titre)),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: <Widget>[
               Text(
-                widget.exercise.conseil!,
+                '${widget.exercise.detail} - ${widget.tempoBpm} bpm',
+                style: theme.textTheme.bodyMedium,
+              ),
+              if (widget.exercise.conseil != null) ...<Widget>[
+                const SizedBox(height: 8),
+                Text(
+                  widget.exercise.conseil!,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+              const SizedBox(height: 16),
+              // La partition, sans curseur : rien ne defile, c'est l'eleve qui
+              // mene. Le suiveur viendra au jalon 6 ; en attendant, un curseur
+              // d'horloge contredirait l'ADR-009.
+              SizedBox(
+                height: 220,
+                child: ScoreView(
+                    passage: widget.exercise.toPassage(
+                  tempoBpm: widget.tempoBpm,
+                )),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                key: TrainingScreen.bourdonKey,
+                contentPadding: EdgeInsets.zero,
+                value: _bourdon,
+                onChanged: tonique == null
+                    ? null
+                    : (bool v) => unawaited(_basculerLeBourdon(v)),
+                title: Text(
+                  tonique == null ? 'Bourdon' : 'Bourdon sur ${tonique.label}',
+                ),
+                subtitle: Text(
+                  tonique == null
+                      // Dire pourquoi, plutot que de griser sans explication.
+                      ? 'Pas de tonique : le motif traverse les quatre cordes'
+                      : 'La tonique de l exercice, quinte comprise',
+                ),
+              ),
+              SwitchListTile(
+                key: TrainingScreen.metronomeKey,
+                contentPadding: EdgeInsets.zero,
+                value: _metronome,
+                onChanged: (bool v) => unawaited(_basculerLeMetronome(v)),
+                title: Text('Metronome a ${widget.tempoBpm}'),
+                subtitle: const Text('Le premier temps sonne plus aigu'),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Rien n est note ici : l application joue, elle n ecoute pas. '
+                'Quand tu veux te controler, passe l exercice.',
                 style: theme.textTheme.bodySmall,
               ),
             ],
-            const SizedBox(height: 16),
-            // La partition, sans curseur : rien ne defile, c'est l'eleve qui
-            // mene. Le suiveur viendra au jalon 6 ; en attendant, un curseur
-            // d'horloge contredirait l'ADR-009.
-            SizedBox(
-              height: 220,
-              child: ScoreView(
-                  passage: widget.exercise.toPassage(
-                tempoBpm: widget.tempoBpm,
-              )),
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              key: TrainingScreen.bourdonKey,
-              contentPadding: EdgeInsets.zero,
-              value: _bourdon,
-              onChanged: tonique == null
-                  ? null
-                  : (bool v) => unawaited(_basculerLeBourdon(v)),
-              title: Text(
-                tonique == null ? 'Bourdon' : 'Bourdon sur ${tonique.label}',
-              ),
-              subtitle: Text(
-                tonique == null
-                    // Dire pourquoi, plutot que de griser sans explication.
-                    ? 'Pas de tonique : le motif traverse les quatre cordes'
-                    : 'La tonique de l exercice, quinte comprise',
-              ),
-            ),
-            SwitchListTile(
-              key: TrainingScreen.metronomeKey,
-              contentPadding: EdgeInsets.zero,
-              value: _metronome,
-              onChanged: (bool v) => unawaited(_basculerLeMetronome(v)),
-              title: Text('Metronome a ${widget.tempoBpm}'),
-              subtitle: const Text('Le premier temps sonne plus aigu'),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Rien n est note ici : l application joue, elle n ecoute pas. '
-              'Quand tu veux te controler, passe l exercice.',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+          ),
         ),
       ),
     );

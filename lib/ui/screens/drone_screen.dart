@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/play/drone.dart';
+import '../widgets/keep_screen_awake.dart';
 
 /// Le bourdon.
 ///
@@ -124,80 +125,83 @@ class _DroneScreenState extends State<DroneScreen> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Bourdon')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: <Widget>[
-            Text(
-              'Joue ta gamme par-dessus. Quand les battements disparaissent, '
-              'tu es juste.',
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                for (int n = 0; n < Drone.names.length; n++)
-                  ChoiceChip(
-                    key: DroneScreen.noteKey(n),
-                    label: Text(Drone.names[n]),
-                    selected: _bourdon.pitchClass == n,
-                    onSelected: (bool choisi) {
-                      if (choisi) {
-                        unawaited(_choisir(n));
-                      }
-                    },
+    return KeepScreenAwake(
+      actif: _sonne,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Bourdon')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: <Widget>[
+              Text(
+                'Joue ta gamme par-dessus. Quand les battements disparaissent, '
+                'tu es juste.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: <Widget>[
+                  for (int n = 0; n < Drone.names.length; n++)
+                    ChoiceChip(
+                      key: DroneScreen.noteKey(n),
+                      label: Text(Drone.names[n]),
+                      selected: _bourdon.pitchClass == n,
+                      onSelected: (bool choisi) {
+                        if (choisi) {
+                          unawaited(_choisir(n));
+                        }
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                key: DroneScreen.quinteKey,
+                contentPadding: EdgeInsets.zero,
+                value: _bourdon.withFifth,
+                onChanged: (bool v) => unawaited(_basculerLaQuinte(v)),
+                title: const Text('Avec la quinte'),
+                subtitle: const Text('Quinte pure, celle du violon'),
+              ),
+              Row(
+                children: <Widget>[
+                  const Icon(Icons.volume_down, size: 20),
+                  Expanded(
+                    child: Slider(
+                      key: DroneScreen.volumeKey,
+                      value: _volume,
+                      max: 0.8,
+                      divisions: 16,
+                      onChanged: (double v) => unawaited(_reglerLeVolume(v)),
+                    ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              key: DroneScreen.quinteKey,
-              contentPadding: EdgeInsets.zero,
-              value: _bourdon.withFifth,
-              onChanged: (bool v) => unawaited(_basculerLaQuinte(v)),
-              title: const Text('Avec la quinte'),
-              subtitle: const Text('Quinte pure, celle du violon'),
-            ),
-            Row(
-              children: <Widget>[
-                const Icon(Icons.volume_down, size: 20),
-                Expanded(
-                  child: Slider(
-                    key: DroneScreen.volumeKey,
-                    value: _volume,
-                    max: 0.8,
-                    divisions: 16,
-                    onChanged: (double v) => unawaited(_reglerLeVolume(v)),
-                  ),
-                ),
-                const Icon(Icons.volume_up, size: 20),
-              ],
-            ),
-            const SizedBox(height: 8),
-            FilledButton.icon(
-              key: DroneScreen.jouerKey,
-              onPressed: () => unawaited(_basculer()),
-              icon: Icon(_sonne ? Icons.stop : Icons.play_arrow),
-              label:
-                  Text(_sonne ? 'Arreter' : 'Faire sonner ${_bourdon.label}'),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              widget.a4 == PitchUtils.defaultA4
-                  ? 'Diapason : 440 Hz. Accorde d abord, le bourdon suivra.'
-                  : 'Diapason mesure : ${widget.a4.toStringAsFixed(1)} Hz',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Rien n est note ici : l application joue, elle n ecoute pas.',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+                  const Icon(Icons.volume_up, size: 20),
+                ],
+              ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                key: DroneScreen.jouerKey,
+                onPressed: () => unawaited(_basculer()),
+                icon: Icon(_sonne ? Icons.stop : Icons.play_arrow),
+                label:
+                    Text(_sonne ? 'Arreter' : 'Faire sonner ${_bourdon.label}'),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                widget.a4 == PitchUtils.defaultA4
+                    ? 'Diapason : 440 Hz. Accorde d abord, le bourdon suivra.'
+                    : 'Diapason mesure : ${widget.a4.toStringAsFixed(1)} Hz',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Rien n est note ici : l application joue, elle n ecoute pas.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
         ),
       ),
     );

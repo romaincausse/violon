@@ -53,7 +53,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
 | 1 | Le retour qui se voit | 7 | 1 | Ca devient agreable, tout de suite |
-| 2 | Les outils de tous les jours | 7 | 0 | L'application sert avant meme de jouer un morceau |
+| 2 | Les outils de tous les jours | 8 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 4 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**63 lots, 75 soirees restantes**, dont **26 de *must*** -- le reste
+**64 lots, 75 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -244,11 +244,11 @@ un silence.
 
 ## Jalon 2 - Les outils de tous les jours
 
-**Jalon termine.** Sept lots courts, tous sur le code deja livre. Ils ne font
-pas progresser la notation d'un pouce, et ils changent completement le fait de
-s'en servir :
-c'est le jalon ou l'application cesse d'etre une demo et devient un objet
-qu'on pose sur son pupitre tous les soirs.
+**Jalon termine.** Huit lots courts, tous sur le code deja livre -- le
+huitieme, L3, est apparu a l'usage sur le telephone, comme D8 au jalon 1. Ils
+ne font pas progresser la notation d'un pouce, et ils changent completement le
+fait de s'en servir : c'est le jalon ou l'application cesse d'etre une demo et
+devient un objet qu'on pose sur son pupitre tous les soirs.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -259,6 +259,7 @@ qu'on pose sur son pupitre tous les soirs.
 | ~~O4~~ | ~~Quintes a vide dans l'accordeur~~ | | ★★ | fait |
 | ~~O2~~ | ~~Metronome visuel a subdivisions et accents~~ | | ★★ | fait |
 | ~~D7~~ | ~~Depart compte~~ | | ★★★ | fait |
+| ~~L3~~ | ~~L'ecran qui ne s'eteint pas~~ | | ★★★ | fait |
 
 ### L1 - Demarrer en dix secondes
 
@@ -362,6 +363,35 @@ vibreur viendra avec D6.
 quatre" est ce qu'il entend en cours et en orchestre. Le temps du passage est
 obtenu par soustraction du temps absolu, jamais remis a zero : rien n'est
 cumule, donc rien ne derive.
+
+---
+
+### L3 - L'ecran qui ne s'eteint pas
+
+Le telephone est pose sur un pupitre et l'enfant a les deux mains prises.
+L'ecran s'eteignait au bout de trente secondes, au milieu d'une gamme, et le
+rallumer demande de poser l'archet. C'est une raison d'arreter de jouer.
+
+**Fait (PR #43).** L'ecran reste allume pendant qu'on joue, ecran par ecran :
+la prise en cours, l'accordeur, le bourdon quand il sonne, le metronome quand
+il marche, l'ecran de travail. Pas l'application entiere : elle reste souvent
+ouverte apres la seance, et un ecran allume deux heures sur la dalle AMOLED
+d'un S22 coute une batterie et marque l'affichage.
+
+**Un compte, pas un booleen.** Les ecrans s'empilent -- on accorde par-dessus
+une prise en cours. Si chacun posait et retirait un drapeau, le premier a se
+fermer eteindrait l'ecran que celui du dessous reclame encore. `ScreenAwake`
+compte les demandes et ne touche le materiel qu'aux transitions.
+
+**Le paquet et son prix.** `wakelock_plus` amene neuf paquets transitifs
+(dbus, win32, xml, petitparser, package_info_plus) pour ce qui est, cote
+Android, un seul drapeau de fenetre : `FLAG_KEEP_SCREEN_ON`. Aucun ne compile
+de C++ -- la lecon de `flutter_soloud` 5.x -- donc `make check` tourne
+toujours sans chaine de compilation. Une quinzaine de lignes de Kotlin dans
+`MainActivity` et un `MethodChannel` auraient evite les neuf paquets ; le
+paquet a ete retenu pour ne pas maintenir de code natif, et parce qu'il gere
+le rattachement de l'activite apres une mise en arriere-plan, ce qu'un
+`addFlags` dans `onCreate` ne fait pas.
 
 ---
 
@@ -841,11 +871,14 @@ Aucune n'est ajoutee sans accord explicite.
 |--------|------|-------|
 | ~~Bravura (asset, SIL OFL)~~ | ~~le rendu de partition~~ | **ajoutee** |
 | ~~`record`~~ | ~~la capture micro~~ | **ajoutee** |
-| stockage local | H1, la persistance | 9 |
-| moteur audio bas niveau | O1 le bourdon, puis l'accompagnement | **4** |
+| ~~`shared_preferences`~~ | ~~H1, la persistance~~ | **ajoutee** |
+| ~~`flutter_soloud` (4.x)~~ | ~~O1 le bourdon, puis l'accompagnement~~ | **ajoutee** |
+| ~~`wakelock_plus`~~ | ~~L3, l'ecran qui ne s'eteint pas~~ | **ajoutee** |
 
-**Premier arbitrage au jalon 4.** Les cinq premiers jalons sont du calcul
-sur des flux deja captes et du dessin sur un `CustomPainter` deja ecrit.
+**Les trois arbitrages ont ete rendus**, dans l'ordre annonce : le moteur
+audio au jalon 4 parce que le bourdon l'exigeait, le stockage avec H1 remonte,
+l'ecran a l'usage. Il ne reste que la base de donnees du lot H2, et elle
+attend de savoir ce qu'on veut vraiment historiser.
 
 ---
 

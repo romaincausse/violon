@@ -12,6 +12,7 @@ import '../../core/scoring/tuner.dart';
 import '../widgets/tuner_gauge.dart';
 import '../widgets/tuning_colors.dart';
 import 'session_screen.dart' show PitchSourceFactory;
+import '../widgets/keep_screen_awake.dart';
 
 /// Accorder avant de jouer.
 ///
@@ -134,49 +135,51 @@ class _TunerScreenState extends State<TunerScreen> {
     final ThemeData theme = Theme.of(context);
     final TunerReading? lecture = _lecture;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Accorder')),
-      body: SafeArea(
-        child: Padding(
-          key: const Key('tuner-content'),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              StringRow(
-                cordes: PitchUtils.violinOpenStrings,
-                active: lecture?.stringMidi,
-              ),
-              const Spacer(),
-              Text(
-                lecture == null ? '--' : lecture.stringName,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.displaySmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _texteDesCents(lecture),
-                key: const Key('tuner-cents'),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              TunerGauge(reading: lecture),
-              const SizedBox(height: 16),
-              _Quintes(quintes: OpenStringFifths.from(_cordesMesurees)),
-              const Spacer(),
-              if (_probleme != null)
-                Text(
-                  _probleme!,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium,
+    return KeepScreenAwake(
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Accorder')),
+        body: SafeArea(
+          child: Padding(
+            key: const Key('tuner-content'),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                StringRow(
+                  cordes: PitchUtils.violinOpenStrings,
+                  active: lecture?.stringMidi,
                 ),
-              _LigneDuDiapason(
-                reference: widget.a4,
-                mesure: _diapasonMesure,
-                onAdopter: _adopterLeDiapason,
-              ),
-            ],
+                const Spacer(),
+                Text(
+                  lecture == null ? '--' : lecture.stringName,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.displaySmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _texteDesCents(lecture),
+                  key: const Key('tuner-cents'),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge,
+                ),
+                const SizedBox(height: 16),
+                TunerGauge(reading: lecture),
+                const SizedBox(height: 16),
+                _Quintes(quintes: OpenStringFifths.from(_cordesMesurees)),
+                const Spacer(),
+                if (_probleme != null)
+                  Text(
+                    _probleme!,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                _LigneDuDiapason(
+                  reference: widget.a4,
+                  mesure: _diapasonMesure,
+                  onAdopter: _adopterLeDiapason,
+                ),
+              ],
+            ),
           ),
         ),
       ),
