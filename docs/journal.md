@@ -101,10 +101,16 @@ sorties (lots O6, D10, D11, E5), et deux refus.
 
 **Ce qu'on refuse, et pourquoi.**
 
-- *Les notes attendues defilent vers la gauche a vitesse fixe.* C'est un
-  curseur pilote par l'horloge -- precisement ce que l'ADR-009 a retrograde en
-  mode secondaire. On affiche ce qui a ete joue, pas ce qu'il faudrait jouer
-  maintenant.
+- ~~*Les notes attendues defilent vers la gauche a vitesse fixe.*~~
+  **Retire : c'etait faux.** Juge sur des captures fixes, le defilement avait
+  l'air pilote par l'horloge. Une rafale montre une barre a cheval sur la
+  ligne du present, a moitie remplie, qui y reste tant que la note n'est pas
+  juste : le defilement est commande par ce qui est joue. C'est l'ADR-009, pas
+  son contraire. Le lot D11 n'a donc rien a refuser de ce cote.
+
+  La lecon vaut d'etre notee : **une capture fixe ne dit pas ce qui fait
+  avancer une animation.** Il a fallu regarder deux images du meme geste a une
+  seconde d'intervalle pour trancher.
 - *L'application bloque tant que la note n'est pas juste.* Il faut separer
   deux choses qui se ressemblent : **avancer sur la note jouee** est notre
   coeur ; **bloquer** est autre chose. Un enfant qui travaille ne joue pas du

@@ -361,10 +361,37 @@ trait ; le nom ne fait que l'identifier. Un enfant de 4e annee lit sa
 partition papier -- on ne lui apprend pas a lire sur un piano-roll, on lui
 montre ce qu'il vient de jouer.
 
-**Ce qu'on ne prend pas** : chez le concurrent, les notes *attendues* defilent
-vers la gauche a vitesse fixe. C'est un curseur pilote par l'horloge, soit
-exactement ce que l'ADR-009 a retrograde en mode secondaire (lot S6). On
-affiche ce qui a ete joue, pas ce qu'il faudrait jouer maintenant.
+#### Ce qu'une observation sur l'appareil a corrige
+
+La premiere redaction de ce lot disait que les notes attendues defilaient **a
+vitesse fixe**, et en concluait a un curseur pilote par l'horloge, contraire a
+l'ADR-009. **C'est faux.** Une rafale de captures montre une barre a cheval
+sur la ligne du present, a moitie remplie, qui **y reste** tant que la note
+n'est pas juste. Le defilement est donc commande par ce qui est joue, pas par
+l'horloge -- c'est-a-dire l'ADR-009, et non son contraire.
+
+Rien n'interdit donc cette representation. Elle affichera ce que le suiveur
+lui donnera.
+
+#### Les quatre idees a reprendre
+
+- **La colonne ne contient que les notes de l'exercice**, chacune posee a sa
+  hauteur reelle. Pas un clavier chromatique : deux pastilles, un la et un re,
+  separees par le vide qui les separe vraiment. On lit l'intervalle avant de
+  lire les noms.
+- **La note est un contenant, et la justesse se dessine dedans.** C'est la
+  trouvaille. Notre ruban dit de combien on s'ecarte sans dire de quoi ; leur
+  barre dit les deux dans le meme objet. Le trace de hauteur passe a
+  l'interieur de la barre quand c'est juste, et visiblement ailleurs sinon.
+- **La ligne du present est fixe**, c'est le contenu qui vient a elle. Le
+  regard n'a pas a suivre un curseur.
+- **Le trace de hauteur est continu et absolu.** Sur une erreur d'octave il
+  traverse tout l'ecran de haut en bas : on voit d'un coup qu'on n'est pas
+  du tout sur la note, sans avoir a lire un chiffre.
+
+**Ce qu'on ne prend pas** : l'aide en surimpression. Le manche de violon
+semi-transparent couvre le milieu de l'ecran, barres comprises, au moment
+precis ou l'enfant cherche sa note. Chez nous elle se pose a cote.
 
 ---
 
