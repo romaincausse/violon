@@ -30,7 +30,7 @@ enum TuningVerdict {
 /// les deux.
 class LiveTuning {
   LiveTuning({
-    this.toleranceCents = 35,
+    this.toleranceCents = defaultToleranceCents,
     this.minConfidence = 0.7,
     this.minSamples = 2,
     this.attackMs = 80,
@@ -168,6 +168,13 @@ class LiveTuning {
   /// dans la tonalite, donc la tonalite -- que ni `Passage` ni `ScoreNote` ne
   /// portent aujourd'hui. Elle arrivera avec l'import MusicXML, qui la
   /// transporte.
+  /// Ecart au-dela duquel le verdict bascule a "bas" ou "haut".
+  ///
+  /// Expose parce que l'echelle des notes en fait la demi-hauteur de ses
+  /// barreaux : un contenant qui ne vaudrait pas le bareme mentirait a
+  /// l'oeil.
+  static const double defaultToleranceCents = 35;
+
   static const double perfectCents = 22;
 
   /// Ecart a partir duquel la note vaut zero : un demi-ton, soit une autre

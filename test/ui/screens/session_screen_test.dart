@@ -18,6 +18,7 @@ import 'package:violon/core/music/score_note.dart';
 import 'package:violon/ui/screens/session_screen.dart';
 import 'package:violon/ui/widgets/measure_halo.dart';
 import 'package:violon/ui/widgets/measure_strip.dart';
+import 'package:violon/ui/widgets/note_ladder_view.dart';
 import 'package:violon/ui/widgets/score_view.dart';
 import 'package:violon/ui/widgets/metronome_bar.dart';
 import 'package:violon/ui/widgets/tuning_ribbon.dart';
@@ -810,6 +811,30 @@ void main() {
       expect(find.byType(ScoreView), findsNothing);
       expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
       expect(find.byKey(MeasureStrip.stripKey), findsOneWidget);
+    });
+
+    testWidgets('en decouverte, l echelle des notes remplace la partition', (
+      WidgetTester tester,
+    ) async {
+      // **A la place ou la partition n'est pas.** Il dechiffre depuis son
+      // papier : la place libre sert a lui dire *quelle* note il vient de
+      // jouer, ce qu'un ecart en cents ne dit pas.
+      await poser(tester, <PitchEstimate>[]);
+      expect(find.byKey(NoteLadderView.ladderKey), findsNothing);
+
+      await changerDeProfil(tester, fois: 2);
+      expect(find.byType(ScoreView), findsNothing);
+      expect(find.byKey(NoteLadderView.ladderKey), findsOneWidget);
+    });
+
+    testWidgets('en pupitre, trois informations restent trois', (
+      WidgetTester tester,
+    ) async {
+      // L'echelle est du retour de plus : elle n'a rien a faire dans le
+      // profil qui promet de ne montrer que trois choses.
+      await poser(tester, <PitchEstimate>[]);
+      await changerDeProfil(tester);
+      expect(find.byKey(NoteLadderView.ladderKey), findsNothing);
     });
 
     testWidgets('en pupitre il ne reste que le retour et le bouton', (

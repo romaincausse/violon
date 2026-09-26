@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 11 | 2 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 11 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 9 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**70 lots, 78 soirees restantes**, dont **26 de *must*** -- le reste
+**70 lots, 76 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -73,8 +73,8 @@ reste.
 
 **Cinq lots viennent d'ailleurs.** O6, D10, D11, E5 et D12 sont nes de
 l'examen d'une application concurrente (Trala), dont l'utilisateur a rapporte
-des captures. Trois sont deja livres -- l'identite visuelle (D12), l'accordeur qui dit quoi
-faire (O6) et la partition en plein ecran (D10). Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
+des captures. Quatre sont deja livres -- l'identite visuelle (D12), l'accordeur qui dit quoi
+faire (O6), la partition en plein ecran (D10) et l'echelle des notes (D11). Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
 fonctionnement normal de ce plan : un jalon se referme quand ses lots sont
 faits, pas quand on a decrete qu'on n'y toucherait plus. Ce qu'on en prend et
 ce qu'on en refuse est detaille dans `docs/journal.md`.
@@ -86,9 +86,10 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Dix lots livres, un en attente.** Ils tournent sur le code deja livre, sans
-dependance nouvelle, et cinq des dix -- I1, I2, D8, D9 et D12 -- corrigeaient
-des defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
+**Onze lots livres, le jalon est clos.** Ils tournent sur le code deja livre,
+sans dependance nouvelle, et cinq des onze -- I1, I2, D8, D9 et D12 --
+corrigeaient des defauts constates a l'usage plutot que d'ajouter une
+fonctionnalite.
 
 D8 et D9 sont apparus apres coup, sur le telephone : le ruban d'ecart livre en
 D2 faisait son travail mais n'etait pas beau (D8), et la portee laissait un
@@ -107,7 +108,7 @@ deux premiers de ce qu'elle affiche, le troisieme de l'allure qu'elle a.
 | ~~D8~~ | ~~Refonte graphique du ruban d'ecart~~ | | ★★ | fait |
 | ~~D9~~ | ~~La portee remplit la ligne~~ | | ★★ | fait |
 | ~~D10~~ | ~~La partition en plein ecran~~ | | ★★ | fait |
-| D11 | Le ruban nomme les notes | | ★★ | 2 |
+| ~~D11~~ | ~~Le ruban nomme les notes~~ | | ★★ | fait |
 | ~~D12~~ | ~~Une identite visuelle~~ | | ★★ | fait |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
@@ -433,6 +434,40 @@ lui donnera.
 **Ce qu'on ne prend pas** : l'aide en surimpression. Le manche de violon
 semi-transparent couvre le milieu de l'ecran, barres comprises, au moment
 precis ou l'enfant cherche sa note. Chez nous elle se pose a cote.
+
+#### Fait
+
+**A la place ou la partition n'est pas.** L'echelle occupe, dans le profil
+*decouverte*, la place que la partition prend dans *par coeur*. C'est le
+profil ou l'eleve dechiffre depuis son papier, donc celui ou savoir *quelle*
+note il vient de jouer vaut le plus -- et la place y etait vide. Le profil
+*pupitre* n'y touche pas : il promet trois informations, et il en garde trois.
+
+Les quatre idees sont la. La geometrie -- quelles notes, quelle etendue, quel
+barreau une hauteur atteint -- vit dans `NoteLadder`, du Dart pur ; le widget
+ne fait que peindre.
+
+**La demi-hauteur d'un barreau est la tolerance elle-meme**, exposee par
+`LiveTuning.defaultToleranceCents` plutot que recopiee : un contenant qui ne
+vaudrait plus le bareme mentirait a l'oeil.
+
+#### Deux ecarts avec le ruban d'ecart, et pourquoi
+
+- **Le trait est en encre, pas en couleur.** Le ruban d'ecart peut se
+  permettre un degrade vertical parce que chez lui la hauteur *est* le
+  verdict. Ici l'axe est absolu : juste depend de la note attendue, qui change
+  en cours de route. Un degrade vertical dirait donc faux. C'est le barreau
+  qui porte le verdict, et le trait ne porte que la hauteur.
+- **Atteindre un barreau qui n'est pas celui attendu n'est pas "juste".** Le
+  barreau se colore alors en bleu ou en orange selon le sens de l'erreur --
+  les memes trois couleurs que partout ailleurs.
+
+**Les noms s'effacent quand les barreaux se serrent.** Une gamme sur deux
+octaves en pose vingt-cinq : les nommer tous empilerait des etiquettes
+illisibles. Restent le nom attendu et celui qu'on atteint, les deux qui
+servent. Le seuil se mesure sur le **plus petit** ecart entre deux barreaux et
+non sur l'ecart moyen -- une gamme melange tons et demi-tons, et c'est le
+demi-ton qui fait se toucher les etiquettes.
 
 ---
 

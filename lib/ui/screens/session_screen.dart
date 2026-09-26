@@ -13,6 +13,7 @@ import '../../core/play/count_in.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
+import '../../core/scoring/note_ladder.dart';
 import '../../core/scoring/measure_scores.dart';
 import '../../core/scoring/tuning_trace.dart';
 import '../../core/scoring/string_drift_monitor.dart';
@@ -20,6 +21,7 @@ import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
 import '../widgets/measure_halo.dart';
 import '../widgets/measure_strip.dart';
+import '../widgets/note_ladder_view.dart';
 import '../widgets/metronome_bar.dart';
 import '../widgets/tuning_ribbon.dart';
 import '../widgets/score_view.dart';
@@ -360,6 +362,10 @@ class _SessionScreenState extends State<SessionScreen>
             pitch.frequencyHz,
             PitchUtils.midiToFrequency(note.midi, a4: widget.a4),
           ),
+          // L'echelle des notes, elle, raisonne en hauteur absolue : c'est
+          // ce qui lui permet de dire *quelle* note on joue, et pas
+          // seulement de combien on manque celle qu'on attendait.
+          midi: PitchUtils.frequencyToMidi(pitch.frequencyHz, a4: widget.a4),
         );
       }
     });
@@ -761,6 +767,8 @@ class _SessionScreenState extends State<SessionScreen>
         // a suivre, en plus petit que celle du pupitre. Elle encombre.
         if (_profil == DisplayProfile.parCoeur)
           Expanded(child: _partition(orientation))
+        else if (_profil == DisplayProfile.decouverte)
+          Expanded(child: _echelle())
         else
           const Spacer(),
         const SizedBox(height: 8),
@@ -801,6 +809,8 @@ class _SessionScreenState extends State<SessionScreen>
       children: <Widget>[
         if (_profil == DisplayProfile.parCoeur)
           Expanded(child: _partition(orientation))
+        else if (_profil == DisplayProfile.decouverte)
+          Expanded(child: _echelle())
         else
           const Spacer(),
         const SizedBox(width: 16),
@@ -936,6 +946,22 @@ class _SessionScreenState extends State<SessionScreen>
         onPressed: _running ? _stop : _start,
         icon: Icon(_running ? Icons.stop : Icons.play_arrow),
         label: Text(_running ? 'Arreter' : 'Jouer le passage'),
+      );
+
+  /// L'echelle des notes de l'exercice.
+  ///
+  /// **A la place ou la partition n'est pas.** En decouverte, l'eleve
+  /// dechiffre depuis son papier : la place laissee libre par la partition
+  /// sert a lui dire *quelle* note il vient de jouer, ce qu'un ecart en cents
+  /// ne dit pas.
+  Widget _echelle() => NoteLadderView(
+        ladder: NoteLadder(
+          notes: widget.passage.notes.map((ScoreNote n) => n.midi),
+        ),
+        trace: _trace,
+        // Hors prise, aucune note n'est attendue : l'echelle montre alors ou l'on
+        // est, sans dire que c'est bien ou mal.
+        expected: _running ? _cursor.noteAt(_elapsed)?.midi : null,
       );
 
   Widget _partition(Orientation orientation) {
