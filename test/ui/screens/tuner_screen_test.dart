@@ -9,8 +9,13 @@ import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/scoring/tuner.dart';
 import 'package:violon/ui/screens/tuner_screen.dart';
 import 'package:violon/ui/widgets/tuner_gauge.dart';
+import 'package:violon/ui/widgets/tuning_colors.dart';
 
 import '../../core/audio/fake_capture.dart';
+
+/// La phrase affichee a l'enfant.
+String consigne(WidgetTester tester) =>
+    tester.widget<Text>(find.byKey(const Key('tuner-consigne'))).data!;
 
 void main() {
   /// Un signal PCM d'une hauteur donnee, assez long pour plusieurs trames.
@@ -80,7 +85,7 @@ void main() {
       await jouer(tester, micro, 440);
 
       expect(find.text('La4'), findsOneWidget);
-      expect(find.text('juste'), findsOneWidget);
+      expect(consigne(tester), 'Juste. Ne touche plus a rien.');
     });
 
     testWidgets('une corde basse annonce son ecart en cents', (
@@ -106,6 +111,102 @@ void main() {
       expect(texte.startsWith('+'), isTrue, reason: 'trop haut : $texte');
     });
 
+    testWidgets('un petit ecart renvoie au tendeur, et nomme la corde', (
+      WidgetTester tester,
+    ) async {
+      // 435 Hz : une vingtaine de cents sous le la. Le tendeur a la course
+      // qu'il faut, et il est bien plus sur qu'une cheville.
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, 435);
+
+      expect(consigne(tester), 'Serre le tendeur du la');
+      expect(find.byKey(const Key('tuner-rappel')), findsNothing);
+    });
+
+    testWidgets(
+        'un gros ecart envoie a la cheville, avec le rappel qui va avec', (
+      WidgetTester tester,
+    ) async {
+      // 420 Hz : quatre-vingts cents sous le la. Le tendeur arriverait en
+      // butee ; c'est la cheville, et la cheville s'enfonce en tournant.
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, 420);
+
+      expect(consigne(tester), 'Serre la cheville du la');
+      expect(find.byKey(const Key('tuner-rappel')), findsOneWidget);
+    });
+
+    testWidgets('une corde trop haute s entend dire de desserrer', (
+      WidgetTester tester,
+    ) async {
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, 448);
+
+      expect(consigne(tester), startsWith('Desserre'));
+    });
+
+    testWidgets('une corde juste dit de ne plus y toucher', (
+      WidgetTester tester,
+    ) async {
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, 440);
+
+      expect(consigne(tester), 'Juste. Ne touche plus a rien.');
+      expect(find.byKey(const Key('tuner-rappel')), findsNothing);
+    });
+
+    // Les memes trois couleurs que la partition et le ruban : une consigne
+    // qui en prendrait une quatrieme serait une couleur de plus a apprendre.
+    //
+    // **Une prise par cas.** Enchainer 435 puis 448 sur le meme ecran ferait
+    // sauter la hauteur d'une cinquantaine de cents, et le lisseur -- a juste
+    // titre -- declarerait la note instable au lieu de la juger.
+    for (final (double hz, Color attendue, String cas) in <(
+      double,
+      Color,
+      String,
+    )>[
+      (435, TuningColors.low, 'trop bas'),
+      (448, TuningColors.high, 'trop haut'),
+      (440, TuningColors.inTune, 'juste'),
+    ]) {
+      testWidgets('la consigne porte la couleur du sens : $cas', (
+        WidgetTester tester,
+      ) async {
+        final FakeCapture micro = await poser(tester);
+        await jouer(tester, micro, hz);
+        expect(
+          tester
+              .widget<Text>(find.byKey(const Key('tuner-consigne')))
+              .style
+              ?.color,
+          attendue,
+        );
+      });
+    }
+
+    testWidgets('sans rien entendre, la consigne invite a jouer', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      expect(consigne(tester), 'Joue une corde a vide');
+    });
+
+    testWidgets('l ecran tient en paysage, rappel compris', (
+      WidgetTester tester,
+    ) async {
+      // La consigne a ajoute soixante points de hauteur a un ecran qui n'en
+      // avait pas de reste. En paysage, la barre systeme prise en compte, il
+      // reste moins de trois cent trente points.
+      await tester.binding.setSurfaceSize(const Size(743, 330));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final FakeCapture micro = await poser(tester);
+      await jouer(tester, micro, 420);
+
+      expect(find.byKey(const Key('tuner-rappel')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('le diapason de reference est affiche', (
       WidgetTester tester,
     ) async {
@@ -120,7 +221,7 @@ void main() {
       // l'instrument, pas contre un chiffre.
       final FakeCapture micro = await poser(tester, a4: 442);
       await jouer(tester, micro, 442);
-      expect(find.text('juste'), findsOneWidget);
+      expect(consigne(tester), 'Juste. Ne touche plus a rien.');
     });
 
     testWidgets('on peut adopter le diapason mesure', (

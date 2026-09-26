@@ -52,8 +52,8 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 10 | 3 | Ca devient agreable, tout de suite |
-| 2 | Les outils de tous les jours | 9 | 1 | L'application sert avant meme de jouer un morceau |
+| 1 | Le retour qui se voit | 11 | 3 | Ca devient agreable, tout de suite |
+| 2 | Les outils de tous les jours | 9 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**70 lots, 80 soirees restantes**, dont **26 de *must*** -- le reste
+**70 lots, 79 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -73,7 +73,8 @@ reste.
 
 **Cinq lots viennent d'ailleurs.** O6, D10, D11, E5 et D12 sont nes de
 l'examen d'une application concurrente (Trala), dont l'utilisateur a rapporte
-des captures. Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
+des captures. Deux sont deja livres -- l'identite visuelle (D12) et l'accordeur qui dit quoi
+faire (O6). Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
 fonctionnement normal de ce plan : un jalon se referme quand ses lots sont
 faits, pas quand on a decrete qu'on n'y toucherait plus. Ce qu'on en prend et
 ce qu'on en refuse est detaille dans `docs/journal.md`.
@@ -456,14 +457,14 @@ dans le noir, et pas avant.
 
 ## Jalon 2 - Les outils de tous les jours
 
-**Huit lots livres, un ajoute.** Tous sur le code deja livre -- le huitieme,
-L3, est apparu a l'usage sur le telephone, comme D8 au jalon 1. Ils ne font
-pas progresser la notation d'un pouce, et ils changent completement le fait de
+**Neuf lots livres.** Tous sur le code deja livre -- le huitieme, L3, est
+apparu a l'usage sur le telephone, comme D8 au jalon 1. Ils ne font pas
+progresser la notation d'un pouce, et ils changent completement le fait de
 s'en servir : c'est le jalon ou l'application cesse d'etre une demo et devient
 un objet qu'on pose sur son pupitre tous les soirs.
 
-**O6 rouvre le jalon**, et c'est le meilleur rapport effet/cout de tout ce qui
-reste au plan.
+**O6 avait rouvert le jalon**, et le refermait aussitot : c'etait le meilleur
+rapport effet/cout de tout ce qui restait au plan, pour une soiree.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -475,7 +476,7 @@ reste au plan.
 | ~~O2~~ | ~~Metronome visuel a subdivisions et accents~~ | | ★★ | fait |
 | ~~D7~~ | ~~Depart compte~~ | | ★★★ | fait |
 | ~~L3~~ | ~~L'ecran qui ne s'eteint pas~~ | | ★★★ | fait |
-| O6 | L'accordeur dit quoi faire | | ★★★ | 1 |
+| ~~O6~~ | ~~L'accordeur dit quoi faire~~ | | ★★★ | fait |
 
 ### L1 - Demarrer en dix secondes
 
@@ -599,10 +600,39 @@ deja mesure ; il ne manque que la traduction en geste.
 confettis. La regle du projet est explicite -- on montre des donnees qui
 montent, pas des recompenses. Une corde juste se signale, elle ne se fete pas.
 
-Reste a trancher a l'usage : notre accordeur juge contre le **diapason
-mesure** sur les cordes a vide, pas contre 440 fixe (lot O4). L'instruction
-doit donc dire *« serre jusqu'a la quinte juste »* plutot que *« monte a 440 »*,
-sans quoi elle contredirait la mesure qu'on affiche juste au-dessus.
+**Fait.** L'ecart se traduit en geste dans `TuningCoach`, du Dart pur : la
+consigne nait d'un `TunerReading`, donc du diapason en cours -- celui de
+l'instrument s'il a ete adopte (lot O4). Aucun hertz n'entre dans la phrase,
+ce qui reglait la question laissee ouverte : dire *« monte a 440 »*
+contredirait le chiffre affiche juste en dessous.
+
+#### Ce que la consigne dit, et ce qu'elle ne dit pas
+
+- **Quelle cheville** : la corde est nommee, et la pastille correspondante
+  s'allume dans la rangee des quatre.
+- **Dans quel sens** : *serre* ou *desserre*, dans la couleur qui le dit deja
+  ailleurs -- bleu trop bas, orange trop haut, vert juste. Une quatrieme
+  couleur pour redire la meme chose serait une couleur de plus a apprendre.
+- **Avec quoi** : le tendeur en deca de vingt-cinq cents, la cheville au-dela.
+  Un tendeur arrive en butee, et l'enfant force alors sur une vis au lieu de
+  prendre la cheville. Les quatre cordes sont supposees en porter un, ce qui
+  est le cas courant sur un violon d'etude ; un instrument qui n'en a qu'un se
+  declare en une ligne.
+- **Quand s'arreter** : ca ne se dit pas, ca se voit. La consigne passe de la
+  cheville au tendeur puis a *« ne touche plus a rien »* : le geste annonce
+  lui-meme qu'on approche.
+- **Une faute de onze ans** : *« enfonce la cheville en tournant, sinon elle
+  glisse »*, rappele seulement quand c'est la cheville qu'on demande.
+
+**Pas de schema de chevillier**, contrairement a la premiere redaction. Le
+dessiner obligerait a affirmer quelle cheville est de quel cote du chevillier,
+et une affirmation fausse sur un schema est pire qu'une absence de schema. La
+corde nommee et la pastille allumee suffisent a un eleve de 4e annee, qui sait
+quelle cheville tient son sol.
+
+**L'ecran passe a deux colonnes en paysage.** La consigne ajoutait sa hauteur
+a un ecran qui n'en avait pas de reste : il debordait deja de cinquante points
+avant ce lot, sans qu'aucun test ne le voie. Deux tests le voient maintenant.
 
 ---
 
