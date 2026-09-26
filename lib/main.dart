@@ -17,6 +17,7 @@ import 'platform/device/wakelock_screen_keeper.dart';
 import 'platform/store/prefs_session_store.dart';
 import 'ui/screens/home_shell.dart';
 import 'ui/screens/session_screen.dart' show PitchSourceFactory;
+import 'ui/theme/violon_theme.dart';
 import 'ui/widgets/keep_screen_awake.dart';
 
 void main() {
@@ -142,10 +143,7 @@ class _ViolonAppState extends State<ViolonApp> {
       child: MaterialApp(
         title: 'Violon',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorSchemeSeed: const Color(0xFF6D4C41),
-          useMaterial3: true,
-        ),
+        theme: ViolonTheme.clair(),
         // Aucun ecran d'accueil : l'application s'ouvre sur le travail en
         // cours.
         home: !_relue

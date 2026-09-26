@@ -815,7 +815,12 @@ class _SessionScreenState extends State<SessionScreen>
         _ => 'noire',
       };
 
-  Widget _bouton() => FilledButton.tonalIcon(
+  /// Le seul bouton plein de l'ecran.
+  ///
+  /// Tout le reste de l'interface est en encre sur papier ; lancer la prise
+  /// est la seule chose qu'on vient y faire, et c'est la seule qui porte la
+  /// couleur.
+  Widget _bouton() => FilledButton.icon(
         onPressed: _running ? _stop : _start,
         icon: Icon(_running ? Icons.stop : Icons.play_arrow),
         label: Text(_running ? 'Arreter' : 'Jouer le passage'),

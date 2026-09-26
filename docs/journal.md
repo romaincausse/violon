@@ -86,8 +86,8 @@ meme simple, l'export vers le professeur.
 
 ### Examen d'une concurrente : Trala
 
-Regardee sur captures, une fois les jalons 1 a 4 livres. Quatre idees en sont
-sorties (lots O6, D10, D11, E5), et deux refus.
+Regardee sur captures, une fois les jalons 1 a 4 livres. Cinq idees en sont
+sorties (lots O6, D10, D11, E5, D12), et deux refus.
 
 **Ce qu'elle fait mieux que nous.**
 
@@ -98,6 +98,12 @@ sorties (lots O6, D10, D11, E5), et deux refus.
   hauteur part en barres de titre et de navigation (D10).
 - *Une colonne de noms de notes*, coloree par ce qui est joue. Notre ruban dit
   de combien on est loin, jamais de quelle note (D11).
+- *Elle a une allure.* La notre portait le theme Material par defaut, ce qui
+  n'est pas un gout mais une absence de choix. **On lui prend sa grammaire --
+  un serif de titre, une lineale de lecture, des cartes sur fond teinte, un
+  accent unique -- et rien de son habillage** : ni ses illustrations, ni sa
+  palette, ni ses polices. Copier une identite graphique est a un studio ce
+  que copier Galamian serait a un pedagogue (D12).
 
 **Ce qu'on refuse, et pourquoi.**
 

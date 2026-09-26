@@ -414,19 +414,30 @@ class _Repertoire extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           children: <Widget>[
             Card(
-              color: theme.colorScheme.primaryContainer,
+              // "Voila ta prochaine tache" est ce que l'application a a dire
+              // ce soir : c'est la seule carte sombre de l'ecran, et il n'y
+              // en aura jamais deux.
+              color: theme.colorScheme.inverseSurface,
               child: ListTile(
                 key: HomeShell.exercicesKey,
+                textColor: theme.colorScheme.onInverseSurface,
+                iconColor: theme.colorScheme.onInverseSurface,
                 leading: const Icon(Icons.straighten),
                 title: const Text('Gammes et exercices'),
                 subtitle: Text(
                   tache == null
                       ? 'Tout le catalogue est acquis'
                       : 'A travailler : ${tache.titre}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onInverseSurface
+                        .withValues(alpha: 0.75),
+                  ),
                 ),
                 trailing: Text(
                   '${progres.acquis}/${ExerciseCatalog.all.length}',
-                  style: theme.textTheme.titleMedium,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onInverseSurface,
+                  ),
                 ),
                 onTap: onExercices,
               ),
