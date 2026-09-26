@@ -52,9 +52,9 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 8 | 0 | Ca devient agreable, tout de suite |
-| 2 | Les outils de tous les jours | 8 | 0 | L'application sert avant meme de jouer un morceau |
-| 3 | Les gammes et les exercices | 4 | 0 | Utile **tous les jours**, sans rien preparer |
+| 1 | Le retour qui se voit | 10 | 3 | Ca devient agreable, tout de suite |
+| 2 | Les outils de tous les jours | 9 | 1 | L'application sert avant meme de jouer un morceau |
+| 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
@@ -64,12 +64,19 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**65 lots, 74 soirees restantes**, dont **26 de *must*** -- le reste
+**69 lots, 80 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
 Les lots barres sont livres ; la colonne des soirees ne compte que ce qui
 reste.
+
+**Quatre lots viennent d'ailleurs.** O6, D10, D11 et E5 sont nes de l'examen
+d'une application concurrente (Trala), dont l'utilisateur a rapporte des
+captures. Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
+fonctionnement normal de ce plan : un jalon se referme quand ses lots sont
+faits, pas quand on a decrete qu'on n'y toucherait plus. Ce qu'on en prend et
+ce qu'on en refuse est detaille dans `docs/journal.md`.
 
 **Le calendrier des dependances a change.** L'ancien plan n'arbitrait rien
 avant le jalon 6. Le bourdon oblige a trancher le moteur audio au **jalon 4** :
@@ -78,13 +85,14 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Jalon termine, huit lots.** Ils tournent sur le code deja livre, sans
-dependance nouvelle, et quatre d'entre eux -- I1, I2, D8 et D9 -- corrigeaient
+**Huit lots livres, deux ajoutes.** Ils tournent sur le code deja livre, sans
+dependance nouvelle, et quatre des huit -- I1, I2, D8 et D9 -- corrigeaient
 des defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
 
-Les deux derniers sont apparus apres coup, sur le telephone : le ruban d'ecart
-livre en D2 faisait son travail mais n'etait pas beau (D8), et la portee
-laissait un blanc a droite de chaque ligne (D9).
+D8 et D9 sont apparus apres coup, sur le telephone : le ruban d'ecart livre en
+D2 faisait son travail mais n'etait pas beau (D8), et la portee laissait un
+blanc a droite de chaque ligne (D9). **D10 et D11 viennent d'ailleurs** : de
+ce qu'une application concurrente fait mieux que nous de l'ecran.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -96,6 +104,8 @@ laissait un blanc a droite de chaque ligne (D9).
 | ~~D5~~ | ~~Halo de fin de mesure~~ | | ★★ | fait |
 | ~~D8~~ | ~~Refonte graphique du ruban d'ecart~~ | | ★★ | fait |
 | ~~D9~~ | ~~La portee remplit la ligne~~ | | ★★ | fait |
+| D10 | La partition en plein ecran | | ★★ | 1 |
+| D11 | Le ruban nomme les notes | | ★★ | 2 |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -323,15 +333,51 @@ du defilement -- c'est le seul element qu'on doit atteindre sans chercher,
 violon en main. Le test qui couvrait le paysage le posait en 780 x 360, la
 fenetre entiere : il ne pouvait pas voir le defaut.
 
+### D10 - La partition en plein ecran
+
+Le profil pupitre (D4) donne deja la partition en grand, mais l'ecran garde sa
+barre de titre et sa barre de navigation : une bonne moitie de la hauteur part
+en decor.
+
+Un appui fait disparaitre tout ce qui n'est pas la musique -- il ne reste que
+la portee et de quoi en sortir. C'est l'etat dans lequel le telephone passe
+l'essentiel d'une seance, pose sur le pupitre a soixante-dix centimetres.
+
+**Ce qui reste visible se compte sur une main** : la portee, le tempo, et le
+bouton pour arreter. Le reste s'atteint en sortant du plein ecran, ce qui est
+un geste rare.
+
+---
+
+### D11 - Le ruban nomme les notes
+
+Le ruban d'ecart (D2, refondu en D8) dit **de combien** on est loin, jamais
+**de quelle note** on est loin. Une colonne de noms de notes sur le cote, et
+la hauteur jouee vient colorer celui qu'elle atteint : on lit d'un coup qu'on
+joue un do au lieu d'un do diese, ce qu'un ecart en cents ne dit pas.
+
+**C'est du retour, pas une partition.** L'ecart mesure garde la hauteur du
+trait ; le nom ne fait que l'identifier. Un enfant de 4e annee lit sa
+partition papier -- on ne lui apprend pas a lire sur un piano-roll, on lui
+montre ce qu'il vient de jouer.
+
+**Ce qu'on ne prend pas** : chez le concurrent, les notes *attendues* defilent
+vers la gauche a vitesse fixe. C'est un curseur pilote par l'horloge, soit
+exactement ce que l'ADR-009 a retrograde en mode secondaire (lot S6). On
+affiche ce qui a ete joue, pas ce qu'il faudrait jouer maintenant.
+
 ---
 
 ## Jalon 2 - Les outils de tous les jours
 
-**Jalon termine.** Huit lots courts, tous sur le code deja livre -- le
-huitieme, L3, est apparu a l'usage sur le telephone, comme D8 au jalon 1. Ils
-ne font pas progresser la notation d'un pouce, et ils changent completement le
-fait de s'en servir : c'est le jalon ou l'application cesse d'etre une demo et
-devient un objet qu'on pose sur son pupitre tous les soirs.
+**Huit lots livres, un ajoute.** Tous sur le code deja livre -- le huitieme,
+L3, est apparu a l'usage sur le telephone, comme D8 au jalon 1. Ils ne font
+pas progresser la notation d'un pouce, et ils changent completement le fait de
+s'en servir : c'est le jalon ou l'application cesse d'etre une demo et devient
+un objet qu'on pose sur son pupitre tous les soirs.
+
+**O6 rouvre le jalon**, et c'est le meilleur rapport effet/cout de tout ce qui
+reste au plan.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -343,6 +389,7 @@ devient un objet qu'on pose sur son pupitre tous les soirs.
 | ~~O2~~ | ~~Metronome visuel a subdivisions et accents~~ | | ★★ | fait |
 | ~~D7~~ | ~~Depart compte~~ | | ★★★ | fait |
 | ~~L3~~ | ~~L'ecran qui ne s'eteint pas~~ | | ★★★ | fait |
+| O6 | L'accordeur dit quoi faire | | ★★★ | 1 |
 
 ### L1 - Demarrer en dix secondes
 
@@ -449,6 +496,30 @@ cumule, donc rien ne derive.
 
 ---
 
+### O6 - L'accordeur dit quoi faire
+
+Notre accordeur mesure et affiche : un ecart en cents, une jauge, les quintes
+a vide. Il ne dit **rien de ce qu'il faut faire de ses mains**.
+
+Il manque trois mots : quelle cheville, dans quel sens, et quand s'arreter.
+*« Serre le la »* avec la bonne cheville designee sur un schema, et l'enfant
+s'accorde seul. Sans ces trois mots il mesure, constate, et appelle son pere
+-- ce qui est exactement ce que l'application est censee eviter.
+
+**Le plus gros effet pour le plus petit cout de tout ce qui reste.** Tout est
+deja mesure ; il ne manque que la traduction en geste.
+
+**Ce qu'on ne prend pas** : chez le concurrent, une corde juste declenche des
+confettis. La regle du projet est explicite -- on montre des donnees qui
+montent, pas des recompenses. Une corde juste se signale, elle ne se fete pas.
+
+Reste a trancher a l'usage : notre accordeur juge contre le **diapason
+mesure** sur les cordes a vide, pas contre 440 fixe (lot O4). L'instruction
+doit donc dire *« serre jusqu'a la quinte juste »* plutot que *« monte a 440 »*,
+sans quoi elle contredirait la mesure qu'on affiche juste au-dessus.
+
+---
+
 ### L3 - L'ecran qui ne s'eteint pas
 
 Le telephone est pose sur un pupitre et l'enfant a les deux mains prises.
@@ -480,10 +551,10 @@ le rattachement de l'activite apres une mise en arriere-plan, ce qu'un
 
 ## Jalon 3 - Les gammes et les exercices
 
-**Jalon termine (PR #40).** Un catalogue de dix-neuf exercices repartis sur
-six paliers, generes et non saisis, et une progression qui designe la
-prochaine tache. Voir `docs/exercices.md` pour le detail de ce qui est fidele
-aux methodes et de ce qui ne l'est pas.
+**Quatre lots livres (PR #40), un ajoute.** Un catalogue de dix-neuf exercices
+repartis sur six paliers, generes et non saisis, et une progression qui
+designe la prochaine tache. E5 rouvre le jalon. Voir `docs/exercices.md` pour
+le detail de ce qui est fidele aux methodes et de ce qui ne l'est pas.
 
 **Le meilleur rapport effet/cout de tout le plan.** Un eleve de 4e annee passe
 une part considerable de son temps sur des gammes, des arpeges et des etudes.
@@ -503,6 +574,7 @@ Or c'est le cas d'usage ideal pour cette application :
 | ~~E2~~ | ~~Progression de difficulte et score~~ | | ★★★ | fait |
 | ~~E3~~ | ~~Travailler au bourdon et au metronome~~ | | ★★★ | fait |
 | ~~E4~~ | ~~Le cran de tempo suivant~~ | | ★★★ | fait |
+| E5 | Le mode note a note, pour les doigts seulement | | ★★ | 2 |
 
 ### E1 - Catalogue d'exercices issus des methodes
 
@@ -607,6 +679,37 @@ rien. Apres une gamme propre a 60, l'application propose maintenant **66** --
 le pas d'un metronome mecanique dans cette region. C'est la seule facon dont
 une donnee qui monte devient une invitation, et c'est la seule recompense que
 le projet s'autorise.
+
+---
+
+### E5 - Le mode note a note, pour les doigts seulement
+
+L'application n'avance a la note suivante que lorsque la bonne note est
+entendue. Tant qu'elle ne l'est pas, elle montre **quelle corde et quel
+doigt** -- le seul endroit du projet ou un schema de manche a un sens.
+
+**Et seulement pour les motifs de doigts.** C'est la moitie qu'on prend d'une
+idee dont l'autre moitie est mauvaise.
+
+| | Verdict |
+|---|---|
+| Le curseur avance sur la **note jouee**, pas sur l'horloge | C'est l'ADR-009. C'est notre coeur. |
+| L'application **bloque** tant que la note n'est pas juste | Refuse pour un morceau. Accepte pour un motif de doigts. |
+
+La raison du refus est ecrite depuis le debut dans `CLAUDE.md` : **un enfant
+qui travaille ne joue pas du debut a la fin.** Il s'arrete, reprend la mesure,
+saute. Pour le suiveur c'est le cas nominal, pas le cas limite -- et un
+curseur bloquant punit exactement ce comportement-la. Sur un morceau au tempo
+ecrit, bloquer detruit en plus la ligne musicale : on ne joue plus de la
+musique, on repond a un questionnaire note a note.
+
+Sur un motif de Sevcik, en revanche, il n'y a **aucune ligne musicale a
+casser** : huit notes, un doigt a la fois, et la justesse note a note *est* le
+sujet. Bloquer y devient la bonne pedagogie plutot qu'une entrave.
+
+Ce lot ne depend pas du suiveur : savoir si la note attendue vient d'etre
+jouee ne demande que `LiveTuning`, qui existe. Il se fait donc avant le jalon
+6, et il alimentera le banc d'essai du jalon 5 en prises propres.
 
 ---
 

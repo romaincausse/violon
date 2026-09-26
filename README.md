@@ -106,8 +106,10 @@ Deux exclusions fermes :
 ## Etat
 
 **608 tests, quarante-trois lots livres** -- dix-huit avant la refonte du plan,
-vingt-cinq depuis (jalons 1 a 4 termines, plus H1 remonte, deux lots de
-consolidation et l'ecran qui ne s'eteint plus). Le plan a ete refondu : c'est desormais
+vingt-cinq depuis (tout ce qui etait prevu aux jalons 1 a 4, plus H1 remonte,
+deux lots de consolidation et l'ecran qui ne s'eteint plus). Quatre lots
+neufs viennent d'etre ajoutes aux jalons 1 a 3, tires de l'examen d'une
+application concurrente : voir `docs/journal.md`. Le plan a ete refondu : c'est desormais
 l'application qui suit l'eleve, et non l'inverse (ADR-009), et il est
 reordonne par rapport effet/cout.
 
