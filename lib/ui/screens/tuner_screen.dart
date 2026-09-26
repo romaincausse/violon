@@ -9,6 +9,7 @@ import '../../core/music/pitch_utils.dart';
 import '../../core/scoring/a4_estimator.dart';
 import '../../core/scoring/open_string_fifths.dart';
 import '../../core/scoring/tuner.dart';
+import '../../core/scoring/tuning_advice.dart';
 import '../widgets/tuner_gauge.dart';
 import '../widgets/tuning_colors.dart';
 import 'session_screen.dart' show PitchSourceFactory;
@@ -48,6 +49,12 @@ class _TunerScreenState extends State<TunerScreen> {
 
   late Tuner _accordeur = Tuner(a4: widget.a4);
   late A4Estimator _diapason = A4Estimator(tuner: _accordeur);
+
+  /// La traduction de la mesure en geste.
+  ///
+  /// Il n'a aucun etat : les seuils lui suffisent, et l'ecart lui vient de
+  /// l'accordeur -- donc du diapason en cours, mesure ou de reference.
+  static const TuningCoach _coach = TuningCoach();
 
   @override
   void initState() {
@@ -132,8 +139,10 @@ class _TunerScreenState extends State<TunerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final TunerReading? lecture = _lecture;
+    final TuningAdvice conseil = _coach.advise(lecture);
+    final bool paysage =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
 
     return KeepScreenAwake(
       child: Scaffold(
@@ -141,7 +150,10 @@ class _TunerScreenState extends State<TunerScreen> {
         body: SafeArea(
           child: Padding(
             key: const Key('tuner-content'),
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: paysage ? 8 : 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
@@ -149,29 +161,32 @@ class _TunerScreenState extends State<TunerScreen> {
                   cordes: PitchUtils.violinOpenStrings,
                   active: lecture?.stringMidi,
                 ),
-                const Spacer(),
-                Text(
-                  lecture == null ? '--' : lecture.stringName,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.displaySmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _texteDesCents(lecture),
-                  key: const Key('tuner-cents'),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                TunerGauge(reading: lecture),
-                const SizedBox(height: 16),
-                _Quintes(quintes: OpenStringFifths.from(_cordesMesurees)),
-                const Spacer(),
+                if (paysage)
+                  // **Deux colonnes, et non une pile.** En paysage il reste
+                  // moins de trois cent trente points de haut : la consigne,
+                  // la jauge et les quintes ne tiennent pas l'une sous
+                  // l'autre. La largeur, elle, ne manque pas.
+                  Expanded(
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(child: _laConsigne(conseil, lecture)),
+                        const SizedBox(width: 24),
+                        Expanded(child: _laMesure(lecture)),
+                      ],
+                    ),
+                  )
+                else ...<Widget>[
+                  const Spacer(),
+                  _laConsigne(conseil, lecture),
+                  const SizedBox(height: 16),
+                  _laMesure(lecture),
+                  const Spacer(),
+                ],
                 if (_probleme != null)
                   Text(
                     _probleme!,
                     textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 _LigneDuDiapason(
                   reference: widget.a4,
@@ -186,21 +201,154 @@ class _TunerScreenState extends State<TunerScreen> {
     );
   }
 
-  /// Le chiffre ne s'affiche que quand la hauteur tient : pendant un demarrage
-  /// d'archet il danserait sans rien dire d'utile.
+  /// Quelle corde, et quoi en faire.
+  Widget _laConsigne(TuningAdvice conseil, TunerReading? lecture) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(
+          lecture == null ? '--' : lecture.stringName,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.displaySmall,
+        ),
+        const SizedBox(height: 8),
+        _Consigne(conseil: conseil),
+        SizedBox(
+          // Hauteur reservee : sans elle, tout le bloc sauterait de vingt
+          // points des que l'archet se pose.
+          height: 20,
+          child: Text(
+            _texteDesCents(lecture),
+            key: const Key('tuner-cents'),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// De combien, et ou en sont les quintes.
+  Widget _laMesure(TunerReading? lecture) => Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TunerGauge(reading: lecture),
+          const SizedBox(height: 16),
+          _Quintes(quintes: OpenStringFifths.from(_cordesMesurees)),
+        ],
+      );
+
+  /// La mesure, et rien d'autre.
+  ///
+  /// **Ce qu'il faut faire se lit au-dessus** ; cette ligne-ci ne porte que
+  /// le chiffre, y compris quand la corde est juste -- "juste" sous une
+  /// consigne qui dit deja "Juste" ne serait qu'un doublon, la ou "+2 cents"
+  /// dit a quel point on a bien vise. Rien ne s'affiche tant que la hauteur
+  /// ne tient pas : pendant un demarrage d'archet le chiffre danserait sans
+  /// rien dire d'utile.
   static String _texteDesCents(TunerReading? lecture) {
-    if (lecture == null) {
-      return 'Joue une corde a vide';
-    }
-    if (!lecture.steady) {
-      return '...';
+    if (lecture == null || !lecture.steady) {
+      return '';
     }
     final int cents = lecture.centsOffset.round();
-    if (lecture.inTune) {
-      return 'juste';
-    }
-    return cents > 0 ? '+$cents cents' : '$cents cents';
+    final String unite = cents.abs() <= 1 ? 'cent' : 'cents';
+    return cents > 0 ? '+$cents $unite' : '$cents $unite';
   }
+}
+
+/// Ce qu'il faut faire de ses mains, en une phrase.
+///
+/// **C'est le lot O6 tout entier.** L'accordeur mesurait et affichait sans
+/// jamais dire quoi faire ; il manquait quelle cheville, dans quel sens, et
+/// quand s'arreter. Les deux premiers sont dans la phrase, le troisieme est
+/// dans le fait que la phrase change toute seule -- la cheville, puis le
+/// tendeur, puis plus rien.
+///
+/// **Aucun hertz ici.** L'ecart vient du diapason en cours, celui de
+/// l'instrument s'il a ete adopte : dire "monte a 440" contredirait le
+/// chiffre affiche juste en dessous.
+class _Consigne extends StatelessWidget {
+  const _Consigne({required this.conseil});
+
+  final TuningAdvice conseil;
+
+  static const Key consigneKey = Key('tuner-consigne');
+  static const Key rappelKey = Key('tuner-rappel');
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return ConstrainedBox(
+      // Une hauteur reservee, pas imposee : la consigne qui apparait ne doit
+      // pousser la jauge ni vers le bas ni hors de l'ecran, et une phrase qui
+      // passe a la ligne sur un ecran etroit doit pouvoir le faire.
+      constraints: const BoxConstraints(minHeight: 64),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            phrase(conseil),
+            key: consigneKey,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontSize: 20,
+              color: couleur(conseil) ?? theme.colorScheme.onSurface,
+            ),
+          ),
+          if (conseil.action == TuningAction.peg)
+            Text(
+              // La faute que tout le monde fait a onze ans : tourner sans
+              // enfoncer, et la cheville revient en arriere toute seule.
+              'Enfonce la cheville en tournant, sinon elle glisse.',
+              key: rappelKey,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall,
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// La phrase dite a l'enfant.
+  static String phrase(TuningAdvice conseil) => switch (conseil.action) {
+        TuningAction.play => 'Joue une corde a vide',
+        TuningAction.hold => 'Tiens la note',
+        TuningAction.stop => 'Juste. Ne touche plus a rien.',
+        TuningAction.fineTuner =>
+          '${_verbe(conseil)} le tendeur du ${_corde(conseil)}',
+        TuningAction.peg =>
+          '${_verbe(conseil)} la cheville du ${_corde(conseil)}',
+      };
+
+  /// Le sens, dans la couleur qui le dit deja ailleurs.
+  ///
+  /// Trop bas est bleu, trop haut est orange, juste est vert -- les memes
+  /// trois couleurs que la partition et le ruban. Une consigne qui prendrait
+  /// une quatrieme couleur pour dire la meme chose serait une couleur de
+  /// plus a apprendre.
+  static Color? couleur(TuningAdvice conseil) => switch (conseil.action) {
+        TuningAction.stop => TuningColors.inTune,
+        TuningAction.fineTuner ||
+        TuningAction.peg =>
+          conseil.turn == TuningTurn.tighten
+              ? TuningColors.low
+              : TuningColors.high,
+        TuningAction.play || TuningAction.hold => null,
+      };
+
+  static String _verbe(TuningAdvice conseil) =>
+      conseil.turn == TuningTurn.tighten ? 'Serre' : 'Desserre';
+
+  /// "Sol3" designe une hauteur ; "sol" designe une corde, et c'est d'une
+  /// corde qu'on parle quand on dit quelle cheville tourner.
+  static String _corde(TuningAdvice conseil) =>
+      PitchUtils.noteName(conseil.stringMidi!)
+          .replaceAll(RegExp(r'\d'), '')
+          .toLowerCase();
 }
 
 /// Le diapason de reference, et la possibilite d'adopter celui de
