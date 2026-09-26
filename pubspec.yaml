@@ -95,6 +95,22 @@ flutter:
       fonts:
         - asset: assets/fonts/Bravura.otf
 
+    # Instrument Serif (SIL OFL 1.1) : la police des titres. Un serif a fort
+    # contraste, comme les titres et les indications de mouvement graves sur
+    # la partition papier que l'enfant a sous les yeux.
+    - family: InstrumentSerif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Regular.ttf
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          style: italic
+
+    # Manrope (SIL OFL 1.1) : la police de lecture. Fichier variable unique,
+    # l'axe wght couvre 200 a 800 -- une seule declaration suffit donc pour
+    # toutes les graisses.
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Variable.ttf
+
   # A decommenter quand la premiere partition sera gravee (make scores) :
   # un dossier d'assets vide fait echouer le build.
   # assets:

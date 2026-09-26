@@ -64,16 +64,16 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**69 lots, 80 soirees restantes**, dont **26 de *must*** -- le reste
+**70 lots, 80 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
 Les lots barres sont livres ; la colonne des soirees ne compte que ce qui
 reste.
 
-**Quatre lots viennent d'ailleurs.** O6, D10, D11 et E5 sont nes de l'examen
-d'une application concurrente (Trala), dont l'utilisateur a rapporte des
-captures. Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
+**Cinq lots viennent d'ailleurs.** O6, D10, D11, E5 et D12 sont nes de
+l'examen d'une application concurrente (Trala), dont l'utilisateur a rapporte
+des captures. Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
 fonctionnement normal de ce plan : un jalon se referme quand ses lots sont
 faits, pas quand on a decrete qu'on n'y toucherait plus. Ce qu'on en prend et
 ce qu'on en refuse est detaille dans `docs/journal.md`.
@@ -85,14 +85,15 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Huit lots livres, deux ajoutes.** Ils tournent sur le code deja livre, sans
-dependance nouvelle, et quatre des huit -- I1, I2, D8 et D9 -- corrigeaient
+**Neuf lots livres, deux ajoutes.** Ils tournent sur le code deja livre, sans
+dependance nouvelle, et cinq des neuf -- I1, I2, D8, D9 et D12 -- corrigeaient
 des defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
 
 D8 et D9 sont apparus apres coup, sur le telephone : le ruban d'ecart livre en
 D2 faisait son travail mais n'etait pas beau (D8), et la portee laissait un
-blanc a droite de chaque ligne (D9). **D10 et D11 viennent d'ailleurs** : de
-ce qu'une application concurrente fait mieux que nous de l'ecran.
+blanc a droite de chaque ligne (D9). **D10, D11 et D12 viennent d'ailleurs** :
+de ce qu'une application concurrente fait mieux que nous de l'ecran -- les
+deux premiers de ce qu'elle affiche, le troisieme de l'allure qu'elle a.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
@@ -106,6 +107,7 @@ ce qu'une application concurrente fait mieux que nous de l'ecran.
 | ~~D9~~ | ~~La portee remplit la ligne~~ | | ★★ | fait |
 | D10 | La partition en plein ecran | | ★★ | 1 |
 | D11 | Le ruban nomme les notes | | ★★ | 2 |
+| ~~D12~~ | ~~Une identite visuelle~~ | | ★★ | fait |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -392,6 +394,63 @@ lui donnera.
 **Ce qu'on ne prend pas** : l'aide en surimpression. Le manche de violon
 semi-transparent couvre le milieu de l'ecran, barres comprises, au moment
 precis ou l'enfant cherche sa note. Chez nous elle se pose a cote.
+
+---
+
+### D12 - Une identite visuelle
+
+L'application portait le theme Material par defaut, tire d'une graine marron :
+des conteneurs saumon, Roboto partout, et l'allure d'un formulaire. Ce n'est
+pas un defaut de gout, c'est une **absence de choix** -- personne n'avait
+decide de quoi ca devait avoir l'air.
+
+**Ce qu'on prend a la concurrente, c'est la grammaire, pas l'habillage.** Un
+serif de titre marie a une lineale de lecture, des cartes claires posees sur
+un fond teinte, des rayons genereux, un accent unique. C'est ce qui rend une
+application reconnaissable en une seconde. On ne prend ni ses illustrations,
+ni sa palette, ni ses polices : ce serait a son identite graphique ce que
+copier Galamian serait a son systeme de gammes.
+
+#### La contrainte que leur design ne connait pas
+
+Chez nous, **trois couleurs sont deja prises et disent quelque chose** : le
+vert est juste, le bleu est trop bas, l'orange est trop haut (`TuningColors`).
+Une interface qui s'en servirait pour un bouton ou un onglet apprendrait a
+l'oeil qu'elles ne veulent rien dire de particulier, et le ruban d'ecart
+perdrait sa langue.
+
+D'ou la these : **encre et papier.** Le texte et la portee sont en encre
+chaude sur un papier creme, et les seules couleurs franches de l'ecran sont
+celles qui mesurent. Reste une couleur pour ce sur quoi on appuie -- un
+lie-de-vin, sombre et froid la ou l'orange est clair et chaud. Un test le
+defend : aucun role du theme ne peut etre a la fois vif et de teinte voisine
+d'une couleur de mesure.
+
+#### Ce que le test a revele
+
+Il ne restait plus de teinte libre pour une erreur. Tout rouge d'alerte tombe
+a quelques degres de l'orange du "trop haut" -- une panne se serait lue comme
+une note un peu haute. **Une erreur est donc en encre, comme le reste** : ce
+sont les mots qui portent la mauvaise nouvelle, pas la couleur. C'est une
+contrainte que l'application se donne, et elle lui va : elle ne crie pas.
+
+#### Les polices
+
+Deux fichiers d'assets, pas une dependance : Instrument Serif pour les titres
+et Manrope pour la lecture, toutes deux sous licence SIL OFL, livrees avec
+leur licence a cote de celle de Bravura. Le serif n'est pas un ornement -- les
+titres et les indications de mouvement sont graves ainsi sur la partition
+papier que l'enfant a sous les yeux.
+
+Manrope est un fichier variable unique ; `fontWeight` pilote bien son axe de
+graisse, verifie sur l'appareil avant de batir l'echelle typographique dessus.
+
+#### Ce qui reste ouvert
+
+**Un seul theme, clair.** Le telephone est pose sur un pupitre dans une piece
+eclairee, a soixante-dix centimetres des yeux : la lisibilite passe avant la
+discretion. Un theme sombre se justifiera le jour ou quelqu'un travaillera
+dans le noir, et pas avant.
 
 ---
 
