@@ -1,11 +1,23 @@
 /// Un point du trace : un ecart a la note attendue, a un instant donne.
 class TracePoint {
-  const TracePoint({required this.timestampMs, required this.cents});
+  const TracePoint({
+    required this.timestampMs,
+    required this.cents,
+    this.midi,
+  });
 
   final int timestampMs;
 
   /// Ecart a la note attendue. Negatif si trop grave.
   final double cents;
+
+  /// La hauteur reellement entendue, en numero MIDI fractionnaire.
+  ///
+  /// **Facultative, parce que le trace sait vivre sans.** Le ruban d'ecart
+  /// ne dessine qu'un ecart : savoir de quelle note on s'ecarte ne lui sert a
+  /// rien. C'est l'echelle des notes qui en a besoin, pour poser le trait
+  /// entre deux noms plutot qu'autour d'un axe.
+  final double? midi;
 }
 
 /// Les dernieres secondes de justesse, pour etre dessinees.
@@ -42,14 +54,16 @@ class TuningTrace {
   /// Instant du point le plus recent, ou `null`.
   int? get latestMs => _points.isEmpty ? null : _points.last.timestampMs;
 
-  void add(int timestampMs, double cents) {
+  void add(int timestampMs, double cents, {double? midi}) {
     // Un horodatage qui recule signale une nouvelle prise : le micro
     // recommence a zero. Garder l'ancien trace dessinerait un aller-retour
     // dans le temps.
     if (_points.isNotEmpty && timestampMs < _points.last.timestampMs) {
       _points.clear();
     }
-    _points.add(TracePoint(timestampMs: timestampMs, cents: cents));
+    _points.add(
+      TracePoint(timestampMs: timestampMs, cents: cents, midi: midi),
+    );
     _elaguer();
   }
 
