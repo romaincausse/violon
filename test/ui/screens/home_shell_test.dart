@@ -74,6 +74,25 @@ void main() {
       expect(find.text('Jouer le passage'), findsOneWidget);
     });
 
+    testWidgets('en plein ecran, la barre de navigation s efface', (
+      WidgetTester tester,
+    ) async {
+      // La barre de navigation appartient a la coquille, pas a l'ecran de
+      // travail : lui seul sait qu'on veut le plein ecran, elle seule peut
+      // s'effacer. Sans ce va-et-vient, quatre-vingts points de decor
+      // resteraient en bas de la dalle.
+      await poser(tester);
+      expect(find.byKey(HomeShell.navKey), findsOneWidget);
+
+      await tester.tap(find.byKey(SessionScreen.pleinEcranKey));
+      await tester.pump();
+      expect(find.byKey(HomeShell.navKey), findsNothing);
+
+      await tester.tap(find.byKey(SessionScreen.sortiePleinEcranKey));
+      await tester.pump();
+      expect(find.byKey(HomeShell.navKey), findsOneWidget);
+    });
+
     testWidgets('le repertoire montre le passage en cours', (
       WidgetTester tester,
     ) async {

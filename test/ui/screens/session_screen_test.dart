@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/microphone_pitch_source.dart';
@@ -859,6 +860,168 @@ void main() {
           expect(tester.takeException(), isNull,
               reason: 'profil $i a ${taille.width}x${taille.height}');
         }
+      }
+      await tester.binding.setSurfaceSize(null);
+    });
+  });
+
+  group('plein ecran', () {
+    /// Entre dans le plein ecran depuis la barre de titre.
+    Future<void> entrer(WidgetTester tester) async {
+      await tester.tap(find.byKey(SessionScreen.pleinEcranKey));
+      await tester.pump();
+    }
+
+    /// Ce que l'ecran a demande aux barres du systeme, dans l'ordre.
+    List<String> ecouterLeSysteme(WidgetTester tester) {
+      final List<String> demandes = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (MethodCall appel) async {
+          if (appel.method == 'SystemChrome.setEnabledSystemUIMode') {
+            demandes.add(appel.arguments as String);
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      return demandes;
+    }
+
+    testWidgets('il ne reste que la portee, le tempo et le bouton', (
+      WidgetTester tester,
+    ) async {
+      // **Une bonne moitie de la hauteur partait en decor.** Ce qui reste se
+      // compte sur une main, et le reste s'atteint en sortant.
+      await poser(tester, <PitchEstimate>[]);
+      await entrer(tester);
+
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byType(ScoreView), findsOneWidget);
+      expect(find.text('92 bpm'), findsOneWidget);
+      expect(find.text('Jouer le passage'), findsOneWidget);
+      expect(find.byKey(SessionScreen.sortiePleinEcranKey), findsOneWidget);
+      expect(find.byKey(TuningRibbon.ribbonKey), findsNothing);
+      expect(find.byType(MetronomeBar), findsNothing);
+    });
+
+    testWidgets('demander le plein ecran, c est demander la partition', (
+      WidgetTester tester,
+    ) async {
+      // Depuis le profil decouverte, la partition est cachee. L'ouvrir en
+      // plein ecran sur un ecran vide serait une reponse absurde a une
+      // demande claire.
+      await poser(tester, <PitchEstimate>[]);
+      await tester.tap(find.byKey(SessionScreen.profilKey));
+      await tester.pump();
+      await tester.tap(find.byKey(SessionScreen.profilKey));
+      await tester.pump();
+      expect(find.byType(ScoreView), findsNothing, reason: 'decouverte');
+
+      await entrer(tester);
+      expect(find.byType(ScoreView), findsOneWidget);
+    });
+
+    testWidgets('on en sort par ou on y est entre', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, <PitchEstimate>[]);
+      await entrer(tester);
+      await tester.tap(find.byKey(SessionScreen.sortiePleinEcranKey));
+      await tester.pump();
+
+      expect(find.byType(AppBar), findsOneWidget);
+      expect(find.byKey(TuningRibbon.ribbonKey), findsOneWidget);
+    });
+
+    testWidgets('les barres du systeme s effacent, puis reviennent', (
+      WidgetTester tester,
+    ) async {
+      final List<String> demandes = ecouterLeSysteme(tester);
+      await poser(tester, <PitchEstimate>[]);
+      await entrer(tester);
+      expect(demandes.last, contains('immersiveSticky'));
+
+      await tester.tap(find.byKey(SessionScreen.sortiePleinEcranKey));
+      await tester.pump();
+      expect(demandes.last, contains('edgeToEdge'));
+    });
+
+    testWidgets('quitter l ecran en plein ecran rend les barres', (
+      WidgetTester tester,
+    ) async {
+      // Les barres appartiennent a l'application entiere : les laisser
+      // cachees derriere soi rendrait tout le reste inutilisable.
+      final List<String> demandes = ecouterLeSysteme(tester);
+      await poser(tester, <PitchEstimate>[]);
+      await entrer(tester);
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      await tester.pump();
+
+      expect(demandes.last, contains('edgeToEdge'));
+    });
+
+    testWidgets('le retour sort du plein ecran, pas de la seance', (
+      WidgetTester tester,
+    ) async {
+      // En immersion la barre systeme est cachee : le geste de retour est le
+      // seul reflexe qui reste, et il ne doit pas punir celui qui s'en sert.
+      await poser(tester, <PitchEstimate>[]);
+      await entrer(tester);
+      expect(find.byType(AppBar), findsNothing);
+
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+
+      // La seance est toujours la, et elle a repris ses barres.
+      expect(find.byType(ScoreView), findsOneWidget);
+      expect(find.byType(AppBar), findsOneWidget);
+    });
+
+    testWidgets('la hauteur gagnee passe dans les notes', (
+      WidgetTester tester,
+    ) async {
+      // **C'est la promesse du lot.** Retirer les barres sans agrandir la
+      // gravure n'aurait fait que remplacer du decor par du blanc : sur un
+      // pupitre a soixante-dix centimetres, cette hauteur-la ne vaut que si
+      // elle passe dans les notes.
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await poser(tester, <PitchEstimate>[]);
+      final double avant =
+          tester.getSize(find.byKey(ScoreView.canvasKey)).height;
+
+      await entrer(tester);
+      final double apres =
+          tester.getSize(find.byKey(ScoreView.canvasKey)).height;
+
+      expect(apres, greaterThan(avant * 1.3));
+    });
+
+    testWidgets('il ne deborde dans aucune des deux orientations', (
+      WidgetTester tester,
+    ) async {
+      for (final Size taille in <Size>[
+        const Size(360, 640),
+        const Size(740, 360),
+      ]) {
+        // Repartir d'un arbre vide : un `pumpWidget` sur le meme type d'ecran
+        // reutilise l'etat, et le second tour serait deja en plein ecran --
+        // donc sans le bouton pour y entrer.
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.binding.setSurfaceSize(taille);
+        await poser(tester, <PitchEstimate>[]);
+        await entrer(tester);
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'a ${taille.width}x${taille.height}',
+        );
       }
       await tester.binding.setSurfaceSize(null);
     });
