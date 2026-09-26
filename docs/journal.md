@@ -84,6 +84,51 @@ reduction de la musique a des notes justes en rythme.
 Apprecie et rarement anticipe : le drone sur la tonique, un accompagnement
 meme simple, l'export vers le professeur.
 
+### Examen d'une concurrente : Trala
+
+Regardee sur captures, une fois les jalons 1 a 4 livres. Quatre idees en sont
+sorties (lots O6, D10, D11, E5), et deux refus.
+
+**Ce qu'elle fait mieux que nous.**
+
+- *L'accordeur dit quoi faire*, pas seulement ou on en est : quelle cheville,
+  dans quel sens. Nous mesurions sans traduire en geste. C'est le meilleur
+  rapport effet/cout de tout ce qui reste au plan (O6).
+- *La partition occupe toute la page.* Chez nous une bonne moitie de la
+  hauteur part en barres de titre et de navigation (D10).
+- *Une colonne de noms de notes*, coloree par ce qui est joue. Notre ruban dit
+  de combien on est loin, jamais de quelle note (D11).
+
+**Ce qu'on refuse, et pourquoi.**
+
+- *Les notes attendues defilent vers la gauche a vitesse fixe.* C'est un
+  curseur pilote par l'horloge -- precisement ce que l'ADR-009 a retrograde en
+  mode secondaire. On affiche ce qui a ete joue, pas ce qu'il faudrait jouer
+  maintenant.
+- *L'application bloque tant que la note n'est pas juste.* Il faut separer
+  deux choses qui se ressemblent : **avancer sur la note jouee** est notre
+  coeur ; **bloquer** est autre chose. Un enfant qui travaille ne joue pas du
+  debut a la fin -- il s'arrete, reprend, saute -- et un curseur bloquant
+  punit exactement ce cas, qui est le cas nominal. Sur un morceau au tempo
+  ecrit, bloquer detruit en plus la ligne musicale.
+
+  **La moitie qu'on garde** : sur un motif de doigts, il n'y a aucune ligne
+  musicale a casser et la justesse note a note *est* le sujet. Bloquer y
+  devient la bonne pedagogie. D'ou E5, limite aux exercices de doigts.
+- *Points, medailles, etoiles, confettis, et un decompte avec une main qui
+  fait le signe du rock.* La regle du projet n'a pas bouge : on montre des
+  donnees qui montent, pas des recompenses. Une corde juste se signale, elle
+  ne se fete pas.
+- *Les lecons video.* L'utilisateur a tranche lui-meme : il y a un vrai
+  professeur. Une video ne remplace pas ce qu'un professeur corrige, et ce
+  n'est pas le sujet de cette application.
+
+Un dernier point, structurel : cette application-la s'adresse a un debutant
+qui n'a pas de professeur, et se fait payer cent vingt euros par an pour le
+remplacer. La notre s'adresse a un eleve de 4e annee qui en a un, et sert a
+travailler entre deux cours. Ce n'est pas le meme produit, et c'est ce qui
+explique la plupart des divergences ci-dessus.
+
 ## Choix de plateforme
 
 Telephone Android d'abord, iOS ensuite. Le web est ecarte pour l'audio, pas
