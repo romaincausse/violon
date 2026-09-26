@@ -707,6 +707,34 @@ Sur un motif de Sevcik, en revanche, il n'y a **aucune ligne musicale a
 casser** : huit notes, un doigt a la fois, et la justesse note a note *est* le
 sujet. Bloquer y devient la bonne pedagogie plutot qu'une entrave.
 
+#### Bloquer oui, impasse non
+
+Verification faite sur l'appareil, puis confirmee par l'utilisateur : chez le
+concurrent, **l'attente est infinie**. Tant que la note juste n'est pas
+entendue, rien n'avance. La sortie existe -- *I need help*, *Restart*, *I'm
+done* -- mais elle est rangee derriere un menu hamburger : deux appuis, violon
+en main.
+
+C'est le piege a eviter, et il contredit deux regles produit du projet :
+l'application dit *« voila ta prochaine tache »*, et **une erreur ne remet
+jamais un compteur a zero**. Un enfant coince sur une note qu'il ne trouve pas
+n'a plus de prochaine tache : il a un mur.
+
+La regle du lot est donc en trois temps, et sans aucun appui :
+
+| Apres | Ce qui se passe |
+|-------|-----------------|
+| quelques secondes | l'aide s'affiche : quelle corde, quel doigt |
+| quelques secondes de plus | **on passe a la note suivante**, et celle-ci est retenue comme a retravailler |
+
+La note manquee ne disparait donc pas : elle devient la prochaine tache, ce
+qui est exactement le mecanisme que le projet met au centre. L'enfant n'a
+jamais a demander la permission d'avancer.
+
+**Et l'aide se pose a cote de la musique, jamais dessus.** Chez le concurrent,
+le manche de violon en surimpression recouvre trois mesures de la partition --
+au moment precis ou l'enfant en a besoin, on lui cache ce qu'il doit lire.
+
 Ce lot ne depend pas du suiveur : savoir si la note attendue vient d'etre
 jouee ne demande que `LiveTuning`, qui existe. Il se fait donc avant le jalon
 6, et il alimentera le banc d'essai du jalon 5 en prises propres.
