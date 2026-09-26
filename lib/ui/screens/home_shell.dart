@@ -88,6 +88,12 @@ class _HomeShellState extends State<HomeShell> {
   /// L'application s'ouvre sur *Jouer*, jamais sur un menu.
   int _destination = 0;
 
+  /// L'ecran de travail est passe en plein ecran.
+  ///
+  /// La barre de navigation est ici, pas dans l'ecran de travail : lui seul
+  /// sait qu'on veut le plein ecran, elle seule peut s'effacer.
+  bool _pleinEcran = false;
+
   /// Ou en est l'eleve dans le catalogue.
   ///
   /// **Volatile, tant que la persistance n'existe pas** (lot H1) : la
@@ -325,6 +331,7 @@ class _HomeShellState extends State<HomeShell> {
               onChangePassage: () => unawaited(_saisirUnPassage()),
               // Accorder est la premiere chose de chaque seance : elle
               // merite son raccourci, en plus du tiroir.
+              onFullScreen: (bool plein) => setState(() => _pleinEcran = plein),
               onTune: () => unawaited(
                 Navigator.of(context).push<void>(
                   MaterialPageRoute<void>(
@@ -345,30 +352,33 @@ class _HomeShellState extends State<HomeShell> {
               onSaisir: () => unawaited(_saisirUnPassage()),
               onExercices: () => unawaited(_ouvrirLesExercices()),
             ),
-      bottomNavigationBar: NavigationBar(
-        key: HomeShell.navKey,
-        selectedIndex: _destination,
-        onDestinationSelected: (int i) {
-          // Le dernier bouton n'est pas une destination : c'est le tiroir.
-          if (i == 2) {
-            unawaited(_ouvrirLesOutils());
-            return;
-          }
-          setState(() => _destination = i);
-        },
-        destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(Icons.play_arrow), label: 'Jouer'),
-          NavigationDestination(
-            icon: Icon(Icons.library_music),
-            label: 'Repertoire',
-          ),
-          NavigationDestination(
-            key: HomeShell.outilsKey,
-            icon: Icon(Icons.handyman),
-            label: 'Outils',
-          ),
-        ],
-      ),
+      bottomNavigationBar: _pleinEcran
+          ? null
+          : NavigationBar(
+              key: HomeShell.navKey,
+              selectedIndex: _destination,
+              onDestinationSelected: (int i) {
+                // Le dernier bouton n'est pas une destination : c'est le tiroir.
+                if (i == 2) {
+                  unawaited(_ouvrirLesOutils());
+                  return;
+                }
+                setState(() => _destination = i);
+              },
+              destinations: const <NavigationDestination>[
+                NavigationDestination(
+                    icon: Icon(Icons.play_arrow), label: 'Jouer'),
+                NavigationDestination(
+                  icon: Icon(Icons.library_music),
+                  label: 'Repertoire',
+                ),
+                NavigationDestination(
+                  key: HomeShell.outilsKey,
+                  icon: Icon(Icons.handyman),
+                  label: 'Outils',
+                ),
+              ],
+            ),
     );
   }
 }

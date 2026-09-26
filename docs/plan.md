@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 11 | 3 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 11 | 2 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 9 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**70 lots, 79 soirees restantes**, dont **26 de *must*** -- le reste
+**70 lots, 78 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -73,8 +73,8 @@ reste.
 
 **Cinq lots viennent d'ailleurs.** O6, D10, D11, E5 et D12 sont nes de
 l'examen d'une application concurrente (Trala), dont l'utilisateur a rapporte
-des captures. Deux sont deja livres -- l'identite visuelle (D12) et l'accordeur qui dit quoi
-faire (O6). Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
+des captures. Trois sont deja livres -- l'identite visuelle (D12), l'accordeur qui dit quoi
+faire (O6) et la partition en plein ecran (D10). Ils rouvrent trois jalons qu'on croyait clos -- ce qui est le
 fonctionnement normal de ce plan : un jalon se referme quand ses lots sont
 faits, pas quand on a decrete qu'on n'y toucherait plus. Ce qu'on en prend et
 ce qu'on en refuse est detaille dans `docs/journal.md`.
@@ -86,8 +86,8 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Neuf lots livres, deux ajoutes.** Ils tournent sur le code deja livre, sans
-dependance nouvelle, et cinq des neuf -- I1, I2, D8, D9 et D12 -- corrigeaient
+**Dix lots livres, un en attente.** Ils tournent sur le code deja livre, sans
+dependance nouvelle, et cinq des dix -- I1, I2, D8, D9 et D12 -- corrigeaient
 des defauts constates a l'usage plutot que d'ajouter une fonctionnalite.
 
 D8 et D9 sont apparus apres coup, sur le telephone : le ruban d'ecart livre en
@@ -106,7 +106,7 @@ deux premiers de ce qu'elle affiche, le troisieme de l'allure qu'elle a.
 | ~~D5~~ | ~~Halo de fin de mesure~~ | | ★★ | fait |
 | ~~D8~~ | ~~Refonte graphique du ruban d'ecart~~ | | ★★ | fait |
 | ~~D9~~ | ~~La portee remplit la ligne~~ | | ★★ | fait |
-| D10 | La partition en plein ecran | | ★★ | 1 |
+| ~~D10~~ | ~~La partition en plein ecran~~ | | ★★ | fait |
 | D11 | Le ruban nomme les notes | | ★★ | 2 |
 | ~~D12~~ | ~~Une identite visuelle~~ | | ★★ | fait |
 
@@ -349,6 +349,44 @@ l'essentiel d'une seance, pose sur le pupitre a soixante-dix centimetres.
 **Ce qui reste visible se compte sur une main** : la portee, le tempo, et le
 bouton pour arreter. Le reste s'atteint en sortant du plein ecran, ce qui est
 un geste rare.
+
+**Fait.** Quatre barres disparaissent ensemble -- la barre de titre, la barre
+de navigation de la coquille, et les deux barres du systeme (`immersiveSticky`
+plutot qu'`immersive` : un doigt qui effleure le bas de la dalle en tournant
+une page ne doit pas recuperer la barre systeme pour le reste de la seance).
+Elles reviennent ensemble, y compris si l'on quitte l'ecran depuis le plein
+ecran : les barres appartiennent a l'application entiere, pas a cet ecran-la.
+
+Le geste de retour sort du plein ecran avant de sortir de la seance. En
+immersion, c'est le seul reflexe qui reste : le laisser quitter le travail en
+cours reviendrait a punir celui qui s'en sert.
+
+**Demander le plein ecran, c'est demander la partition** : elle s'affiche quel
+que soit le profil d'affichage. L'ouvrir sur le profil decouverte, qui cache
+la partition, donnerait un ecran vide -- une reponse absurde a une demande
+claire.
+
+#### Ce que la hauteur gagnee devient, et ou
+
+Mesure faite sur l'appareil, elle corrige la promesse du lot :
+
+- **En paysage, elle passe dans les notes.** C'est la que la hauteur etait la
+  ressource rare : une fois les quatre barres retirees, la zone de gravure
+  passe d'environ 1350x430 a 2400x600 points, et l'interligne grandit d'un
+  tiers. C'est le vrai gain du lot.
+- **En portrait, sur un passage court, elle ne devient rien.** La taille des
+  notes y est bornee par la **largeur**, pas par la hauteur : un systeme
+  occupe deja toute la ligne, et on ne peut pas descendre en dessous d'une
+  mesure par systeme. Le gain y est l'absence de decor, pas des notes plus
+  grandes -- et il faut le dire ainsi plutot que de le promettre.
+- **En portrait, sur un passage long, elle passe dans les notes aussi.** Des
+  que quatre systemes doivent tenir, la hauteur redevient la contrainte, et la
+  gravure cesse de devoir retrecir pour entrer.
+
+Le plafond d'interligne est donc releve **uniquement en plein ecran** (de 16 a
+32). Un plafond ne grossit rien de force : `ScoreView` balaie toujours du plus
+grand au plus petit et retient le premier qui tient. Le relever ne fait que
+lui laisser le choix quand la place existe.
 
 ---
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/audio/microphone_pitch_source.dart';
 import '../../core/audio/pitch_smoother.dart';
@@ -103,6 +104,7 @@ class SessionScreen extends StatefulWidget {
     this.a4 = PitchUtils.defaultA4,
     this.pitchSourceFactory = defaultPitchSource,
     this.onResult,
+    this.onFullScreen,
     super.key,
   });
 
@@ -130,8 +132,21 @@ class SessionScreen extends StatefulWidget {
   /// l'inverse du travail.
   final ValueChanged<SessionResult>? onResult;
 
+  /// Previent la coquille qu'on entre ou qu'on sort du plein ecran.
+  ///
+  /// La barre de navigation ne nous appartient pas : elle est a `HomeShell`,
+  /// qui seule peut la retirer. Sans ce signal, le plein ecran garderait
+  /// quatre-vingts points de decor en bas de la dalle.
+  final ValueChanged<bool>? onFullScreen;
+
   /// Bouton de changement de profil d'affichage, pour les tests.
   static const Key profilKey = Key('profil-affichage');
+
+  /// Entree du plein ecran, pour les tests.
+  static const Key pleinEcranKey = Key('plein-ecran');
+
+  /// Sortie du plein ecran, pour les tests.
+  static const Key sortiePleinEcranKey = Key('sortie-plein-ecran');
 
   /// Reglage de subdivision du metronome, pour les tests.
   static const Key subdivisionKey = Key('subdivision-metronome');
@@ -425,6 +440,12 @@ class _SessionScreenState extends State<SessionScreen>
   void dispose() {
     _ticker.dispose();
     unawaited(_fermerLeMicro());
+    if (_pleinEcran) {
+      // Les barres du systeme appartiennent a l'application entiere, pas a
+      // cet ecran : les laisser cachees derriere soi rendrait tout le reste
+      // inutilisable.
+      _chromeSysteme(false);
+    }
     super.dispose();
   }
 
@@ -440,6 +461,37 @@ class _SessionScreenState extends State<SessionScreen>
       _profil = DisplayProfile
           .values[(_profil.index + 1) % DisplayProfile.values.length];
     });
+  }
+
+  /// Le plein ecran : plus rien a l'ecran que la musique.
+  ///
+  /// **Une bonne moitie de la hauteur partait en decor** -- barre de titre,
+  /// barre de navigation, barre d'etat, barre systeme. Sur un telephone pose
+  /// sur un pupitre a soixante-dix centimetres, cette hauteur-la vaut des
+  /// notes plus grandes, et rien d'autre.
+  bool _pleinEcran = false;
+
+  /// Entre ou sort du plein ecran.
+  ///
+  /// **Trois choses disparaissent a la fois** : notre barre de titre, la
+  /// barre de navigation de la coquille, et les barres du systeme. Les trois
+  /// doivent revenir ensemble, sans quoi on sortirait sur un ecran mutile.
+  void _basculerLePleinEcran() {
+    final bool voulu = !_pleinEcran;
+    setState(() => _pleinEcran = voulu);
+    widget.onFullScreen?.call(voulu);
+    _chromeSysteme(voulu);
+  }
+
+  /// `immersiveSticky` et non `immersive` : un enfant qui effleure le bas de
+  /// la dalle en tournant sa page ne doit pas recuperer la barre systeme pour
+  /// le reste de la seance.
+  static void _chromeSysteme(bool cache) {
+    unawaited(
+      SystemChrome.setEnabledSystemUIMode(
+        cache ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+      ),
+    );
   }
 
   IconData get _iconeDuProfil => switch (_profil) {
@@ -546,76 +598,136 @@ class _SessionScreenState extends State<SessionScreen>
       // la seance -- le garder allume tout du long reviendrait a l'allumer
       // pour toujours.
       actif: _running,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(passage.title),
-          actions: <Widget>[
-            IconButton(
-              onPressed: widget.onTune,
-              icon: const Icon(Icons.tune),
-              tooltip: 'Accorder',
-            ),
-            IconButton(
-              key: SessionScreen.profilKey,
-              onPressed: _changerDeProfil,
-              icon: Icon(_iconeDuProfil),
-              tooltip: 'Affichage : $_nomDuProfil',
-            ),
-            // La mise en page de la partition n'a de sens que si la partition
-            // est a l'ecran.
-            if (_profil == DisplayProfile.parCoeur)
-              IconButton(
-                onPressed: _changerDeMode,
-                icon: Icon(
-                  _mode == ScoreDisplayMode.systems
-                      ? Icons.view_headline
-                      : Icons.swap_horiz,
+      child: PopScope(
+        // Le retour sort du plein ecran avant de sortir de l'ecran. En
+        // immersion la barre systeme est cachee, et le geste de retour est
+        // alors le seul reflexe qui reste : le laisser quitter la seance
+        // serait le punir de s'en servir.
+        canPop: !_pleinEcran,
+        onPopInvokedWithResult: (bool sorti, Object? _) {
+          if (!sorti && _pleinEcran) {
+            _basculerLePleinEcran();
+          }
+        },
+        child: Scaffold(
+          appBar: _pleinEcran
+              ? null
+              : AppBar(
+                  title: Text(passage.title),
+                  actions: <Widget>[
+                    IconButton(
+                      onPressed: widget.onTune,
+                      icon: const Icon(Icons.tune),
+                      tooltip: 'Accorder',
+                    ),
+                    IconButton(
+                      key: SessionScreen.profilKey,
+                      onPressed: _changerDeProfil,
+                      icon: Icon(_iconeDuProfil),
+                      tooltip: 'Affichage : $_nomDuProfil',
+                    ),
+                    // La mise en page de la partition n'a de sens que si la partition
+                    // est a l'ecran.
+                    if (_profil == DisplayProfile.parCoeur)
+                      IconButton(
+                        onPressed: _changerDeMode,
+                        icon: Icon(
+                          _mode == ScoreDisplayMode.systems
+                              ? Icons.view_headline
+                              : Icons.swap_horiz,
+                        ),
+                        tooltip: _mode == ScoreDisplayMode.systems
+                            ? 'Passer au defilement'
+                            : 'Passer a plusieurs lignes',
+                      ),
+                    IconButton(
+                      key: SessionScreen.pleinEcranKey,
+                      onPressed: _basculerLePleinEcran,
+                      icon: const Icon(Icons.open_in_full),
+                      tooltip: 'Plein ecran',
+                    ),
+                    IconButton(
+                      onPressed: widget.onChangePassage,
+                      icon: const Icon(Icons.edit_note),
+                      tooltip: 'Changer de passage',
+                    ),
+                  ],
                 ),
-                tooltip: _mode == ScoreDisplayMode.systems
-                    ? 'Passer au defilement'
-                    : 'Passer a plusieurs lignes',
+          body: SafeArea(
+            child: Padding(
+              // Cle explicite : le test de mise en page mesure ce contenu, pas
+              // le SafeArea lui-meme, qui occupe toute la hauteur et dont seul
+              // l'enfant est decale.
+              key: const Key('session-content'),
+              // **Plus etroit lateralement que verticalement.** La largeur est
+              // la ressource utile : elle se paie en notes plus grandes sur la
+              // portee et en secondes lisibles sur le ruban. Le blanc en haut et
+              // en bas, lui, ne sert qu'a ne pas coller aux barres du systeme.
+              //
+              // Pas de plein bord pour autant : une portee qui touche le bord de
+              // la dalle se lit comme coupee, et aucune gravure ne fait ca.
+              padding: EdgeInsets.symmetric(
+                horizontal: paysage ? 10 : 12,
+                vertical: paysage ? 12 : 24,
               ),
-            IconButton(
-              onPressed: widget.onChangePassage,
-              icon: const Icon(Icons.edit_note),
-              tooltip: 'Changer de passage',
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: Padding(
-            // Cle explicite : le test de mise en page mesure ce contenu, pas
-            // le SafeArea lui-meme, qui occupe toute la hauteur et dont seul
-            // l'enfant est decale.
-            key: const Key('session-content'),
-            // **Plus etroit lateralement que verticalement.** La largeur est
-            // la ressource utile : elle se paie en notes plus grandes sur la
-            // portee et en secondes lisibles sur le ruban. Le blanc en haut et
-            // en bas, lui, ne sert qu'a ne pas coller aux barres du systeme.
-            //
-            // Pas de plein bord pour autant : une portee qui touche le bord de
-            // la dalle se lit comme coupee, et aucune gravure ne fait ca.
-            padding: EdgeInsets.symmetric(
-              horizontal: paysage ? 10 : 12,
-              vertical: paysage ? 12 : 24,
-            ),
-            child: MeasureHalo(
-              trigger: _mesuresReussies,
-              child: Stack(
-                children: <Widget>[
-                  Positioned.fill(
-                    child: paysage
-                        ? _enPaysage(orientation)
-                        : _enPortrait(orientation),
-                  ),
-                  if (_enDecompte)
-                    Positioned.fill(child: _Decompte(compte: _compteAffiche)),
-                ],
+              child: MeasureHalo(
+                trigger: _mesuresReussies,
+                child: Stack(
+                  children: <Widget>[
+                    Positioned.fill(
+                      child: _pleinEcran
+                          ? _enPleinEcran(orientation)
+                          : paysage
+                              ? _enPaysage(orientation)
+                              : _enPortrait(orientation),
+                    ),
+                    if (_enDecompte)
+                      Positioned.fill(child: _Decompte(compte: _compteAffiche)),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Plus rien que la musique.
+  ///
+  /// **Ce qui reste se compte sur une main** : la portee, le tempo, et le
+  /// bouton. Le reste s'atteint en sortant, ce qui est un geste rare -- le
+  /// telephone passe l'essentiel d'une seance dans cet etat-la.
+  ///
+  /// **La partition s'affiche quel que soit le profil.** Demander le plein
+  /// ecran, c'est demander la partition ; l'ouvrir sur le profil decouverte
+  /// donnerait un ecran vide, ce qui serait une reponse absurde a une demande
+  /// claire.
+  Widget _enPleinEcran(Orientation orientation) {
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Text(
+              '${widget.passage.writtenTempoBpm} bpm',
+              style: theme.textTheme.titleMedium,
+            ),
+            const Spacer(),
+            IconButton(
+              key: SessionScreen.sortiePleinEcranKey,
+              onPressed: _basculerLePleinEcran,
+              icon: const Icon(Icons.close_fullscreen),
+              tooltip: 'Quitter le plein ecran',
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
+        Expanded(child: _partition(orientation)),
+        const SizedBox(height: 8),
+        _bouton(),
+      ],
     );
   }
 
@@ -843,6 +955,10 @@ class _SessionScreenState extends State<SessionScreen>
         mode: _mode,
         zoom: _zoom,
         maxSystems: maxSystemsFor(orientation),
+        // En plein ecran, la hauteur gagnee doit se voir sur les notes.
+        maxSpaceSize: _pleinEcran
+            ? ScoreView.pleinEcranMaxSpaceSize
+            : ScoreView.defaultMaxSpaceSize,
       ),
     );
   }

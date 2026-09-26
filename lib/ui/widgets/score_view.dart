@@ -45,6 +45,7 @@ class ScoreView extends StatelessWidget {
     this.cursorTick,
     this.spaceSize,
     this.maxSystems,
+    this.maxSpaceSize = defaultMaxSpaceSize,
     this.mode = ScoreDisplayMode.systems,
     this.zoom = 1,
     super.key,
@@ -61,8 +62,17 @@ class ScoreView extends StatelessWidget {
   /// En dessous, la portee devient illisible a 70 cm sur un pupitre.
   static const double minSpaceSize = 7;
 
-  /// Au-dela, une portee de deux mesures s'etalerait sur tout l'ecran.
-  static const double maxSpaceSize = 16;
+  /// Au-dela, une portee de deux mesures s'etalerait sur tout l'ecran --
+  /// ce qui est un defaut partout, sauf en plein ecran ou c'est le but.
+  static const double defaultMaxSpaceSize = 16;
+
+  /// Ce que le plein ecran s'autorise.
+  ///
+  /// **La hauteur recuperee doit se voir sur les notes**, pas se transformer
+  /// en blanc. Un plafond seul ne grossit rien de force : `_choisirEspace`
+  /// balaie toujours du plus grand au plus petit et retient le premier qui
+  /// tient, donc relever le plafond ne fait que lui laisser le choix.
+  static const double pleinEcranMaxSpaceSize = 32;
 
   final Passage passage;
 
@@ -76,6 +86,9 @@ class ScoreView extends StatelessWidget {
   ///
   /// `null` laisse le widget la deduire de la place disponible.
   final double? spaceSize;
+
+  /// Plafond de l'interligne choisi automatiquement.
+  final double maxSpaceSize;
 
   /// Nombre maximal de systemes. `null` laisse la geometrie decider.
   ///
