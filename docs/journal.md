@@ -115,6 +115,17 @@ sorties (lots O6, D10, D11, E5), et deux refus.
   **La moitie qu'on garde** : sur un motif de doigts, il n'y a aucune ligne
   musicale a casser et la justesse note a note *est* le sujet. Bloquer y
   devient la bonne pedagogie. D'ou E5, limite aux exercices de doigts.
+
+  **Precision obtenue sur l'appareil : l'attente est infinie.** Rien n'avance
+  tant que la note juste n'est pas entendue, et la sortie est rangee derriere
+  un menu. Un enfant coince n'a plus de prochaine tache, il a un mur -- ce qui
+  contredit la regle la plus ancienne du projet. E5 bloque donc, mais passe
+  tout seul apres quelques secondes en retenant la note comme a retravailler.
+
+  Mesure au passage, sur une prise de quarante-deux images : **quand l'enfant
+  joue juste, le blocage ne coute rien.** Une note par seconde a 60 a la
+  noire, soit exactement le tempo ecrit. Ce qui etait la crainte principale ne
+  se verifie pas.
 - *Points, medailles, etoiles, confettis, et un decompte avec une main qui
   fait le signe du rock.* La regle du projet n'a pas bouge : on montre des
   donnees qui montent, pas des recompenses. Une corde juste se signale, elle
