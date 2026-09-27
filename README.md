@@ -46,7 +46,7 @@ lib/
     device/            l'ecran du telephone, allume ou non
   platform/            adaptateurs vers les plugins, une classe par frontiere
   ui/                  ecrans et widgets, aucune logique metier
-test/                  miroir de lib/, 658 tests
+test/                  miroir de lib/, 675 tests
 assets/fonts/          Bravura (SIL OFL), livree non modifiee
 tool/                  script Verovio -- mort-ne, voir Etat
 docs/                  plan, decisions, journal, navigation, professeur
@@ -104,8 +104,8 @@ Deux exclusions fermes :
 
 ## Etat
 
-**658 tests, quarante-sept lots livres** -- dix-huit avant la refonte du plan,
-vingt-neuf depuis. **Les jalons 1 a 4 sont clos.** Cinq lots neufs ont ete
+**675 tests, quarante-huit lots livres** -- dix-huit avant la refonte du plan,
+trente depuis. **Les jalons 1 a 4 sont clos.** Cinq lots neufs ont ete
 ajoutes aux jalons 1 a 3, tires de l'examen d'une application concurrente ;
 quatre sont deja livres, et seul E5 reste : voir `docs/journal.md`. Le plan a ete refondu : c'est desormais
 l'application qui suit l'eleve, et non l'inverse (ADR-009), et il est

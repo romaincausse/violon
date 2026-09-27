@@ -63,6 +63,13 @@ class MicrophonePitchSource implements PitchSource {
   final StreamController<SmoothedPitch> _controller =
       StreamController<SmoothedPitch>.broadcast();
 
+  /// Les octets bruts, rediffuses tels quels.
+  ///
+  /// Ils partent vers l'analyse **et** vers qui veut les garder, sans copie
+  /// et sans retarder l'analyse d'une image.
+  final StreamController<Uint8List> _octets =
+      StreamController<Uint8List>.broadcast();
+
   StreamSubscription<Uint8List>? _subscription;
   MicSource? _activeSource;
 
@@ -89,6 +96,9 @@ class MicrophonePitchSource implements PitchSource {
   @override
   Stream<PitchEstimate> get pitches =>
       _controller.stream.map((SmoothedPitch p) => p.estimate);
+
+  @override
+  Stream<Uint8List> get audio => _octets.stream;
 
   /// Zero tant que la calibration n'a pas eu lieu (lot J2).
   ///
@@ -148,6 +158,9 @@ class MicrophonePitchSource implements PitchSource {
   }
 
   void _onBytes(Uint8List bytes) {
+    if (_octets.hasListener) {
+      _octets.add(bytes);
+    }
     for (final PcmFrame frame in _framer.addBytes(bytes)) {
       _attente.add(frame);
       while (_attente.length > maxPendingFrames) {
@@ -214,5 +227,6 @@ class MicrophonePitchSource implements PitchSource {
     await _analyzer.dispose();
     await capture.dispose();
     await _controller.close();
+    await _octets.close();
   }
 }

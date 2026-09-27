@@ -9,10 +9,12 @@ import 'core/exercises/exercise_progress.dart';
 import 'core/music/demo_passage.dart';
 import 'core/music/passage.dart';
 import 'core/music/pitch_utils.dart';
+import 'core/audio/take_player.dart';
 import 'core/play/audio_engine.dart';
 import 'core/store/session_store.dart';
 import 'platform/audio/default_pitch_source.dart';
 import 'platform/audio/soloud_audio_engine.dart';
+import 'platform/audio/soloud_take_player.dart';
 import 'platform/device/wakelock_screen_keeper.dart';
 import 'platform/store/prefs_session_store.dart';
 import 'ui/screens/home_shell.dart';
@@ -30,6 +32,7 @@ class ViolonApp extends StatefulWidget {
   const ViolonApp({
     this.pitchSourceFactory = defaultPitchSource,
     this.audioEngineFactory = defaultAudioEngine,
+    this.takePlayerFactory = defaultTakePlayer,
     this.sessionStoreFactory = defaultSessionStore,
     this.screenKeeperFactory = defaultScreenKeeper,
     super.key,
@@ -46,6 +49,9 @@ class ViolonApp extends StatefulWidget {
   /// Fabrique du moteur de son, injectable pour la meme raison : un test de
   /// widget n'a pas de haut-parleur.
   final AudioEngineFactory audioEngineFactory;
+
+  /// Fabrique du liseur de prise, pour le mode libre.
+  final TakePlayerFactory takePlayerFactory;
 
   /// Fabrique de la memoire, injectable pour la meme raison : un test de
   /// widget n'ecrit nulle part.
@@ -151,6 +157,7 @@ class _ViolonAppState extends State<ViolonApp> {
             : HomeShell(
                 pitchSourceFactory: widget.pitchSourceFactory,
                 audioEngineFactory: widget.audioEngineFactory,
+                takePlayerFactory: widget.takePlayerFactory,
                 passage: _passage,
                 a4: _a4,
                 initialBests: _records,

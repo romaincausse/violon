@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'pitch_estimate.dart';
 import 'pitch_smoother.dart';
 
@@ -20,6 +22,21 @@ abstract class PitchSource {
   /// evite a l'interface de tester le type reel de la source, ce qui rendait
   /// l'accordeur muet des qu'on developpait avec une source factice.
   Stream<SmoothedPitch> get smoothedPitches;
+
+  /// Les octets tels qu'ils sortent du micro, avant toute analyse.
+  ///
+  /// **Promu a la frontiere comme [smoothedPitches] avant lui**, et pour la
+  /// meme raison : ce qui traverse cette frontiere, ce sont des octets, et le
+  /// mode libre en a besoin pour rendre a l'enfant ce qu'il vient de jouer.
+  /// Un ecran qui testerait le type reel de la source pour les obtenir
+  /// deviendrait muet des qu'on developpe avec une source factice -- la lecon
+  /// est deja ecrite plus haut.
+  ///
+  /// **Un seul micro pour les deux usages.** Ouvrir une seconde capture pour
+  /// enregistrer, pendant que la premiere analyse, demanderait deux fois le
+  /// materiel a Android -- qui le refuse le plus souvent, et le fait mal
+  /// quand il l'accepte.
+  Stream<Uint8List> get audio;
 
   /// Comment la source se nomme, pour l'ecran de controle du micro.
   ///
