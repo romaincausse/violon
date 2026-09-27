@@ -13,6 +13,7 @@ import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
 import 'metronome_screen.dart';
+import 'note_by_note_screen.dart';
 import 'training_screen.dart';
 import 'mic_check_screen.dart';
 import 'passage_editor_screen.dart';
@@ -193,6 +194,24 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
     if (choix == null) {
+      return;
+    }
+    if (choix.mode == ExerciseMode.noteANote) {
+      // Ni passage ni progression : note a note n'est pas une prise notee,
+      // c'est un exercice de main gauche.
+      final Exercise exo = choix.exercise;
+      if (!mounted || exo is! MotifExercise) {
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (BuildContext c) => NoteByNoteScreen(
+            exercise: exo,
+            pitchSourceFactory: widget.pitchSourceFactory,
+            a4: widget.a4,
+          ),
+        ),
+      );
       return;
     }
     if (choix.mode == ExerciseMode.travailler) {
