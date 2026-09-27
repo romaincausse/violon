@@ -35,8 +35,10 @@ class PcmTake {
 
   /// En dessous de cette amplitude efficace, on considere qu'on n'entend rien.
   ///
-  /// Rapporte a la pleine echelle : 0,012 vaut environ -38 dB, bien en dessous
-  /// d'un violon dans une piece et bien au-dessus du bruit d'une dalle.
+  /// **Mesure sur le S22, pas devine** : en `UNPROCESSED`, le bruit d'une
+  /// piece calme tient entre 0,004 et 0,006. Le seuil est donc pose a deux
+  /// fois ce plancher -- assez haut pour qu'une piece vide ne se declare pas
+  /// jouee, assez bas pour qu'un violon, qui est fort, passe sans discuter.
   final double silenceThreshold;
 
   /// Silence garde de part et d'autre du son, en millisecondes.
@@ -91,12 +93,18 @@ class PcmTake {
   }
 
   bool _sonore(Uint8List octets) {
-    final int pairs = octets.length - (octets.length % 2);
-    if (pairs == 0) {
+    // **Pas de `Int16List.sublistView` ici.** Le paquet de capture livre des
+    // vues sur un tampon plus grand, parfois a un decalage d'octet impair :
+    // reinterpreter ces octets en entiers de deux octets leve alors une
+    // erreur d'alignement. Un appareil l'a trouvee en une seconde la ou les
+    // tests ne pouvaient pas, faute de construire jamais un tampon desaligne.
+    // `ByteData` lit octet par octet et se moque de l'alignement.
+    final ByteData octetsLus = ByteData.sublistView(octets);
+    final int combien = octets.length ~/ 2;
+    if (combien == 0) {
       return false;
     }
-    final Int16List e = Int16List.sublistView(octets, 0, pairs);
-    return _efficace(e, 0, e.length) >= silenceThreshold;
+    return _efficaceDe(octetsLus, 0, combien) >= silenceThreshold;
   }
 
   void reset() {
@@ -131,9 +139,9 @@ class PcmTake {
       plat.setRange(ou, ou + morceau.octets.length, morceau.octets);
       ou += morceau.octets.length;
     }
-    // `sublistView` exige un decalage pair ; un flux d'octets PCM 16 bits
-    // l'est toujours, mais une trame tronquee par le materiel ne le serait
-    // pas.
+    // Ici la vue est sure : `plat` vient d'etre alloue, donc son decalage
+    // dans son tampon est nul. C'est sur les morceaux livres par le micro
+    // qu'elle ne l'est pas -- voir `_sonore`.
     final int pairs = plat.length - (plat.length % 2);
     return Int16List.sublistView(plat, 0, pairs);
   }
@@ -164,6 +172,16 @@ class PcmTake {
     double somme = 0;
     for (int i = depuis; i < depuis + combien; i++) {
       final double v = echantillons[i] / 32768;
+      somme += v * v;
+    }
+    return math.sqrt(somme / combien);
+  }
+
+  /// La meme chose, lue sur des octets bruts, alignes ou non.
+  double _efficaceDe(ByteData octets, int depuis, int combien) {
+    double somme = 0;
+    for (int i = depuis; i < depuis + combien; i++) {
+      final double v = octets.getInt16(i * 2, Endian.little) / 32768;
       somme += v * v;
     }
     return math.sqrt(somme / combien);

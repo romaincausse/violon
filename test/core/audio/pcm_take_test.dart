@@ -113,6 +113,25 @@ void main() {
       expect(prise.hasSound, isFalse);
     });
 
+    test('elle accepte un tampon desaligne', () {
+      // **Trouve sur l'appareil, pas en test.** Le paquet de capture livre
+      // des vues sur un tampon plus grand, parfois a un decalage d'octet
+      // impair. Reinterpreter ces octets en entiers de deux octets leve une
+      // erreur d'alignement -- et le mode libre restait muet, le bouton
+      // eternellement gris, sans que rien ne le dise a l'ecran.
+      final Uint8List aligne = son(1);
+      final Uint8List decale = Uint8List.sublistView(
+        Uint8List.fromList(<int>[0, ...aligne]),
+        1,
+      );
+      expect(decale.offsetInBytes.isOdd, isTrue, reason: 'bien desaligne');
+
+      final PcmTake prise = PcmTake(sampleRate: 8000);
+      expect(() => prise.add(decale), returnsNormally);
+      expect(prise.hasSound, isTrue);
+      expect(prise.wav(), isNotNull);
+    });
+
     test('elle se vide quand on le lui demande', () {
       final PcmTake prise = PcmTake(sampleRate: 8000)..add(son(1));
       prise.reset();
