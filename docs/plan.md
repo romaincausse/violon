@@ -56,7 +56,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
-| 5 | La preuve | 3 | 6 | On sait si le suiveur tient |
+| 5 | La preuve | 4 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**71 lots, 76 soirees restantes**, dont **26 de *must*** -- le reste
+**72 lots, 76 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -1064,11 +1064,12 @@ remplissage -- voir ADR-012.
 ## Jalon 5 - La preuve
 
 **Ne livre aucune fonctionnalite, et c'est assume.** Le suivi adaptatif etait
-decrit comme le lot le plus risque du projet. Le prouver coute six soirees ;
+decrit comme le lot le plus risque du projet. Le prouver coute sept soirees ;
 batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
+| ~~P0~~ | ~~Violon de synthese : un passage joue avec ses defauts, verite terrain comprise~~ | | ★★★ | fait |
 | P1 | Banc d'essai : vraies prises, annotees a la main | **Must** | ★★ | 2 |
 | P2 | Alignement hors ligne (hauteurs + attaques) | **Must** | ★★ | 3 |
 | P3 | Verdict chiffre et ADR | **Must** | ★★★ | 1 |
@@ -1080,6 +1081,48 @@ mesure** et **90 % sur la bonne note**. En dessous, c'est le plan qui change.
 **Le protocole de P1** -- quelles prises, quels pieges, comment annoter et
 comment compter -- est dans `docs/banc-d-essai.md`. Les prises n'entrent
 jamais dans le depot, qui est public.
+
+### P0 - Violon de synthese
+
+Ajoute apres coup, quand la question s'est posee : **l'eleve ne joue pas
+toujours juste, faut-il un autre violon pour prouver le suiveur ?** Non -- ses
+fausses notes sont precisement ce que le suiveur doit tenir. Mais il manquait
+de quoi **developper** l'aligneur sans attendre les prises, et sans annoter a
+la main chaque cas qu'on veut essayer.
+
+Le generateur prend un passage et un scenario de jeu -- tempo, derive,
+liaisons, notes fausses, sautees, ajoutees, arret, reprise, vibrato -- et rend
+le signal **et** ses etiquettes, au format exact du protocole de P1. P2 lit
+donc une prise de synthese et une vraie prise avec le meme code.
+
+Pourquoi un lot a part plutot qu'un morceau de P2 : il sert trois jalons. Le
+suiveur en ligne et son re-ancrage (S2, S3) s'y testent, et le juge de rythme
+aussi (N3) -- "tout a 74 au lieu de 92" se fabrique avec son verdict attendu.
+
+**La garde, a ne jamais lever :** un aligneur qui passe sur la synthese n'a
+rien prouve. La synthese ignore la piece, le micro du S22 et la vraie attaque
+d'archet. **Le critere de sortie se mesure sur les prises reelles, et sur
+elles seules.** Elle sert a construire, pas a conclure.
+
+**Fait.** Deux pieces, separees par la frontiere habituelle : `ViolinSynth`
+(`lib/core/audio/`) fait sonner des coups d'archet et ne connait pas la
+partition ; `TakeScript` (`lib/core/follow/`) raconte la prise -- "joue n1 a
+n6, arrete-toi, reprends n5" -- et sait ce que chaque son visait.
+`dart run tool/synthese.dart` en ecrit une dans le banc, pour l'ecouter.
+
+Ce que le passage des vrais detecteurs sur la synthese a deja appris, avant
+toute prise :
+
+- **Deux notes detachees a la meme hauteur donnent bien deux attaques** : le
+  piege ou YIN est aveugle est couvert par le detecteur d'attaques, au moins
+  sur un archet franc.
+- **Une liaison declenche parfois le detecteur d'attaques, parfois non** : un
+  changement de hauteur deplace l'energie du spectre, ce que le flux spectral
+  prend pour une attaque. L'aligneur ne pourra donc traiter une attaque ni
+  comme un debut de note sur, ni son absence comme une liaison sure.
+- **Le biais des attaques est constant, une douzaine de millisecondes en
+  avance** sur le debut reel : il s'annule entre deux attaques, comme l'ADR-010
+  le prevoyait.
 
 ---
 
@@ -1303,6 +1346,7 @@ quand une soiree se libere.
 | S4 | 6 | Le suivi devient enfin visible |
 | S5 | 6 | Empeche de noter n'importe quoi en silence |
 | P3 | 5 | Un chiffre qui valide ou annule quarante soirees |
+| P0 | 5 | Tout le suivi et toute la notation se testent sans violon |
 | D5 | 1 | La seule recompense autorisee : de la lumiere |
 
 **Deux soirees chacun.**
