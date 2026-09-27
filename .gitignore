@@ -58,3 +58,7 @@ build/
 # Sources sous droits : jamais versionnees (methode Suzuki notamment)
 /tool/sources/*
 !/tool/sources/.gitkeep
+
+# Banc d essai du suiveur (P1) : prises d un mineur, jamais versionnees
+/banc/
+*.wav
