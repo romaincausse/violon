@@ -1077,6 +1077,10 @@ batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 et reprise de mesure, l'alignement place **95 % des notes dans la bonne
 mesure** et **90 % sur la bonne note**. En dessous, c'est le plan qui change.
 
+**Le protocole de P1** -- quelles prises, quels pieges, comment annoter et
+comment compter -- est dans `docs/banc-d-essai.md`. Les prises n'entrent
+jamais dans le depot, qui est public.
+
 ---
 
 ## Jalon 6 - Le suivi
