@@ -1,4 +1,4 @@
-.PHONY: setup format analyze test check core-pur run apk clean
+.PHONY: setup format analyze test test-lent test-tout check core-pur run apk clean
 
 setup:
 	flutter pub get
@@ -9,7 +9,15 @@ format:
 analyze:
 	flutter analyze --fatal-infos
 
+# Les tests etiquetes `lent` (alignement de bout en bout sur la synthese)
+# sont exclus de la boucle courante. La CI lance tout, sans exclusion.
 test:
+	flutter test --exclude-tags lent
+
+test-lent:
+	flutter test --tags lent
+
+test-tout:
 	flutter test
 
 check: format analyze test core-pur

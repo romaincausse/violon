@@ -162,7 +162,10 @@ Quatre regles structurantes :
   l'horloge accepte une graine ou une horloge injectee.
 - Pour tester l'audio, utiliser `FakePitchSource` ou synthetiser un signal,
   jamais le vrai micro.
-- Lancer : `flutter test`.
+- Lancer : `make test` pendant le developpement, qui exclut les tests
+  etiquetes `lent` (alignement de bout en bout sur la synthese). `make
+  test-tout` lance tout, comme la CI. Un nouveau test qui prend plusieurs
+  secondes recoit `@Tags(<String>['lent'])`.
 
 ## Git
 
