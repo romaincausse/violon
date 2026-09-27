@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/music/passage.dart';
 import '../../core/music/score_note.dart';
+import '../../core/score/score_fit.dart';
 import '../../core/score/score_layout.dart';
 import '../../core/score/smufl.dart';
 import '../../core/score/staff_geometry.dart';
@@ -55,6 +56,7 @@ class ScoreView extends StatelessWidget {
     this.spaceSize,
     this.maxSystems,
     this.maxSpaceSize = defaultMaxSpaceSize,
+    this.tooSmall,
     this.mode = ScoreDisplayMode.systems,
     this.zoom = 1,
     super.key,
@@ -108,6 +110,17 @@ class ScoreView extends StatelessWidget {
   /// hauteur, donc moins de lignes.
   final int? maxSystems;
 
+  /// Ce qu'on montre quand la partition ne tient pas, meme au plus petit
+  /// interligne lisible.
+  ///
+  /// **Une portee a moitie hors du cadre n'est pas une partition.** Le defaut
+  /// -- `null` -- reste de graver et de laisser defiler, ce qui vaut pour un
+  /// debordement de quelques points. Mais quand il ne reste de place pour
+  /// aucun interligne lisible, defiler veut dire que l'enfant ne voit qu'un
+  /// bout de sa ligne, et qu'il devrait pousser du doigt en plein morceau.
+  /// L'ecran passe alors ici de quoi proposer autre chose.
+  final Widget? tooSmall;
+
   final ScoreDisplayMode mode;
 
   /// Grossissement demande par l'utilisateur, autour de la taille choisie
@@ -122,6 +135,16 @@ class ScoreView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
+        final Widget? repli = tooSmall;
+        // Seulement sur une taille choisie automatiquement : un interligne
+        // impose est une demande explicite, et un zoom deborde par nature.
+        if (repli != null &&
+            spaceSize == null &&
+            constraints.hasBoundedWidth &&
+            constraints.hasBoundedHeight &&
+            !_tientDans(constraints, minSpaceSize)) {
+          return repli;
+        }
         final double base = spaceSize ?? _choisirEspace(constraints);
         final double espace = base * zoom.clamp(minZoom, maxZoom);
         return _build(context, espace, constraints);
@@ -168,21 +191,20 @@ class ScoreView extends StatelessWidget {
   }
 
   bool _tientDans(BoxConstraints constraints, double taille) {
-    final ScoreLayout layout = _layoutPour(constraints.maxWidth / taille);
-    final SystemMetrics metrics =
-        SystemMetrics.of(layout, alsoCover: _ghostSteps());
-    // En defilement, deborder en largeur est le principe meme : seule la
-    // hauteur contraint la taille des notes.
-    if (mode == ScoreDisplayMode.systems &&
-        layout.widthSpaces * taille > constraints.maxWidth + 0.01) {
-      return false;
-    }
-    if (!constraints.hasBoundedHeight) {
-      return true;
-    }
-    final double hauteur =
-        metrics.stackHeightSpaces(layout.systemCount) * taille;
-    return hauteur <= constraints.maxHeight;
+    // En defilement, aucune largeur ne borne la ligne : tout tient sur un
+    // seul systeme, et deborder en largeur est le principe meme. Seule la
+    // hauteur contraint alors la taille des notes.
+    final bool defilement = mode == ScoreDisplayMode.scrolling;
+    return scoreFits(
+      passage,
+      widthSpaces: defilement ? double.infinity : constraints.maxWidth / taille,
+      checkWidth: !defilement,
+      heightSpaces: constraints.hasBoundedHeight
+          ? constraints.maxHeight / taille
+          : double.infinity,
+      maxSystems: defilement ? 1 : maxSystems,
+      alsoCover: _ghostSteps(),
+    );
   }
 
   ScoreLayout _layoutPour(double largeurEspaces, {bool justify = false}) =>

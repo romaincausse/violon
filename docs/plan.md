@@ -390,6 +390,35 @@ Le plafond d'interligne est donc releve **uniquement en plein ecran** (de 16 a
 grand au plus petit et retient le premier qui tient. Le relever ne fait que
 lui laisser le choix quand la place existe.
 
+#### Ce que le plein ecran repare, et qu'on n'avait pas vu
+
+Constate sur l'appareil apres coup : **un exercice de quatre mesures ne tient
+pas hors du plein ecran, dans aucune des deux orientations.** Au plus petit
+interligne encore lisible a soixante-dix centimetres, il demande 623 points de
+large sur 210 de haut, ou 336 sur 434 selon le decoupage en systemes.
+
+| | Place reelle | Verdict |
+|---|---|---|
+| Paysage, hors plein ecran | 544 x 188 | coupe de 22 points |
+| Portrait, hors plein ecran | 336 x 313 | coupe de **121 points** |
+| Plein ecran, paysage | 760 x 212 | tient |
+| Plein ecran, portrait | 336 x 520 | tient, quatre systemes |
+
+La portee sortait donc du cadre **sans que rien ne le dise** : le graveur
+defile plutot que de rogner, ce qui est la bonne regle pour quelques points de
+trop, mais qui veut dire ici que l'enfant ne voyait qu'un bout de sa partition
+et aurait du pousser du doigt en plein morceau.
+
+Quand aucun interligne lisible ne passe, l'ecran ne grave donc plus : il dit
+*« la partition ne tient pas ici »* et pose le bouton du plein ecran. **La
+place existe sur ce telephone, elle etait prise par le decor** -- c'est
+exactement ce que ce lot avait construit, et personne n'y etait envoye.
+
+Le test qui defendait la promesse du lot -- *la hauteur gagnee passe dans les
+notes* -- a ete repris au passage : il posait une surface de 400 x 800 qui ne
+s'appliquait pas, et mesurait donc une portee qui ne tenait deja pas dans son
+cadre. Il verifie desormais la promesse **en paysage**, ou elle est vraie.
+
 ---
 
 ### D11 - Le ruban nomme les notes

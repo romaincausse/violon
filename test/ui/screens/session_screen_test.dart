@@ -8,6 +8,7 @@ import 'package:violon/core/audio/microphone_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
 
+import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/music/demo_passage.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
@@ -1011,12 +1012,21 @@ void main() {
     testWidgets('la hauteur gagnee passe dans les notes', (
       WidgetTester tester,
     ) async {
-      // **C'est la promesse du lot.** Retirer les barres sans agrandir la
-      // gravure n'aurait fait que remplacer du decor par du blanc : sur un
-      // pupitre a soixante-dix centimetres, cette hauteur-la ne vaut que si
-      // elle passe dans les notes.
-      await tester.binding.setSurfaceSize(const Size(400, 800));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      // **C'est la promesse du lot, et elle est vraie en paysage.** Retirer
+      // les barres sans agrandir la gravure n'aurait fait que remplacer du
+      // decor par du blanc : sur un pupitre a soixante-dix centimetres, cette
+      // hauteur-la ne vaut que si elle passe dans les notes.
+      //
+      // **En paysage et pas en portrait**, comme le plan le dit depuis la
+      // mesure sur l'appareil : en portrait la taille des notes est bornee
+      // par la largeur, et la hauteur gagnee n'y devient que de l'absence de
+      // decor. Ce test posait 400 x 800 -- du portrait -- et n'a jamais
+      // verifie sa propre promesse : avec le rapport de pixels par defaut, la
+      // surface demandee ne s'appliquait meme pas, et la portee mesuree ne
+      // tenait pas dans son cadre.
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(780, 360);
       await poser(tester, <PitchEstimate>[]);
       final double avant =
           tester.getSize(find.byKey(ScoreView.canvasKey)).height;
@@ -1025,7 +1035,11 @@ void main() {
       final double apres =
           tester.getSize(find.byKey(ScoreView.canvasKey)).height;
 
-      expect(apres, greaterThan(avant * 1.3));
+      // **Un cinquieme ici, un tiers sur l'appareil.** A ce niveau seule la
+      // barre de titre disparait ; les trois autres -- la navigation de la
+      // coquille et les deux barres du systeme -- sont retirees un cran plus
+      // haut, et c'est de la que vient le reste.
+      expect(apres, greaterThan(avant * 1.15));
     });
 
     testWidgets('il ne deborde dans aucune des deux orientations', (
@@ -1267,6 +1281,74 @@ void main() {
       await tester.pump();
 
       expect(find.byKey(SessionScreen.partitionJoueeKey), findsNothing);
+    });
+  });
+
+  group('quand la partition ne tient pas', () {
+    /// L'exercice reel mesure sur l'appareil : quatre mesures de motif.
+    Passage lesDoigtsEnLigne() =>
+        ExerciseCatalog.byId('motif-en-ligne-2-3')!.toPassage();
+
+    Future<void> poserSur(WidgetTester tester, Size ecran) async {
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = ecran;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SessionScreen(
+            passage: lesDoigtsEnLigne(),
+            onChangePassage: () {},
+            onTune: () {},
+            pitchSourceFactory: () async =>
+                FakePitchSource(const <PitchEstimate>[]),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('en paysage, elle propose le plein ecran au lieu de se couper',
+        (WidgetTester tester) async {
+      // **Une portee a moitie hors du cadre n'est pas une partition**, et
+      // pousser du doigt en plein morceau n'est pas une reponse. Le plein
+      // ecran, lui, a la place : c'est ce que le lot D10 a construit.
+      await poserSur(tester, const Size(743, 250));
+
+      expect(find.byKey(SessionScreen.tropEtroitKey), findsOneWidget);
+      expect(find.byKey(ScoreView.canvasKey), findsNothing);
+    });
+
+    testWidgets('et le bouton y mene vraiment', (WidgetTester tester) async {
+      await poserSur(tester, const Size(743, 250));
+      await tester.tap(find.text('Plein ecran'));
+      await tester.pumpAndSettle();
+
+      // La promesse est tenue : la partition est la, entiere.
+      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
+      expect(find.byKey(SessionScreen.tropEtroitKey), findsNothing);
+      expect(find.byType(AppBar), findsNothing);
+    });
+
+    testWidgets('en plein ecran, on grave meme s il faut defiler', (
+      WidgetTester tester,
+    ) async {
+      // Il n'y a plus rien a proposer : c'est deja toute la place que le
+      // telephone possede. Proposer le plein ecran depuis le plein ecran
+      // serait une impasse.
+      await poserSur(tester, const Size(500, 180));
+      await tester.tap(find.byKey(SessionScreen.pleinEcranKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
+      expect(find.byKey(SessionScreen.tropEtroitKey), findsNothing);
+    });
+
+    testWidgets('quand elle tient, rien ne change', (
+      WidgetTester tester,
+    ) async {
+      await poserSur(tester, const Size(1400, 700));
+      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
+      expect(find.byKey(SessionScreen.tropEtroitKey), findsNothing);
     });
   });
 

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
+import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/core/score/staff_layout.dart';
 import 'package:violon/ui/widgets/score_view.dart';
@@ -428,6 +429,108 @@ void main() {
       final Size maxi = await poserAvec(tester, zoom: 99);
       final Size plafond = await poserAvec(tester, zoom: ScoreView.maxZoom);
       expect(maxi.height, plafond.height);
+    });
+  });
+
+  group('quand la partition ne tient pas', () {
+    /// L'exercice reel mesure sur l'appareil : quatre mesures de motif.
+    Passage lesDoigtsEnLigne() =>
+        ExerciseCatalog.byId('motif-en-ligne-2-3')!.toPassage();
+
+    /// Pose la partition dans une boite donnee, avec un repli nomme.
+    Future<void> poserDans(
+      WidgetTester tester,
+      Passage passage,
+      Size boite, {
+      Widget? repli,
+      int? maxSystems = 2,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: boite.width,
+                height: boite.height,
+                child: ScoreView(
+                  passage: passage,
+                  maxSystems: maxSystems,
+                  tooSmall: repli,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    const Key repliKey = Key('repli');
+    const Widget repli = Text('trop petit', key: repliKey);
+
+    testWidgets('un exercice de quatre mesures ne tient pas dans un S22 couche',
+        (WidgetTester tester) async {
+      // **Mesure sur l'appareil, et c'est la raison du repli.** Barre de titre
+      // et barre de navigation de la coquille comprises, il reste 544 sur 188
+      // a la gravure. L'exercice en demande 623 sur 210 au plus petit
+      // interligne encore lisible a soixante-dix centimetres : il ne tenait
+      // dans aucune des deux dimensions, et la portee sortait du cadre des
+      // deux cotes sans que rien ne le dise.
+      await poserDans(
+        tester,
+        lesDoigtsEnLigne(),
+        const Size(544, 188),
+        repli: repli,
+      );
+      expect(find.byKey(repliKey), findsOneWidget);
+      expect(find.byKey(ScoreView.canvasKey), findsNothing);
+    });
+
+    testWidgets('le meme exercice tient en plein ecran', (
+      WidgetTester tester,
+    ) async {
+      // Les quatre barres retirees, il reste 760 sur 212 : la place existe sur
+      // ce telephone, elle etait prise par le decor.
+      await poserDans(
+        tester,
+        lesDoigtsEnLigne(),
+        const Size(760, 212),
+        repli: repli,
+      );
+      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
+      expect(find.byKey(repliKey), findsNothing);
+    });
+
+    testWidgets('sans repli, on grave et on laisse defiler', (
+      WidgetTester tester,
+    ) async {
+      // Le defaut ne change pas : un debordement de quelques points se defile
+      // tres bien, et c'est la regle du graveur depuis le debut.
+      await poserDans(tester, lesDoigtsEnLigne(), const Size(544, 188));
+      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
+    });
+
+    testWidgets('un interligne impose passe outre le repli', (
+      WidgetTester tester,
+    ) async {
+      // Poser une taille est une demande explicite : on la sert.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: ScoreView(
+                  passage: lesDoigtsEnLigne(),
+                  spaceSize: 9,
+                  tooSmall: repli,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
     });
   });
 

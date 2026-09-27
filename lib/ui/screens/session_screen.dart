@@ -157,6 +157,9 @@ class SessionScreen extends StatefulWidget {
   /// La ligne qui annonce que la portee montre ce qui a ete joue.
   static const Key partitionJoueeKey = Key('partition-jouee');
 
+  /// L'invitation au plein ecran, quand la partition ne tient pas.
+  static const Key tropEtroitKey = Key('partition-trop-etroite');
+
   @override
   State<SessionScreen> createState() => _SessionScreenState();
 }
@@ -1041,6 +1044,9 @@ class _SessionScreenState extends State<SessionScreen>
         maxSpaceSize: _pleinEcran
             ? ScoreView.pleinEcranMaxSpaceSize
             : ScoreView.defaultMaxSpaceSize,
+        // En plein ecran il n'y a plus rien a proposer : c'est deja toute la
+        // place que le telephone possede. On grave et on laisse defiler.
+        tooSmall: _pleinEcran ? null : _tropEtroit(),
       ),
     );
     if (joue == null) {
@@ -1052,6 +1058,43 @@ class _SessionScreenState extends State<SessionScreen>
         _titreDeLaPartitionJouee(joue),
         Expanded(child: portee)
       ],
+    );
+  }
+
+  /// Ce qu'on montre a la place d'une portee coupee.
+  ///
+  /// **Mesure sur l'appareil.** Un exercice de quatre mesures demande, au plus
+  /// petit interligne encore lisible a soixante-dix centimetres, 623 points de
+  /// large et 210 de haut. Un S22 couche, barre de titre et barre de
+  /// navigation comprises, n'en offre que 544 sur 188 : il ne tenait dans
+  /// aucune des deux dimensions, et la portee sortait du cadre des deux cotes
+  /// sans que rien ne le dise.
+  ///
+  /// Le plein ecran, lui, offre 760 sur 212 : la meme partition y tient. La
+  /// place existe donc sur ce telephone, elle est seulement prise par le
+  /// decor -- et c'est exactement ce que le lot D10 a construit. On ne rogne
+  /// pas, on ne fait pas pousser du doigt en plein morceau : on dit ou est la
+  /// place.
+  Widget _tropEtroit() {
+    final ThemeData theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            'La partition ne tient pas ici.',
+            key: SessionScreen.tropEtroitKey,
+            style: theme.textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          FilledButton.tonalIcon(
+            onPressed: _basculerLePleinEcran,
+            icon: const Icon(Icons.open_in_full),
+            label: const Text('Plein ecran'),
+          ),
+        ],
+      ),
     );
   }
 
