@@ -258,6 +258,25 @@ Pour ne pas decider de la regle apres avoir vu les chiffres :
 
 ---
 
+## Passer le banc
+
+```sh
+dart run tool/banc.dart            # le tableau et le verdict
+dart run tool/banc.dart --detail   # plus chaque note mal placee
+```
+
+L'outil lit les metadonnees de chaque prise. Deux champs y sont indispensables :
+
+- `critere` : seules les prises a `true` comptent ;
+- `pieges` : une prise est **avec reprise** au sens du critere si elle
+  contient `arret-reprise` ou `saut-arriere`. Ecrire ces deux mots tels
+  quels.
+
+`la_mesure_hz` sert d'accord de reference : un la joue sur un violon accorde a
+441 est un la juste. Sans lui, l'outil suppose 440.
+
+---
+
 ## Fini quand
 
 - [ ] Le pilote est annote et le protocole corrige en consequence

@@ -39,10 +39,22 @@ class YinDetector {
       return null;
     }
 
+    final int minTau = math.max(2, (sampleRate / maxFrequencyHz).floor());
+    final int maxTau =
+        math.min(halfSize - 2, (sampleRate / minFrequencyHz).ceil());
+    if (minTau >= maxTau) {
+      return null;
+    }
+
+    // Rien n'est lu au-dela de maxTau + 1 : ni la recherche du minimum, ni
+    // l'interpolation, et la normalisation ne regarde que vers le bas. Calculer
+    // jusqu'a la moitie du buffer quadruplait le cout pour un resultat
+    // identique -- ce qui compte des qu'on analyse une prise entiere.
+    final int limite = maxTau + 2;
     final Float64List yin = Float64List(halfSize);
 
     // 1. Fonction de difference.
-    for (int tau = 1; tau < halfSize; tau++) {
+    for (int tau = 1; tau < limite; tau++) {
       double sum = 0;
       for (int i = 0; i < halfSize; i++) {
         final double delta = buffer[i] - buffer[i + tau];
@@ -54,19 +66,12 @@ class YinDetector {
     // 2. Normalisation par la moyenne cumulee.
     yin[0] = 1;
     double runningSum = 0;
-    for (int tau = 1; tau < halfSize; tau++) {
+    for (int tau = 1; tau < limite; tau++) {
       runningSum += yin[tau];
       yin[tau] = runningSum == 0 ? 1 : yin[tau] * tau / runningSum;
     }
 
     // 3. Premier minimum local sous le seuil.
-    final int minTau = math.max(2, (sampleRate / maxFrequencyHz).floor());
-    final int maxTau =
-        math.min(halfSize - 2, (sampleRate / minFrequencyHz).ceil());
-    if (minTau >= maxTau) {
-      return null;
-    }
-
     int? tauEstimate;
     for (int tau = minTau; tau <= maxTau; tau++) {
       if (yin[tau] < threshold) {

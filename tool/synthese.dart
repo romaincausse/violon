@@ -7,12 +7,14 @@
 // ~/violon-banc/synthese/), hors du depot comme tout le banc. Une prise de
 // synthese sert a construire l'aligneur, jamais a le juger : voir le lot P0
 // dans docs/plan.md.
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:violon/core/audio/violin_synth.dart';
 import 'package:violon/core/audio/wav.dart';
 import 'package:violon/core/exercises/exercise.dart';
 import 'package:violon/core/exercises/exercise_catalog.dart';
+import 'package:violon/core/follow/bench_score.dart';
 import 'package:violon/core/follow/synthetic_take.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
@@ -51,6 +53,27 @@ void main(List<String> args) {
   final Directory dossier = Directory('$banc/synthese')
     ..createSync(recursive: true);
   final String nom = '${dossier.path}/gamme-sol-seance-g$graine';
+  const JsonEncoder json = JsonEncoder.withIndent('  ');
+
+  // La partition et les metadonnees, au format du protocole : tool/banc.dart
+  // lit une prise de synthese exactement comme une vraie.
+  final Directory partitions = Directory('$banc/partitions')
+    ..createSync(recursive: true);
+  File('${partitions.path}/${gamme.id}.json').writeAsStringSync(
+    json.convert(
+      BenchScore.toJson(passage, slurredInto: <String>{'n6', 'n7', 'n8'}),
+    ),
+  );
+  File('$nom.json').writeAsStringSync(
+    json.convert(<String, Object?>{
+      'id': nom.split('/').last,
+      'partition': gamme.id,
+      'consigne': 'synthese, graine $graine',
+      'pieges': <String>['arret-reprise', 'fausse-note', 'liaison'],
+      'critere': false,
+      'la_mesure_hz': 440,
+    }),
+  );
 
   File('$nom.wav').writeAsBytesSync(
     Wav.encode(prise.render(ViolinSynth(seed: graine))),
