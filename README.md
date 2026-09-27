@@ -68,7 +68,6 @@ Quatre regles structurantes, detaillees dans `CLAUDE.md` :
 make check     # format + analyse + tests + verification d'architecture
 make test
 make apk
-make scores    # mort-ne : voir Etat, et ADR-002 marquee caduque
 ```
 
 ## Documentation
@@ -146,8 +145,11 @@ l'application, et c'est deja ce qu'on faisait hier, au tempo atteint.
 personne : ils attendent le suiveur. Consequence a garder en tete, **ils n'ont
 jamais vu un vrai signal de violon** -- uniquement des signaux de synthese.
 
-`tool/build_scores.mjs` ecrit dans `assets/scores/`, qui n'existe pas. Il n'a
-donc jamais rien produit : mort-ne plutot que dormant.
+**Il n'y a plus qu'une entree ici.** `tool/build_scores.mjs` en sortait : il
+ecrivait dans `assets/scores/`, un dossier qui n'a jamais existe, et n'avait
+donc jamais rien produit. Supprime avec sa cible `make scores` -- un outil
+qu'aucune decision ne soutient plus se lit comme une intention, et fait
+hesiter celui qui le trouve. Voir ADR-002.
 
 ### Ce qui vient ensuite
 

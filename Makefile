@@ -1,4 +1,4 @@
-.PHONY: setup format analyze test check core-pur run apk clean scores
+.PHONY: setup format analyze test check core-pur run apk clean
 
 setup:
 	flutter pub get
@@ -31,9 +31,6 @@ run:
 
 apk:
 	flutter build apk --release
-
-scores:
-	node tool/build_scores.mjs
 
 clean:
 	flutter clean

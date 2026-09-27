@@ -37,7 +37,11 @@ comme **environnement de developpement** de l'interface, avec une
 > timemap. Un SVG ne se suit pas. L'import du lot H6 lit donc directement le
 > MusicXML, ce qui est de l'analyse d'XML et non de la gravure.
 >
-> `tool/build_scores.mjs` et `make scores` sont dormants en consequence.
+> `tool/build_scores.mjs` et `make scores` **ont ete supprimes** le 27
+> septembre 2026. Ils etaient dormants depuis l'ADR-009, et n'avaient en
+> realite jamais rien produit : le script ecrivait dans `assets/scores/`, un
+> dossier qui n'a jamais existe. Un outil qu'aucune decision ne soutient plus
+> se lit comme une intention, et fait hesiter celui qui le trouve.
 
 **Contexte.** Il n'existe pas de moteur de gravure musicale mature en
 Flutter. Trois voies : WebView + OpenSheetMusicDisplay ou alphaTab, moteur
