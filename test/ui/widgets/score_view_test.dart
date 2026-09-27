@@ -1,10 +1,37 @@
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
+import 'package:violon/core/music/score_note.dart';
 import 'package:violon/core/score/staff_layout.dart';
 import 'package:violon/ui/widgets/score_view.dart';
+
+/// Ce que le graveur a effectivement dessine.
+///
+/// **On interroge le peintre, pas une image.** Un golden dirait "ca a change"
+/// a la premiere retouche de theme sans dire ce qui a change ; ici chaque test
+/// nomme la propriete qu'il defend.
+class _CanvasEspion implements Canvas {
+  /// Un glyphe dessine, et ou. Tetes, alterations, cle, crochets, points.
+  final List<Offset> glyphes = <Offset>[];
+  final List<({Offset de, Offset a, Color couleur})> traits =
+      <({Offset de, Offset a, Color couleur})>[];
+
+  @override
+  void drawParagraph(ui.Paragraph paragraph, Offset offset) =>
+      glyphes.add(offset);
+
+  @override
+  void drawLine(Offset de, Offset a, Paint paint) =>
+      traits.add((de: de, a: a, couleur: paint.color));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
 
 void main() {
   Passage passageDe(List<(int, NoteValue)> notes) {
@@ -401,6 +428,139 @@ void main() {
       final Size maxi = await poserAvec(tester, zoom: 99);
       final Size plafond = await poserAvec(tester, zoom: ScoreView.maxZoom);
       expect(maxi.height, plafond.height);
+    });
+  });
+
+  group('la hauteur en clair', () {
+    const double espace = 9;
+
+    /// Pose la partition et rend ce que le peintre a dessine.
+    Future<_CanvasEspion> peindre(
+      WidgetTester tester,
+      Passage passage, {
+      GhostMidiResolver? ghost,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: ScoreView(
+                passage: passage,
+                spaceSize: espace,
+                ghostMidiOf: ghost,
+              ),
+            ),
+          ),
+        ),
+      );
+      final CustomPaint peinture = tester.widget<CustomPaint>(
+        find.byKey(ScoreView.canvasKey),
+      );
+      final _CanvasEspion espion = _CanvasEspion();
+      peinture.painter!
+          .paint(espion, tester.getSize(find.byKey(ScoreView.canvasKey)));
+      return espion;
+    }
+
+    testWidgets('sans resolveur, rien n est dessine en plus', (
+      WidgetTester tester,
+    ) async {
+      final Passage p = passageDe(<(int, NoteValue)>[(71, NoteValue.quarter)]);
+      final _CanvasEspion nu = await peindre(tester, p);
+      final _CanvasEspion rien = await peindre(
+        tester,
+        p,
+        ghost: (ScoreNote note) => null,
+      );
+      expect(rien.glyphes.length, nu.glyphes.length);
+    });
+
+    testWidgets('une hauteur en clair pose une tete de plus, au-dessus', (
+      WidgetTester tester,
+    ) async {
+      final Passage p = passageDe(<(int, NoteValue)>[(71, NoteValue.quarter)]);
+      final _CanvasEspion nu = await peindre(tester, p);
+      final _CanvasEspion avec = await peindre(
+        tester,
+        p,
+        ghost: (ScoreNote note) => 74, // re5, une tierce au-dessus du si4
+      );
+
+      expect(avec.glyphes.length, nu.glyphes.length + 1);
+      // Elle est plus haut que tout ce qui etait deja dessine : c'est
+      // l'intervalle qu'on doit lire, et il se lit dans la distance.
+      final double hautNu = nu.glyphes.map((Offset o) => o.dy).reduce(math.min);
+      final double hautAvec =
+          avec.glyphes.map((Offset o) => o.dy).reduce(math.min);
+      expect(hautAvec, lessThan(hautNu));
+    });
+
+    testWidgets('un do# joue en do laisse le diese en clair', (
+      WidgetTester tester,
+    ) async {
+      // La faute la plus courante a cet age, et la seule ou la tete ne bouge
+      // pas : un do# et un do occupent le meme pas. C'est l'alteration qui
+      // porte alors toute la difference.
+      final Passage p = passageDe(<(int, NoteValue)>[(72, NoteValue.quarter)]);
+      final _CanvasEspion nu = await peindre(tester, p);
+      final _CanvasEspion avec = await peindre(
+        tester,
+        p,
+        ghost: (ScoreNote note) => 73, // le do# qui etait ecrit
+      );
+
+      // Le glyphe de plus se colle a gauche de la tete, a la place ou une
+      // alteration se pose.
+      final Set<double> deja = nu.glyphes.map((Offset o) => o.dx).toSet();
+      final double tete = nu.glyphes.map((Offset o) => o.dx).reduce(math.max);
+      final List<Offset> nouveaux =
+          avec.glyphes.where((Offset o) => !deja.contains(o.dx)).toList();
+      expect(nouveaux, hasLength(1));
+      expect(nouveaux.first.dx, lessThan(tete));
+    });
+
+    testWidgets('la reserve verticale couvre la tete en clair', (
+      WidgetTester tester,
+    ) async {
+      // Sans ca, une note ecrite loin de celle qui a ete jouee se ferait
+      // rogner par le bord de la zone de dessin.
+      final Passage p = passageDe(<(int, NoteValue)>[(71, NoteValue.quarter)]);
+      final Size nue = await poser(tester, p, spaceSize: espace);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: ScoreView(
+                passage: p,
+                spaceSize: espace,
+                // Mi2 : bien en dessous de la tessiture du violon.
+                ghostMidiOf: (ScoreNote note) => 40,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        tester.getSize(find.byKey(ScoreView.canvasKey)).height,
+        greaterThan(nue.height),
+      );
+    });
+
+    testWidgets('des lignes supplementaires en clair, et plus pales', (
+      WidgetTester tester,
+    ) async {
+      final Passage p = passageDe(<(int, NoteValue)>[(71, NoteValue.quarter)]);
+      final _CanvasEspion avec = await peindre(
+        tester,
+        p,
+        ghost: (ScoreNote note) => 60, // do4, sous la portee
+      );
+      // La tete en clair emmene ses propres lignes supplementaires, et aucune
+      // n'est aussi appuyee que l'encre de la portee.
+      final double plusPale = avec.traits
+          .map((({Offset de, Offset a, Color couleur}) t) => t.couleur.a)
+          .reduce(math.min);
+      expect(plusPale, closeTo(0.3, 0.01));
     });
   });
 }

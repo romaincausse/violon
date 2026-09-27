@@ -195,6 +195,20 @@ SIL OFL, donc versionnable sans probleme -- contrairement aux partitions sous
 droits. Le pre-rendu Verovio de l'ADR-002 reste la voie pour importer un
 morceau entier du repertoire, plus tard, et les deux chemins cohabiteront.
 
+**La limite, eprouvee une fois** (lot D13). La partition de ce qui a ete joue
+pose derriere chaque tete deplacee, en encre pale, celle qui etait ecrite. Deux
+tetes au meme instant : c'est exactement ce que cet ADR appelle polyphonie et
+refuse. Ce n'en est pas, et la difference tient en une phrase -- **la tete en
+clair n'a ni hampe, ni crochet, ni point**. Elle n'est pas une seconde voix a
+graver, c'est un rappel pose sur la premiere, au meme titre que le curseur et
+la coloration. La regle a en tirer, pour la prochaine fois : ce graveur accepte
+qu'on dessine **sur** ce qu'il grave, jamais qu'on lui demande de graver deux
+choses a la fois.
+
+Une seule regle de gravure a du etre reprise pour ca, et elle etait deja
+implicite : **deux tetes voisines se posent cote a cote, jamais l'une sur
+l'autre.** A droite, parce que la gauche appartient aux alterations.
+
 ---
 
 ## ADR-008 : Accompagnement et notation sont deux modes, jamais simultanes

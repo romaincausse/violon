@@ -52,7 +52,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
-| 1 | Le retour qui se voit | 11 | 0 | Ca devient agreable, tout de suite |
+| 1 | Le retour qui se voit | 12 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**72 lots, 73 soirees restantes**, dont **26 de *must*** -- le reste
+**73 lots, 73 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -86,8 +86,8 @@ en premier.
 
 ## Jalon 1 - Le retour qui se voit
 
-**Onze lots livres, le jalon est clos.** Ils tournent sur le code deja livre,
-sans dependance nouvelle, et cinq des onze -- I1, I2, D8, D9 et D12 --
+**Douze lots livres, le jalon est clos.** Ils tournent sur le code deja livre,
+sans dependance nouvelle, et cinq des douze -- I1, I2, D8, D9 et D12 --
 corrigeaient des defauts constates a l'usage plutot que d'ajouter une
 fonctionnalite.
 
@@ -110,6 +110,7 @@ deux premiers de ce qu'elle affiche, le troisieme de l'allure qu'elle a.
 | ~~D10~~ | ~~La partition en plein ecran~~ | | ★★ | fait |
 | ~~D11~~ | ~~Le ruban nomme les notes~~ | | ★★ | fait |
 | ~~D12~~ | ~~Une identite visuelle~~ | | ★★ | fait |
+| ~~D13~~ | ~~La partition de ce qui a ete joue~~ | | ★★★ | fait |
 
 ### I1 - Cordes a vide comme ancre, alerte de desaccord
 
@@ -525,6 +526,89 @@ graisse, verifie sur l'appareil avant de batir l'echelle typographique dessus.
 eclairee, a soixante-dix centimetres des yeux : la lisibilite passe avant la
 discretion. Un theme sombre se justifiera le jour ou quelqu'un travaillera
 dans le noir, et pas avant.
+
+---
+
+### D13 - La partition de ce qui a ete joue
+
+**Demande par l'utilisateur**, et la premiere qui ne vienne ni de l'usage ni de
+la concurrence. Sur la partition, a la place des notes ecrites, montrer celles
+que l'eleve a **vraiment jouees**.
+
+Le ruban d'ecart dit de combien on manque. L'echelle des notes (D11) dit quelle
+note on atteint, mais seulement pendant qu'on joue et seulement pour l'instant
+present. Aucun des deux ne laisse regarder, apres coup, **la phrase entiere
+telle qu'elle est sortie**. C'est pourtant l'objet que tout le monde connait :
+la partition annotee au crayon par le professeur.
+
+#### Ce qu'on livre, et ce qu'on ne peut pas encore livrer
+
+Le rythme ecrit est conserve ; seules les hauteurs changent. Chaque note garde
+son identifiant, son instant et sa duree, et la tete se pose a la hauteur
+reellement entendue. La phrase qui en sort : *voila ce que tu as joue la ou une
+note etait attendue*.
+
+**Ce que ca ne peut pas dire**, et il faut le dire plutot que de le laisser
+croire : ni les notes ajoutees, ni celles qui ont ete sautees. L'attribution
+repose sur le curseur, qui sait seulement ou l'eleve **etait cense** se
+trouver. Graver ce qui a vraiment ete joue, rythme compris, demande le suiveur
+(jalon 6) et le juge (jalon 7), et n'a de sens qu'apres la preuve (jalon 5).
+
+#### Trois decisions, dont une que l'ecran a imposee
+
+**La tete ne bouge qu'au demi-ton.** L'ecart median est arrondi : trente cents
+de bas n'est pas une autre note, c'est la meme, jouee un peu bas, et la
+deplacer dirait faux. La partition ne change donc **que la ou une autre note a
+reellement ete jouee** -- la justesse fine reste au ruban, dont c'est le
+metier.
+
+**Au-dela de l'octave, on ne pretend rien savoir.** L'erreur d'octave est la
+faute classique de YIN, et sans suiveur un curseur peut se tromper de note
+attendue. Dans les deux cas ce n'est pas l'enfant qui a joue ailleurs : c'est
+nous qui ne savons pas. La note est alors rendue **non entendue** plutot que
+deplacee, ce qui est exactement ce que l'application sait.
+
+**La hauteur ecrite reste visible, en encre pale, derriere celle qui a ete
+jouee.** Sans elle, une tete deplacee se lit comme une partition correctement
+gravee, et l'enfant croirait que l'application lui donne raison. Avec elle,
+l'erreur se lit comme un **intervalle** -- ce qu'un professeur montre du doigt
+en premier.
+
+#### Ce que l'appareil a corrige
+
+La premiere version posait la tete en clair exactement derriere celle qui avait
+ete jouee. Sur un ecart d'un demi-ton ou d'un ton -- **l'erreur ordinaire, donc
+le cas qui compte** -- les deux tetes se chevauchaient et ne faisaient plus
+qu'une bavure. Aucun test ne pouvait le voir : ils verifiaient qu'une tete de
+plus etait dessinee, et elle l'etait.
+
+La regle de gravure existait deja pour ca : deux tetes voisines se posent cote
+a cote. **A droite**, parce que la gauche appartient aux alterations -- decalee
+a gauche, la tete en clair passait sous le diese de la note jouee.
+
+Cas particulier qui vaut d'etre garde en tete : un **do# joue en do** occupe le
+meme pas sur la portee. Rien ne se deplace, et c'est le diese en clair qui
+porte toute la difference. C'est la faute la plus courante a cet age.
+
+#### Ou et quand
+
+**Pendant la prise, la partition ecrite ; une fois l'archet pose, ce qui a ete
+joue.** Un seul objet, deux moments -- la meme grammaire que le bandeau de
+mesures (D1). Deplacer une tete sous les yeux de l'enfant au moment ou il la
+cherche lui prendrait le papier des mains.
+
+Une ligne l'annonce, et elle n'est pas decorative : une partition qui change
+sans le dire est un piege. L'eleve a la version ecrite sous les yeux, sur son
+papier -- c'est ce qui rend la substitution lisible, et c'est aussi ce qui la
+rendrait dangereuse si personne ne l'annoncait.
+
+**Aucun bouton pour revenir a l'ecrit.** Le papier est deja la, et c'est
+l'ADR-009 : l'eleve lit sa partition, l'application l'ecoute. Un deuxieme
+exemplaire a l'ecran ne servirait qu'a payer un appui.
+
+Les positions horizontales, elles, ne bougent pas d'un pixel : la mise en page
+ne depend que des instants, jamais des alterations. Ce qui se substitue ne
+reflue donc pas.
 
 ---
 
