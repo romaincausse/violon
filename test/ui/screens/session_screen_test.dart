@@ -8,7 +8,6 @@ import 'package:violon/core/audio/microphone_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
 
-import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/music/demo_passage.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
@@ -1281,74 +1280,6 @@ void main() {
       await tester.pump();
 
       expect(find.byKey(SessionScreen.partitionJoueeKey), findsNothing);
-    });
-  });
-
-  group('quand la partition ne tient pas', () {
-    /// L'exercice reel mesure sur l'appareil : quatre mesures de motif.
-    Passage lesDoigtsEnLigne() =>
-        ExerciseCatalog.byId('motif-en-ligne-2-3')!.toPassage();
-
-    Future<void> poserSur(WidgetTester tester, Size ecran) async {
-      addTearDown(tester.view.reset);
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = ecran;
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SessionScreen(
-            passage: lesDoigtsEnLigne(),
-            onChangePassage: () {},
-            onTune: () {},
-            pitchSourceFactory: () async =>
-                FakePitchSource(const <PitchEstimate>[]),
-          ),
-        ),
-      );
-      await tester.pump();
-    }
-
-    testWidgets('en paysage, elle propose le plein ecran au lieu de se couper',
-        (WidgetTester tester) async {
-      // **Une portee a moitie hors du cadre n'est pas une partition**, et
-      // pousser du doigt en plein morceau n'est pas une reponse. Le plein
-      // ecran, lui, a la place : c'est ce que le lot D10 a construit.
-      await poserSur(tester, const Size(743, 250));
-
-      expect(find.byKey(SessionScreen.tropEtroitKey), findsOneWidget);
-      expect(find.byKey(ScoreView.canvasKey), findsNothing);
-    });
-
-    testWidgets('et le bouton y mene vraiment', (WidgetTester tester) async {
-      await poserSur(tester, const Size(743, 250));
-      await tester.tap(find.text('Plein ecran'));
-      await tester.pumpAndSettle();
-
-      // La promesse est tenue : la partition est la, entiere.
-      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
-      expect(find.byKey(SessionScreen.tropEtroitKey), findsNothing);
-      expect(find.byType(AppBar), findsNothing);
-    });
-
-    testWidgets('en plein ecran, on grave meme s il faut defiler', (
-      WidgetTester tester,
-    ) async {
-      // Il n'y a plus rien a proposer : c'est deja toute la place que le
-      // telephone possede. Proposer le plein ecran depuis le plein ecran
-      // serait une impasse.
-      await poserSur(tester, const Size(500, 180));
-      await tester.tap(find.byKey(SessionScreen.pleinEcranKey));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
-      expect(find.byKey(SessionScreen.tropEtroitKey), findsNothing);
-    });
-
-    testWidgets('quand elle tient, rien ne change', (
-      WidgetTester tester,
-    ) async {
-      await poserSur(tester, const Size(1400, 700));
-      expect(find.byKey(ScoreView.canvasKey), findsOneWidget);
-      expect(find.byKey(SessionScreen.tropEtroitKey), findsNothing);
     });
   });
 

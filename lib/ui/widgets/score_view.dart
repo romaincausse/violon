@@ -56,7 +56,6 @@ class ScoreView extends StatelessWidget {
     this.spaceSize,
     this.maxSystems,
     this.maxSpaceSize = defaultMaxSpaceSize,
-    this.tooSmall,
     this.mode = ScoreDisplayMode.systems,
     this.zoom = 1,
     super.key,
@@ -70,8 +69,27 @@ class ScoreView extends StatelessWidget {
   /// Cle de la zone peinte. Sert aux tests a mesurer la partition elle-meme.
   static const Key canvasKey = Key('score-canvas');
 
-  /// En dessous, la portee devient illisible a 70 cm sur un pupitre.
+  /// La taille en dessous de laquelle on ne descend **que s'il le faut**.
+  ///
+  /// C'est le confort vise : en dessous, la portee devient illisible a 70 cm
+  /// sur un pupitre. Le balayage s'y arrete tant qu'une taille plus grande
+  /// passe.
   static const double minSpaceSize = 7;
+
+  /// Le plancher absolu : en dessous, ce n'est plus une portee.
+  ///
+  /// **Mieux vaut une portee serree qu'une portee coupee.** Un exercice de
+  /// quatre mesures ne tient pas dans un S22 hors plein ecran : il demande 336
+  /// sur 434 points la ou il en reste 313, et 623 sur 210 la ou il en reste
+  /// 544 sur 188. S'arreter au confort laissait la partition sortir du cadre
+  /// de 22 points en paysage et de 121 en portrait, sans que rien ne le dise
+  /// -- l'enfant ne voyait qu'un bout de sa ligne et aurait du pousser du
+  /// doigt en plein morceau.
+  ///
+  /// On resserre donc plutot que de couper. La partition devient petite, mais
+  /// elle est **entiere** : on voit la forme de ce qu'on joue, et le plein
+  /// ecran (lot D10) lui rend sa taille d'un appui.
+  static const double crampedSpaceSize = 4;
 
   /// Au-dela, une portee de deux mesures s'etalerait sur tout l'ecran --
   /// ce qui est un defaut partout, sauf en plein ecran ou c'est le but.
@@ -110,17 +128,6 @@ class ScoreView extends StatelessWidget {
   /// hauteur, donc moins de lignes.
   final int? maxSystems;
 
-  /// Ce qu'on montre quand la partition ne tient pas, meme au plus petit
-  /// interligne lisible.
-  ///
-  /// **Une portee a moitie hors du cadre n'est pas une partition.** Le defaut
-  /// -- `null` -- reste de graver et de laisser defiler, ce qui vaut pour un
-  /// debordement de quelques points. Mais quand il ne reste de place pour
-  /// aucun interligne lisible, defiler veut dire que l'enfant ne voit qu'un
-  /// bout de sa ligne, et qu'il devrait pousser du doigt en plein morceau.
-  /// L'ecran passe alors ici de quoi proposer autre chose.
-  final Widget? tooSmall;
-
   final ScoreDisplayMode mode;
 
   /// Grossissement demande par l'utilisateur, autour de la taille choisie
@@ -135,16 +142,6 @@ class ScoreView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final Widget? repli = tooSmall;
-        // Seulement sur une taille choisie automatiquement : un interligne
-        // impose est une demande explicite, et un zoom deborde par nature.
-        if (repli != null &&
-            spaceSize == null &&
-            constraints.hasBoundedWidth &&
-            constraints.hasBoundedHeight &&
-            !_tientDans(constraints, minSpaceSize)) {
-          return repli;
-        }
         final double base = spaceSize ?? _choisirEspace(constraints);
         final double espace = base * zoom.clamp(minZoom, maxZoom);
         return _build(context, espace, constraints);
@@ -162,12 +159,17 @@ class ScoreView extends StatelessWidget {
     if (!constraints.hasBoundedWidth) {
       return maxSpaceSize;
     }
-    for (double taille = maxSpaceSize; taille > minSpaceSize; taille -= 0.5) {
+    // On vise le confort, et on ne descend en dessous que si rien n'y passe :
+    // une portee serree vaut mieux qu'une portee coupee, mais elle ne se
+    // resserre jamais pour le plaisir.
+    for (double taille = maxSpaceSize;
+        taille >= crampedSpaceSize;
+        taille -= 0.5) {
       if (_tientDans(constraints, taille)) {
         return taille;
       }
     }
-    return minSpaceSize;
+    return crampedSpaceSize;
   }
 
   /// Les pas des tetes en clair, a couvrir par la reserve verticale.
