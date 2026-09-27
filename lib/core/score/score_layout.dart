@@ -197,17 +197,36 @@ class ScoreLayout {
 class SystemMetrics {
   const SystemMetrics({required this.topSpaces, required this.bottomSpaces});
 
-  factory SystemMetrics.of(ScoreLayout layout) {
+  /// [alsoCover] ajoute des pas a couvrir en plus de ceux du passage.
+  ///
+  /// Sert a ce qui est dessine sans etre grave : la partition de ce qui a ete
+  /// joue montre en clair la hauteur qui etait ecrite, et cette tete-la peut
+  /// tomber plus haut ou plus bas que toutes les notes de la ligne. Sans elle
+  /// dans le calcul, la reserve la rognerait.
+  factory SystemMetrics.of(
+    ScoreLayout layout, {
+    Iterable<int> alsoCover = const <int>[],
+  }) {
+    int hautPas = layout.highestStep;
+    int basPas = layout.lowestStep;
+    for (final int pas in alsoCover) {
+      if (pas > hautPas) {
+        hautPas = pas;
+      }
+      if (pas < basPas) {
+        basPas = pas;
+      }
+    }
     // Une marge d'un espace et demi au-dela de l'element le plus extreme, pour
     // ne rogner ni les lignes supplementaires ni les hampes. La cle de sol
     // deborde moins qu'une hampe pleine longueur : la reserve la contient.
     final double haut = math.min(
-          StaffGeometry.yInSpaces(layout.highestStep),
+          StaffGeometry.yInSpaces(hautPas),
           -2.0 - StemsAndBeams.standardLengthSpaces,
         ) -
         1.5;
     final double bas = math.max(
-          StaffGeometry.yInSpaces(layout.lowestStep),
+          StaffGeometry.yInSpaces(basPas),
           2.0 + StemsAndBeams.standardLengthSpaces,
         ) +
         1.5;

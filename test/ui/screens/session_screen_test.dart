@@ -1164,6 +1164,112 @@ void main() {
     });
   });
 
+  group('la partition de ce qui a ete joue', () {
+    /// La portee actuellement affichee.
+    ScoreView portee(WidgetTester tester) =>
+        tester.widget<ScoreView>(find.byType(ScoreView));
+
+    /// Joue [midi] sur la premiere note du passage, puis s arrete.
+    Future<MicroFactice> uneprise(WidgetTester tester, int midi) async {
+      final MicroFactice micro = await poser(tester, juste(midi));
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+      await arreter(tester);
+      return micro;
+    }
+
+    testWidgets('pendant la prise, la portee reste celle qui est ecrite', (
+      WidgetTester tester,
+    ) async {
+      // Deplacer une tete sous les yeux de l enfant au moment ou il la
+      // cherche lui prendrait le papier des mains.
+      final MicroFactice micro = await poser(
+        tester,
+        juste(premiere.midi - 1),
+      );
+      await demarrer(tester);
+      micro.derniere.emitAll();
+      await tester.pump();
+
+      expect(portee(tester).passage.notes.first.midi, premiere.midi);
+      expect(portee(tester).ghostMidiOf, isNull);
+      expect(find.byKey(SessionScreen.partitionJoueeKey), findsNothing);
+      await arreter(tester);
+    });
+
+    testWidgets('apres la prise, la tete descend d un demi-ton', (
+      WidgetTester tester,
+    ) async {
+      await uneprise(tester, premiere.midi - 1);
+
+      final ScoreView vue = portee(tester);
+      expect(vue.passage.notes.first.midi, premiere.midi - 1);
+      // Et la hauteur ecrite reste visible derriere : c est l intervalle qui
+      // se lit, pas seulement la note.
+      expect(vue.ghostMidiOf?.call(vue.passage.notes.first), premiere.midi);
+      expect(
+        find.text('Ce que tu as joue -- en clair, ce qui etait ecrit'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('jouee juste, la tete ne bouge pas', (
+      WidgetTester tester,
+    ) async {
+      await uneprise(tester, premiere.midi);
+
+      final ScoreView vue = portee(tester);
+      expect(vue.passage.notes.first.midi, premiere.midi);
+      expect(vue.ghostMidiOf?.call(vue.passage.notes.first), isNull);
+      // Rien n a bouge : la ligne ne promet donc rien en clair.
+      expect(find.text('Ce que tu as joue'), findsOneWidget);
+    });
+
+    testWidgets('une note qu on n a pas entendue passe en encre pale', (
+      WidgetTester tester,
+    ) async {
+      // En direct, une note pas encore jouee garde l encre de la partition :
+      // elle arrive. Sur un bilan, la meme encre dirait qu elle a ete jouee
+      // comme ecrite.
+      await uneprise(tester, premiere.midi);
+
+      final ScoreView vue = portee(tester);
+      final Color? muette = vue.colorOf?.call(vue.passage.notes[1]);
+      expect(muette, isNotNull);
+      expect(muette!.a, closeTo(0.3, 0.01));
+      // Celle qu on a entendue, elle, garde les couleurs de la mesure.
+      expect(vue.colorOf?.call(vue.passage.notes.first), TuningColors.inTune);
+    });
+
+    testWidgets('changer de passage efface ce qu on savait de l ancien', (
+      WidgetTester tester,
+    ) async {
+      // Les identifiants se ressemblent d un passage a l autre (`n1`, `n2`) :
+      // sans cet oubli, le nouveau serait note avec ce qu on a entendu
+      // ailleurs.
+      await uneprise(tester, premiere.midi - 1);
+      expect(find.byKey(SessionScreen.partitionJoueeKey), findsOneWidget);
+
+      final PassageBuilder b = PassageBuilder(beatsPerMeasure: 2);
+      b.add(67, NoteValue.quarter);
+      b.add(69, NoteValue.quarter);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SessionScreen(
+            passage: b.build(),
+            onChangePassage: () {},
+            onTune: () {},
+            pitchSourceFactory: MicroFactice(const <PitchEstimate>[]).creer,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(SessionScreen.partitionJoueeKey), findsNothing);
+    });
+  });
+
   group('le resultat rendu a l appelant', () {
     /// Duree du passage de demo, au tempo ecrit.
     final Duration duree = Duration(
