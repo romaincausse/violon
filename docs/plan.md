@@ -56,7 +56,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
-| 5 | La preuve | 4 | 6 | On sait si le suiveur tient |
+| 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**72 lots, 76 soirees restantes**, dont **26 de *must*** -- le reste
+**72 lots, 73 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -1071,7 +1071,7 @@ batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 |----|-----|------|-----|------|
 | ~~P0~~ | ~~Violon de synthese : un passage joue avec ses defauts, verite terrain comprise~~ | | ★★★ | fait |
 | P1 | Banc d'essai : vraies prises, annotees a la main | **Must** | ★★ | 2 |
-| P2 | Alignement hors ligne (hauteurs + attaques) | **Must** | ★★ | 3 |
+| ~~P2~~ | ~~Alignement hors ligne (hauteurs + attaques)~~ | **Must** | ★★ | fait |
 | P3 | Verdict chiffre et ADR | **Must** | ★★★ | 1 |
 
 **Critere de sortie :** sur dix prises reelles, dont au moins trois avec arret
@@ -1123,6 +1123,64 @@ toute prise :
 - **Le biais des attaques est constant, une douzaine de millisecondes en
   avance** sur le debut reel : il s'annule entre deux attaques, comme l'ADR-010
   le prevoyait.
+
+### P2 - Alignement hors ligne
+
+**Fait, et mesure sur la synthese seulement.** Le chiffre qui compte viendra
+des prises reelles, avec P3.
+
+**Le modele.** Un modele de Markov cache decode par Viterbi
+(`OfflineAligner`). Chaque note de la partition a deux etats : "je la joue"
+et "je me suis arrete apres elle". Le second garde la position pendant le
+silence, et c'est lui qui rend une reprise possible, puisqu'on sait d'ou l'on
+repart. Les transitions vont a la note suivante, sautent une note, et
+**reviennent au debut de n'importe quelle mesure** : la sienne surtout, les
+precedentes un peu moins, les suivantes rarement. Un DTW classique, qui ne
+fait qu'avancer, ne saurait pas representer une reprise.
+
+**Les attaques decident du changement de note.** Sans attaque, on avance
+difficilement, sauf dans une liaison. Avec une attaque, rester sur la note
+coute cher. C'est ce qui permet de compter quatre re croches a la meme
+hauteur, que YIN voit comme un seul son.
+
+**Deux reglages appris en chemin, sur la synthese :**
+
+- **Les trames d'une meme note ne sont pas des temoins independants.** Sommees
+  a plein, quarante trames d'une note tenue trop haut coutaient plus cher
+  qu'un saut n'importe ou dans la partition. Une seule fausse note faisait
+  perdre le fil pour huit notes. Chaque trame compte desormais pour 0,3.
+- **Rester sur une note malgre une attaque doit couter cher.** Sinon,
+  l'aligneur preferait un chemin "je reste, je m'arrete, je repars a la
+  suivante" a la reprise reelle, et se decalait d'une note dans les re
+  repetes.
+
+**Sur la synthese**, huit scenarios -- arret et reprise, retour sans arret,
+tempo lent avec hesitations, fausses notes, note sautee, note ajoutee,
+liaisons, vibrato sur un violon accorde a 443 -- avec plusieurs tirages et
+des tempos de 40 a 140 : **100 % dans la bonne mesure, 95 a 100 % sur la
+bonne note**, aucune note ajoutee prise pour une note de la partition.
+
+**Limites connues, a surveiller sur les vraies prises :**
+
+- **Un bruit de fond quatre fois plus fort que la piece mesuree** fait rater
+  des attaques au detecteur. Les notes repetees ne se comptent plus (environ
+  75 % sur la note), meme si la mesure reste juste. C'est la prise 11 du
+  protocole, hors critere.
+- **Une reprise sans arret au milieu de notes repetees** est ambigue par
+  nature : huit re identiques, sans silence, ne disent pas ou l'eleve est
+  revenu. Seul un modele de duree pourrait trancher, et il n'existe pas encore.
+- **Aucun modele de duree.** Le tempo n'est pas utilise pour placer les
+  notes. C'est volontaire : le suiveur ne doit rien supposer du tempo de
+  l'enfant. Mais c'est la prochaine piste si les vraies prises le demandent.
+
+**Pour passer le banc** : `dart run tool/banc.dart [--detail]` lit
+`$VIOLON_BANC`, passe chaque prise et rend le verdict selon les regles fixees
+d'avance dans `docs/banc-d-essai.md`. Les prises de synthese y sont
+rapportees a part, jamais comptees.
+
+Au passage, **YIN a quadruple de vitesse** sans changer un resultat : il
+calculait 1024 decalages et n'en lisait que 250. Le gain vaut aussi en direct,
+sur le telephone.
 
 ---
 
