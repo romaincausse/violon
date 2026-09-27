@@ -1,3 +1,8 @@
+// Lent : une quinzaine de secondes de synthese, d'oreille et d'alignement.
+// Exclu de `make test`, lance par `make test-lent` et toujours par la CI.
+@Tags(<String>['lent'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/violin_synth.dart';
 import 'package:violon/core/follow/alignment_report.dart';

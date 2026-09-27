@@ -1,0 +1,7 @@
+# Etiquettes de test. Les declarer evite l'avertissement "etiquette inconnue"
+# et documente ce qu'elles veulent dire.
+tags:
+  # Chaine complete sur de vraies durees de signal : synthese, YIN,
+  # alignement. Plusieurs secondes par test. Exclu de `make test` pour garder
+  # la boucle de developpement courte ; la CI les lance toujours.
+  lent:
