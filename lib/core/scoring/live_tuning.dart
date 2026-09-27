@@ -168,14 +168,14 @@ class LiveTuning {
   /// dans la tonalite, donc la tonalite -- que ni `Passage` ni `ScoreNote` ne
   /// portent aujourd'hui. Elle arrivera avec l'import MusicXML, qui la
   /// transporte.
+  static const double perfectCents = 22;
+
   /// Ecart au-dela duquel le verdict bascule a "bas" ou "haut".
   ///
   /// Expose parce que l'echelle des notes en fait la demi-hauteur de ses
   /// barreaux : un contenant qui ne vaudrait pas le bareme mentirait a
   /// l'oeil.
   static const double defaultToleranceCents = 35;
-
-  static const double perfectCents = 22;
 
   /// Ecart a partir duquel la note vaut zero : un demi-ton, soit une autre
   /// note.

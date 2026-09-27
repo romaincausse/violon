@@ -172,6 +172,29 @@ void main() {
           m.heightSpaces + SystemMetrics.gapSpaces,
         );
       });
+
+      test('la reserve couvre ce qu on lui demande en plus', () {
+        // La partition de ce qui a ete joue dessine en clair la hauteur qui
+        // etait ecrite. Elle n'est pas gravee, donc la mise en page ne la
+        // connait pas -- et sans ca la reserve la rognerait.
+        final ScoreLayout l = ScoreLayout.of(passageDe(1), maxWidthSpaces: 60);
+        final SystemMetrics nue = SystemMetrics.of(l);
+        final SystemMetrics avec = SystemMetrics.of(
+          l,
+          alsoCover: const <int>[-20, 20],
+        );
+        expect(avec.topSpaces, lessThan(nue.topSpaces));
+        expect(avec.bottomSpaces, greaterThan(nue.bottomSpaces));
+      });
+
+      test('un pas deja couvert ne change rien', () {
+        final ScoreLayout l = ScoreLayout.of(passageDe(1), maxWidthSpaces: 60);
+        final SystemMetrics nue = SystemMetrics.of(l);
+        final SystemMetrics avec =
+            SystemMetrics.of(l, alsoCover: const <int>[0]);
+        expect(avec.topSpaces, nue.topSpaces);
+        expect(avec.bottomSpaces, nue.bottomSpaces);
+      });
     });
   });
 

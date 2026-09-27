@@ -15,6 +15,7 @@ import '../../core/music/score_note.dart';
 import '../../core/scoring/live_tuning.dart';
 import '../../core/scoring/note_ladder.dart';
 import '../../core/scoring/measure_scores.dart';
+import '../../core/scoring/played_passage.dart';
 import '../../core/scoring/tuning_trace.dart';
 import '../../core/scoring/string_drift_monitor.dart';
 import '../../core/scoring/tuner.dart';
@@ -153,6 +154,9 @@ class SessionScreen extends StatefulWidget {
   /// Reglage de subdivision du metronome, pour les tests.
   static const Key subdivisionKey = Key('subdivision-metronome');
 
+  /// La ligne qui annonce que la portee montre ce qui a ete joue.
+  static const Key partitionJoueeKey = Key('partition-jouee');
+
   @override
   State<SessionScreen> createState() => _SessionScreenState();
 }
@@ -160,6 +164,7 @@ class SessionScreen extends StatefulWidget {
 class _SessionScreenState extends State<SessionScreen>
     with SingleTickerProviderStateMixin {
   late final Ticker _ticker = createTicker(_onTick);
+
   bool _running = false;
 
   /// Temps depuis l'appui sur le bouton, decompte compris.
@@ -425,8 +430,17 @@ class _SessionScreenState extends State<SessionScreen>
     super.didUpdateWidget(oldWidget);
     // Changer de passage arrete la lecture : ni le tempo ni les notes ne sont
     // les memes, et laisser courir l'ancienne induirait en erreur.
-    if (widget.passage != oldWidget.passage && _running) {
-      _stop();
+    if (widget.passage != oldWidget.passage) {
+      if (_running) {
+        _stop();
+      }
+      // Les identifiants de notes se ressemblent d'un passage a l'autre
+      // (`n1`, `n2`...) : garder les mesures de l'ancien ferait noter le
+      // nouveau avec ce qu'on a entendu ailleurs.
+      setState(() {
+        _tuning = LiveTuning(a4: widget.a4);
+        _trace.reset();
+      });
     }
     // Un nouveau diapason change tous les verdicts : les couleurs deja
     // affichees ont ete calculees contre l'ancien.
@@ -455,8 +469,45 @@ class _SessionScreenState extends State<SessionScreen>
     super.dispose();
   }
 
+  /// Ce qui a ete entendu, remis sur la portee. `null` pendant la prise.
+  ///
+  /// **Rien pendant qu'on joue.** Deplacer une tete sous les yeux de l'enfant
+  /// au moment ou il la cherche lui prendrait le papier des mains : la
+  /// partition affichee doit dire ce qui est ecrit tant qu'elle sert a jouer.
+  /// Elle dit ce qui a ete joue une fois l'archet pose.
+  ///
+  /// Recalcule a chaque construction, et ca ne coute rien : hors prise il n'y
+  /// a plus ni horloge ni micro, donc plus de reconstruction que celles que
+  /// l'utilisateur provoque lui-meme.
+  PlayedPassage? get _joue {
+    if (_running || _tuning.overallScore == null) {
+      return null;
+    }
+    return playedPassage(widget.passage, _tuning);
+  }
+
   Color? _couleurDe(ScoreNote note) =>
       TuningColors.of(_tuning.verdictFor(note.id));
+
+  /// La couleur d'une note sur la partition de ce qui a ete joue.
+  ///
+  /// Meme code couleur que partout ailleurs, plus un cas que la prise en
+  /// direct n'a pas : **une note qu'on n'a pas entendue**. En direct, une note
+  /// pas encore jouee garde l'encre de la partition, et c'est juste -- elle
+  /// arrive. Sur un bilan, la meme encre dirait qu'elle a ete jouee comme
+  /// ecrite. Elle passe donc en encre pale : on n'affirme rien.
+  Color? _couleurJouee(PlayedPassage joue, ScoreNote note) {
+    if (joue.byId(note.id)?.heard != true) {
+      return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3);
+    }
+    return _couleurDe(note);
+  }
+
+  /// La hauteur ecrite d'une note dont on grave une autre.
+  int? _ecritDe(PlayedPassage joue, ScoreNote note) {
+    final PlayedNote? p = joue.byId(note.id);
+    return p != null && p.moved ? p.written.midi : null;
+  }
 
   /// Les profils defilent en boucle plutot que de s'ouvrir dans un menu.
   ///
@@ -965,19 +1016,24 @@ class _SessionScreenState extends State<SessionScreen>
       );
 
   Widget _partition(Orientation orientation) {
+    final PlayedPassage? joue = _joue;
     // Des evenements bruts, et non un `GestureDetector`. Un detecteur de
     // pincement entre dans l'arene des gestes et y rafle le glissement a un
     // doigt : le mode defilement ne defilerait plus. Un `Listener` observe
     // sans rien reclamer.
-    return Listener(
+    final Widget portee = Listener(
       onPointerDown: _doigtPose,
       onPointerMove: _doigtBouge,
       onPointerUp: _doigtLeve,
       onPointerCancel: _doigtLeve,
       child: ScoreView(
-        passage: widget.passage,
+        passage: joue?.passage ?? widget.passage,
         cursorTick: _running ? _cursor.tickAt(_elapsed) : null,
-        colorOf: _couleurDe,
+        colorOf: joue == null
+            ? _couleurDe
+            : (ScoreNote note) => _couleurJouee(joue, note),
+        ghostMidiOf:
+            joue == null ? null : (ScoreNote note) => _ecritDe(joue, note),
         mode: _mode,
         zoom: _zoom,
         maxSystems: maxSystemsFor(orientation),
@@ -985,6 +1041,36 @@ class _SessionScreenState extends State<SessionScreen>
         maxSpaceSize: _pleinEcran
             ? ScoreView.pleinEcranMaxSpaceSize
             : ScoreView.defaultMaxSpaceSize,
+      ),
+    );
+    if (joue == null) {
+      return portee;
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _titreDeLaPartitionJouee(joue),
+        Expanded(child: portee)
+      ],
+    );
+  }
+
+  /// Une ligne, parce qu'une partition qui change sans le dire est un piege.
+  ///
+  /// L'enfant a la version ecrite sous les yeux, sur son papier : c'est ce qui
+  /// rend la substitution lisible, et c'est aussi ce qui la rend dangereuse si
+  /// personne ne l'annonce. Il lui faut savoir laquelle des deux il regarde.
+  Widget _titreDeLaPartitionJouee(PlayedPassage joue) {
+    final ThemeData theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        joue.movedCount == 0
+            ? 'Ce que tu as joue'
+            : 'Ce que tu as joue -- en clair, ce qui etait ecrit',
+        key: SessionScreen.partitionJoueeKey,
+        style: theme.textTheme.bodySmall,
+        textAlign: TextAlign.center,
       ),
     );
   }

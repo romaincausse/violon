@@ -13,6 +13,14 @@ import '../../core/score/stems_and_beams.dart';
 /// Couleur d'une note, pour le retour visuel en direct.
 typedef NoteColorResolver = Color? Function(ScoreNote note);
 
+/// Hauteur a montrer **en clair derriere** une note, ou `null`.
+///
+/// Sert a la partition de ce qui a ete joue : la tete gravee est celle qu'on a
+/// entendue, et celle qui etait ecrite reste visible a sa place. On lit alors
+/// l'erreur comme un intervalle, ce qui est exactement ce qu'un professeur
+/// montre du doigt.
+typedef GhostMidiResolver = int? Function(ScoreNote note);
+
 /// Deux facons de lire un passage.
 enum ScoreDisplayMode {
   /// La partition passe a la ligne, comme sur du papier. Tout est visible
@@ -42,6 +50,7 @@ class ScoreView extends StatelessWidget {
   const ScoreView({
     required this.passage,
     this.colorOf,
+    this.ghostMidiOf,
     this.cursorTick,
     this.spaceSize,
     this.maxSystems,
@@ -78,6 +87,9 @@ class ScoreView extends StatelessWidget {
 
   /// Rend la couleur d'une note, ou `null` pour la couleur par defaut.
   final NoteColorResolver? colorOf;
+
+  /// Rend la hauteur a montrer en clair derriere une note, ou `null`.
+  final GhostMidiResolver? ghostMidiOf;
 
   /// Instant courant, en ticks, ou `null` a l'arret. Trace le curseur.
   final int? cursorTick;
@@ -135,9 +147,30 @@ class ScoreView extends StatelessWidget {
     return minSpaceSize;
   }
 
+  /// Les pas des tetes en clair, a couvrir par la reserve verticale.
+  ///
+  /// Elles ne sont pas gravees -- la mise en page ne les connait pas -- mais
+  /// elles sont dessinees : la reserve doit les contenir, sinon une note
+  /// ecrite loin de celle qui a ete jouee se ferait rogner.
+  List<int> _ghostSteps() {
+    final GhostMidiResolver? resoudre = ghostMidiOf;
+    if (resoudre == null) {
+      return const <int>[];
+    }
+    final List<int> pas = <int>[];
+    for (final ScoreNote note in passage.notes) {
+      final int? midi = resoudre(note);
+      if (midi != null) {
+        pas.add(StaffGeometry.stepOf(midi));
+      }
+    }
+    return pas;
+  }
+
   bool _tientDans(BoxConstraints constraints, double taille) {
     final ScoreLayout layout = _layoutPour(constraints.maxWidth / taille);
-    final SystemMetrics metrics = SystemMetrics.of(layout);
+    final SystemMetrics metrics =
+        SystemMetrics.of(layout, alsoCover: _ghostSteps());
     // En defilement, deborder en largeur est le principe meme : seule la
     // hauteur contraint la taille des notes.
     if (mode == ScoreDisplayMode.systems &&
@@ -181,7 +214,8 @@ class ScoreView extends StatelessWidget {
       largeurDisponible / spaceSize,
       justify: true,
     );
-    final SystemMetrics metrics = SystemMetrics.of(layout);
+    final SystemMetrics metrics =
+        SystemMetrics.of(layout, alsoCover: _ghostSteps());
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
     final Size size = Size(
@@ -221,6 +255,7 @@ class ScoreView extends StatelessWidget {
                 cursorColor: scheme.primary,
                 cursorTick: cursorTick,
                 colorOf: colorOf,
+                ghostMidiOf: ghostMidiOf,
               ),
             ),
           ),
@@ -239,6 +274,7 @@ class _ScorePainter extends CustomPainter {
     required this.cursorColor,
     required this.cursorTick,
     required this.colorOf,
+    required this.ghostMidiOf,
   });
 
   final ScoreLayout layout;
@@ -248,6 +284,13 @@ class _ScorePainter extends CustomPainter {
   final Color cursorColor;
   final int? cursorTick;
   final NoteColorResolver? colorOf;
+  final GhostMidiResolver? ghostMidiOf;
+
+  /// Ce qu'il reste de l'encre pour une tete qui n'a pas ete jouee.
+  ///
+  /// Assez pale pour qu'on ne la confonde pas avec une note gravee, assez
+  /// visible pour qu'on lise l'intervalle qui l'en separe.
+  static const double _ghostAlpha = 0.3;
 
   /// Abscisse du bord gauche de la cle, en espaces.
   static const double _clefXSpaces = 1;
@@ -310,6 +353,13 @@ class _ScorePainter extends CustomPainter {
       }
     }
 
+    if (ghostMidiOf != null) {
+      // En premier, donc derriere tout le reste : c'est un rappel, pas une
+      // seconde voix.
+      for (final PlacedNote note in staff.notes) {
+        _paintGhost(canvas, staff, note);
+      }
+    }
     for (final PlacedNote note in staff.notes) {
       _paintLedgers(canvas, note);
     }
@@ -508,6 +558,83 @@ class _ScorePainter extends CustomPainter {
     }
   }
 
+  /// La tete qui etait ecrite, en clair, derriere celle qui a ete jouee.
+  ///
+  /// **Une tete seule : ni hampe, ni crochet, ni point.** Une seconde figure
+  /// complete se lirait comme une seconde voix, ce que ce graveur ne sait pas
+  /// faire et n'a pas a savoir faire (ADR-007). Une tete pale au bout d'un
+  /// intervalle se lit pour ce qu'elle est : la note qui etait ecrite la.
+  void _paintGhost(Canvas canvas, StaffLayout staff, PlacedNote note) {
+    final int? midi = ghostMidiOf?.call(note.note);
+    if (midi == null) {
+      return;
+    }
+    final Color pale = inkColor.withValues(alpha: _ghostAlpha);
+    final int step = StaffGeometry.stepOf(midi);
+    final double y = StaffGeometry.yInSpaces(step);
+    final bool sharp = StaffGeometry.accidentalOf(midi) == Accidental.sharp;
+
+    final TextPainter tp = _glyph(
+      Smufl.noteheadFor(
+        StemsAndBeams.headFor(note.note.durationTicks, staff.ticksPerBeat),
+      ),
+      pale,
+    );
+    final double largeur = _widthSpaces(tp);
+
+    // **Une seconde se pose a cote, jamais dessus.** C'est la regle de gravure
+    // pour deux tetes voisines, et c'est ici le cas le plus frequent : un
+    // demi-ton ou un ton d'ecart est l'erreur ordinaire. Sans ce decalage, les
+    // deux tetes se chevauchent et ne font plus qu'une bavure -- constate sur
+    // l'appareil, invisible aux tests.
+    //
+    // **A droite, parce que la gauche appartient aux alterations.** Decalee a
+    // gauche, la tete en clair passait sous le diese de la note jouee, ce qui
+    // brouillait les deux. A droite elle chevauche la hampe, ce qui est
+    // exactement l'allure d'une seconde gravee.
+    final double x =
+        (step - note.step).abs() == 1 ? note.xSpaces + largeur : note.xSpaces;
+    final double gauche = x - largeur / 2;
+
+    // Un do# joue en do occupe le MEME pas : rien a deplacer, et pourtant la
+    // note n'est pas la meme. C'est le diese en clair qui le dit -- et c'est
+    // la faute la plus courante a cet age.
+    if (step != note.step) {
+      _paintGhostLedgers(canvas, x, step, pale);
+      _drawGlyph(canvas, tp, gauche, y);
+    }
+    if (sharp) {
+      final TextPainter alteration = _glyph(Smufl.accidentalSharp, pale);
+      _drawGlyph(
+        canvas,
+        alteration,
+        gauche - _accidentalGapSpaces - _widthSpaces(alteration),
+        y,
+      );
+    }
+  }
+
+  void _paintGhostLedgers(
+    Canvas canvas,
+    double xSpaces,
+    int step,
+    Color couleur,
+  ) {
+    final List<int> steps = StaffGeometry.ledgerSteps(step);
+    if (steps.isEmpty) {
+      return;
+    }
+    final Paint p = Paint()
+      ..color = couleur
+      ..strokeWidth = math.max(1, spaceSize * 0.12);
+    final double demi = spaceSize * 0.85;
+    final double x = _x(xSpaces);
+    for (final int s in steps) {
+      final double y = _yOfStep(s);
+      canvas.drawLine(Offset(x - demi, y), Offset(x + demi, y), p);
+    }
+  }
+
   void _paintAccidental(
     Canvas canvas,
     PlacedNote note,
@@ -550,5 +677,6 @@ class _ScorePainter extends CustomPainter {
       old.inkColor != inkColor ||
       old.cursorTick != cursorTick ||
       old.cursorColor != cursorColor ||
-      old.colorOf != colorOf;
+      old.colorOf != colorOf ||
+      old.ghostMidiOf != ghostMidiOf;
 }
