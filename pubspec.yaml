@@ -110,8 +110,3 @@ flutter:
     - family: Manrope
       fonts:
         - asset: assets/fonts/Manrope-Variable.ttf
-
-  # A decommenter quand la premiere partition sera gravee (make scores) :
-  # un dossier d'assets vide fait echouer le build.
-  # assets:
-  #   - assets/scores/
