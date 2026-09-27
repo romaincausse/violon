@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
+import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/core/score/staff_layout.dart';
 import 'package:violon/ui/widgets/score_view.dart';
@@ -428,6 +429,93 @@ void main() {
       final Size maxi = await poserAvec(tester, zoom: 99);
       final Size plafond = await poserAvec(tester, zoom: ScoreView.maxZoom);
       expect(maxi.height, plafond.height);
+    });
+  });
+
+  group('quand la partition ne tient pas au confort', () {
+    /// L'exercice reel mesure sur l'appareil : quatre mesures de motif.
+    Passage lesDoigtsEnLigne() =>
+        ExerciseCatalog.byId('motif-en-ligne-2-3')!.toPassage();
+
+    /// Pose la partition dans une boite donnee et rend la taille peinte.
+    Future<Size> dans(
+      WidgetTester tester,
+      Passage passage,
+      Size boite, {
+      int? maxSystems = 2,
+    }) async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: boite.width,
+                height: boite.height,
+                child: ScoreView(passage: passage, maxSystems: maxSystems),
+              ),
+            ),
+          ),
+        ),
+      );
+      return tester.getSize(find.byKey(ScoreView.canvasKey));
+    }
+
+    testWidgets('elle se resserre plutot que de sortir du cadre', (
+      WidgetTester tester,
+    ) async {
+      // **Mesure sur l'appareil.** Un exercice de quatre mesures demande, au
+      // plus petit interligne confortable a soixante-dix centimetres, 336 sur
+      // 434 points en portrait la ou il en reste 313, et 623 sur 210 en
+      // paysage la ou il en reste 544 sur 188. S'arreter au confort laissait
+      // la partition sortir du cadre de 121 points en portrait et de 22 en
+      // paysage, sans que rien ne le dise.
+      for (final (Size boite, int sys) in <(Size, int)>[
+        (const Size(336, 313), 4),
+        (const Size(544, 188), 2),
+      ]) {
+        final Size toile = await dans(
+          tester,
+          lesDoigtsEnLigne(),
+          boite,
+          maxSystems: sys,
+        );
+        expect(toile.width, lessThanOrEqualTo(boite.width + 0.5));
+        expect(toile.height, lessThanOrEqualTo(boite.height + 0.5));
+      }
+    });
+
+    testWidgets('elle ne se resserre jamais pour le plaisir', (
+      WidgetTester tester,
+    ) async {
+      // De la place en plus doit se voir sur les notes, pas devenir du blanc.
+      final Size serree = await dans(
+        tester,
+        lesDoigtsEnLigne(),
+        const Size(336, 313),
+        maxSystems: 4,
+      );
+      final Size large = await dans(
+        tester,
+        lesDoigtsEnLigne(),
+        const Size(336, 520),
+        maxSystems: 4,
+      );
+      expect(large.height, greaterThan(serree.height * 2));
+    });
+
+    testWidgets('le plancher finit par ceder, et on defile', (
+      WidgetTester tester,
+    ) async {
+      // En dessous du plancher ce n'est plus une portee : on grave et on
+      // laisse defiler, comme le graveur l'a toujours fait.
+      final Size toile = await dans(
+        tester,
+        lesDoigtsEnLigne(),
+        const Size(120, 40),
+        maxSystems: 2,
+      );
+      expect(toile.height, greaterThan(40));
     });
   });
 

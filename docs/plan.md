@@ -390,6 +390,45 @@ Le plafond d'interligne est donc releve **uniquement en plein ecran** (de 16 a
 grand au plus petit et retient le premier qui tient. Le relever ne fait que
 lui laisser le choix quand la place existe.
 
+#### Ce que le plein ecran repare, et qu'on n'avait pas vu
+
+Constate sur l'appareil apres coup : **un exercice de quatre mesures ne tenait
+pas hors du plein ecran, dans aucune des deux orientations.** Le graveur
+s'arretait a son interligne de confort -- celui en dessous duquel une portee
+devient illisible a soixante-dix centimetres -- et laissait le reste sortir du
+cadre.
+
+| | Place reelle | Ce qu'il demandait au confort |
+|---|---|---|
+| Portrait, hors plein ecran | 336 x 313 | 336 x 434, soit **121 points dehors** |
+| Paysage, hors plein ecran | 544 x 188 | 623 x 210, soit 22 points dehors |
+
+La portee sortait donc du cadre **sans que rien ne le dise** : l'enfant ne
+voyait qu'un bout de sa ligne, et aurait du pousser du doigt en plein morceau.
+
+**On resserre plutot que de couper.** Le balayage vise toujours le confort et
+s'y arrete tant qu'une taille plus grande passe ; il ne descend en dessous que
+si rien n'y passe, jusqu'a un plancher en dessous duquel ce n'est plus une
+portee. L'exercice s'affiche alors en portrait a l'interligne 5 au lieu de 7 :
+plus petit, mais **entier**. On voit la forme de ce qu'on joue, et le plein
+ecran lui rend sa taille d'un appui -- 496 points de gravure au lieu de 150.
+
+La bascule n'est pas lineaire, et c'est la mise en page qui la fait : a partir
+de l'interligne 5, deux mesures tiennent sur une ligne, le passage tombe de
+quatre systemes a deux, et la hauteur necessaire est divisee par trois. C'est
+la largeur qui commande, comme au lot D9.
+
+**Un ecran qui refuse de graver a ete essaye, puis retire.** La premiere
+version affichait *« la partition ne tient pas ici »* avec un bouton vers le
+plein ecran. C'etait honnete et ca ne convenait pas : on veut voir sa
+partition, meme serree, pas un message a la place. Une portee petite renseigne
+toujours ; un message ne renseigne sur rien.
+
+Le test qui defendait la promesse du lot -- *la hauteur gagnee passe dans les
+notes* -- a ete repris au passage : il posait une surface de 400 x 800 qui ne
+s'appliquait pas, et mesurait donc une portee qui ne tenait deja pas dans son
+cadre. Il verifie desormais la promesse **en paysage**, ou elle est vraie.
+
 ---
 
 ### D11 - Le ruban nomme les notes

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/music/passage.dart';
 import '../../core/music/score_note.dart';
+import '../../core/score/score_fit.dart';
 import '../../core/score/score_layout.dart';
 import '../../core/score/smufl.dart';
 import '../../core/score/staff_geometry.dart';
@@ -68,8 +69,27 @@ class ScoreView extends StatelessWidget {
   /// Cle de la zone peinte. Sert aux tests a mesurer la partition elle-meme.
   static const Key canvasKey = Key('score-canvas');
 
-  /// En dessous, la portee devient illisible a 70 cm sur un pupitre.
+  /// La taille en dessous de laquelle on ne descend **que s'il le faut**.
+  ///
+  /// C'est le confort vise : en dessous, la portee devient illisible a 70 cm
+  /// sur un pupitre. Le balayage s'y arrete tant qu'une taille plus grande
+  /// passe.
   static const double minSpaceSize = 7;
+
+  /// Le plancher absolu : en dessous, ce n'est plus une portee.
+  ///
+  /// **Mieux vaut une portee serree qu'une portee coupee.** Un exercice de
+  /// quatre mesures ne tient pas dans un S22 hors plein ecran : il demande 336
+  /// sur 434 points la ou il en reste 313, et 623 sur 210 la ou il en reste
+  /// 544 sur 188. S'arreter au confort laissait la partition sortir du cadre
+  /// de 22 points en paysage et de 121 en portrait, sans que rien ne le dise
+  /// -- l'enfant ne voyait qu'un bout de sa ligne et aurait du pousser du
+  /// doigt en plein morceau.
+  ///
+  /// On resserre donc plutot que de couper. La partition devient petite, mais
+  /// elle est **entiere** : on voit la forme de ce qu'on joue, et le plein
+  /// ecran (lot D10) lui rend sa taille d'un appui.
+  static const double crampedSpaceSize = 4;
 
   /// Au-dela, une portee de deux mesures s'etalerait sur tout l'ecran --
   /// ce qui est un defaut partout, sauf en plein ecran ou c'est le but.
@@ -139,12 +159,17 @@ class ScoreView extends StatelessWidget {
     if (!constraints.hasBoundedWidth) {
       return maxSpaceSize;
     }
-    for (double taille = maxSpaceSize; taille > minSpaceSize; taille -= 0.5) {
+    // On vise le confort, et on ne descend en dessous que si rien n'y passe :
+    // une portee serree vaut mieux qu'une portee coupee, mais elle ne se
+    // resserre jamais pour le plaisir.
+    for (double taille = maxSpaceSize;
+        taille >= crampedSpaceSize;
+        taille -= 0.5) {
       if (_tientDans(constraints, taille)) {
         return taille;
       }
     }
-    return minSpaceSize;
+    return crampedSpaceSize;
   }
 
   /// Les pas des tetes en clair, a couvrir par la reserve verticale.
@@ -168,21 +193,20 @@ class ScoreView extends StatelessWidget {
   }
 
   bool _tientDans(BoxConstraints constraints, double taille) {
-    final ScoreLayout layout = _layoutPour(constraints.maxWidth / taille);
-    final SystemMetrics metrics =
-        SystemMetrics.of(layout, alsoCover: _ghostSteps());
-    // En defilement, deborder en largeur est le principe meme : seule la
-    // hauteur contraint la taille des notes.
-    if (mode == ScoreDisplayMode.systems &&
-        layout.widthSpaces * taille > constraints.maxWidth + 0.01) {
-      return false;
-    }
-    if (!constraints.hasBoundedHeight) {
-      return true;
-    }
-    final double hauteur =
-        metrics.stackHeightSpaces(layout.systemCount) * taille;
-    return hauteur <= constraints.maxHeight;
+    // En defilement, aucune largeur ne borne la ligne : tout tient sur un
+    // seul systeme, et deborder en largeur est le principe meme. Seule la
+    // hauteur contraint alors la taille des notes.
+    final bool defilement = mode == ScoreDisplayMode.scrolling;
+    return scoreFits(
+      passage,
+      widthSpaces: defilement ? double.infinity : constraints.maxWidth / taille,
+      checkWidth: !defilement,
+      heightSpaces: constraints.hasBoundedHeight
+          ? constraints.maxHeight / taille
+          : double.infinity,
+      maxSystems: defilement ? 1 : maxSystems,
+      alsoCover: _ghostSteps(),
+    );
   }
 
   ScoreLayout _layoutPour(double largeurEspaces, {bool justify = false}) =>

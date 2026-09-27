@@ -1011,12 +1011,21 @@ void main() {
     testWidgets('la hauteur gagnee passe dans les notes', (
       WidgetTester tester,
     ) async {
-      // **C'est la promesse du lot.** Retirer les barres sans agrandir la
-      // gravure n'aurait fait que remplacer du decor par du blanc : sur un
-      // pupitre a soixante-dix centimetres, cette hauteur-la ne vaut que si
-      // elle passe dans les notes.
-      await tester.binding.setSurfaceSize(const Size(400, 800));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      // **C'est la promesse du lot, et elle est vraie en paysage.** Retirer
+      // les barres sans agrandir la gravure n'aurait fait que remplacer du
+      // decor par du blanc : sur un pupitre a soixante-dix centimetres, cette
+      // hauteur-la ne vaut que si elle passe dans les notes.
+      //
+      // **En paysage et pas en portrait**, comme le plan le dit depuis la
+      // mesure sur l'appareil : en portrait la taille des notes est bornee
+      // par la largeur, et la hauteur gagnee n'y devient que de l'absence de
+      // decor. Ce test posait 400 x 800 -- du portrait -- et n'a jamais
+      // verifie sa propre promesse : avec le rapport de pixels par defaut, la
+      // surface demandee ne s'appliquait meme pas, et la portee mesuree ne
+      // tenait pas dans son cadre.
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(780, 360);
       await poser(tester, <PitchEstimate>[]);
       final double avant =
           tester.getSize(find.byKey(ScoreView.canvasKey)).height;
@@ -1025,7 +1034,11 @@ void main() {
       final double apres =
           tester.getSize(find.byKey(ScoreView.canvasKey)).height;
 
-      expect(apres, greaterThan(avant * 1.3));
+      // **Un cinquieme ici, un tiers sur l'appareil.** A ce niveau seule la
+      // barre de titre disparait ; les trois autres -- la navigation de la
+      // coquille et les deux barres du systeme -- sont retirees un cran plus
+      // haut, et c'est de la que vient le reste.
+      expect(apres, greaterThan(avant * 1.15));
     });
 
     testWidgets('il ne deborde dans aucune des deux orientations', (
