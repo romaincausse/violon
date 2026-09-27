@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import '../audio/wav.dart';
 import 'metronome_clock.dart';
 
 /// Un clic de metronome, synthetise plutot qu'enregistre.
@@ -90,53 +91,6 @@ class ClickSound {
   ///
   /// Le moteur audio charge des octets ; lui donner un WAV plutot qu'un format
   /// maison evite d'avoir a le convaincre de quoi que ce soit.
-  Uint8List wav({int sampleRate = 44100}) {
-    final List<double> valeurs = samples(sampleRate: sampleRate);
-    const int bitsParEchantillon = 16;
-    const int canaux = 1;
-    const int octetsParEchantillon = bitsParEchantillon ~/ 8;
-    final int tailleDonnees = valeurs.length * octetsParEchantillon;
-
-    final ByteData data = ByteData(44 + tailleDonnees);
-    int pos = 0;
-    void ecrireAscii(String s) {
-      for (final int c in s.codeUnits) {
-        data.setUint8(pos++, c);
-      }
-    }
-
-    void ecrireUint32(int v) {
-      data.setUint32(pos, v, Endian.little);
-      pos += 4;
-    }
-
-    void ecrireUint16(int v) {
-      data.setUint16(pos, v, Endian.little);
-      pos += 2;
-    }
-
-    ecrireAscii('RIFF');
-    ecrireUint32(36 + tailleDonnees);
-    ecrireAscii('WAVE');
-    ecrireAscii('fmt ');
-    ecrireUint32(16); // taille du bloc fmt
-    ecrireUint16(1); // PCM entier
-    ecrireUint16(canaux);
-    ecrireUint32(sampleRate);
-    ecrireUint32(sampleRate * canaux * octetsParEchantillon);
-    ecrireUint16(canaux * octetsParEchantillon);
-    ecrireUint16(bitsParEchantillon);
-    ecrireAscii('data');
-    ecrireUint32(tailleDonnees);
-
-    for (final double valeur in valeurs) {
-      // Borne avant conversion : 32768 deborderait un entier signe 16 bits et
-      // repasserait au negatif, ce qui s'entendrait comme un craquement.
-      final int entier = (valeur * 32767).round().clamp(-32768, 32767);
-      data.setInt16(pos, entier, Endian.little);
-      pos += 2;
-    }
-
-    return data.buffer.asUint8List();
-  }
+  Uint8List wav({int sampleRate = 44100}) =>
+      Wav.encode(samples(sampleRate: sampleRate), sampleRate: sampleRate);
 }

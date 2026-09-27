@@ -208,7 +208,13 @@ $VIOLON_BANC/
     07-piece-b-seance.wav
     07-piece-b-seance.labels.txt     <- export Audacity, tel quel
     07-piece-b-seance.json           <- metadonnees
+  synthese/                          <- prises de synthese (lot P0)
 ```
+
+Le dossier `synthese/` se remplit par `dart run tool/synthese.dart`. Ses prises
+suivent le meme format que les vraies, etiquettes comprises, pour qu'on les
+ecoute et les aligne avec les memes outils. **Elles ne comptent jamais pour le
+critere.**
 
 Metadonnees d'une prise :
 

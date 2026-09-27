@@ -56,7 +56,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
-| 5 | La preuve | 4 | 7 | On sait si le suiveur tient |
+| 5 | La preuve | 4 | 6 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**72 lots, 77 soirees restantes**, dont **26 de *must*** -- le reste
+**72 lots, 76 soirees restantes**, dont **26 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -1069,7 +1069,7 @@ batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| P0 | Violon de synthese : un passage joue avec ses defauts, verite terrain comprise | | ★★★ | 1 |
+| ~~P0~~ | ~~Violon de synthese : un passage joue avec ses defauts, verite terrain comprise~~ | | ★★★ | fait |
 | P1 | Banc d'essai : vraies prises, annotees a la main | **Must** | ★★ | 2 |
 | P2 | Alignement hors ligne (hauteurs + attaques) | **Must** | ★★ | 3 |
 | P3 | Verdict chiffre et ADR | **Must** | ★★★ | 1 |
@@ -1103,6 +1103,26 @@ aussi (N3) -- "tout a 74 au lieu de 92" se fabrique avec son verdict attendu.
 rien prouve. La synthese ignore la piece, le micro du S22 et la vraie attaque
 d'archet. **Le critere de sortie se mesure sur les prises reelles, et sur
 elles seules.** Elle sert a construire, pas a conclure.
+
+**Fait.** Deux pieces, separees par la frontiere habituelle : `ViolinSynth`
+(`lib/core/audio/`) fait sonner des coups d'archet et ne connait pas la
+partition ; `TakeScript` (`lib/core/follow/`) raconte la prise -- "joue n1 a
+n6, arrete-toi, reprends n5" -- et sait ce que chaque son visait.
+`dart run tool/synthese.dart` en ecrit une dans le banc, pour l'ecouter.
+
+Ce que le passage des vrais detecteurs sur la synthese a deja appris, avant
+toute prise :
+
+- **Deux notes detachees a la meme hauteur donnent bien deux attaques** : le
+  piege ou YIN est aveugle est couvert par le detecteur d'attaques, au moins
+  sur un archet franc.
+- **Une liaison declenche parfois le detecteur d'attaques, parfois non** : un
+  changement de hauteur deplace l'energie du spectre, ce que le flux spectral
+  prend pour une attaque. L'aligneur ne pourra donc traiter une attaque ni
+  comme un debut de note sur, ni son absence comme une liaison sure.
+- **Le biais des attaques est constant, une douzaine de millisecondes en
+  avance** sur le debut reel : il s'annule entre deux attaques, comme l'ADR-010
+  le prevoyait.
 
 ---
 
