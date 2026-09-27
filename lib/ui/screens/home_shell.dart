@@ -7,6 +7,7 @@ import '../../core/exercises/exercise_catalog.dart';
 import '../../core/exercises/exercise_progress.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
+import '../../core/audio/take_player.dart';
 import '../../core/play/audio_engine.dart';
 import 'drone_screen.dart';
 import 'exercises_screen.dart';
@@ -38,6 +39,7 @@ class HomeShell extends StatefulWidget {
     required this.onPassageChanged,
     required this.onA4Changed,
     required this.audioEngineFactory,
+    required this.takePlayerFactory,
     required this.onRemember,
     this.initialBests = const <ExerciseBest>[],
     this.initialExercise,
@@ -52,6 +54,13 @@ class HomeShell extends StatefulWidget {
   /// ouvriraient chacun le materiel audio se marcheraient dessus, et un
   /// bourdon lance depuis un ecran ferme continuerait de sonner.
   final AudioEngineFactory audioEngineFactory;
+
+  /// Fabrique du liseur de prise, pour le mode libre.
+  ///
+  /// **Une fabrique, pas une instance partagee** comme le moteur de son : une
+  /// seule prise se rejoue a la fois, sur un seul ecran, et le liseur meurt
+  /// avec lui. Le tenir ici le ferait survivre a l'ecran qui l'a ouvert.
+  final TakePlayerFactory takePlayerFactory;
 
   /// La progression relue, s'il y en avait une.
   final List<ExerciseBest> initialBests;
@@ -249,6 +258,7 @@ class _HomeShellState extends State<HomeShell> {
                   context,
                   (BuildContext c) => FreePlayScreen(
                     pitchSourceFactory: widget.pitchSourceFactory,
+                    takePlayerFactory: widget.takePlayerFactory,
                     a4: widget.a4,
                   ),
                 ),

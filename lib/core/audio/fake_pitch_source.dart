@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'pitch_estimate.dart';
 import 'pitch_smoother.dart';
@@ -36,6 +37,9 @@ class FakePitchSource implements PitchSource {
   final StreamController<SmoothedPitch> _controller =
       StreamController<SmoothedPitch>.broadcast();
 
+  final StreamController<Uint8List> _octets =
+      StreamController<Uint8List>.broadcast();
+
   Timer? _timer;
   int _index = 0;
 
@@ -45,6 +49,16 @@ class FakePitchSource implements PitchSource {
 
   @override
   Stream<SmoothedPitch> get smoothedPitches => _controller.stream;
+
+  @override
+  Stream<Uint8List> get audio => _octets.stream;
+
+  /// Envoie des octets comme le ferait le micro.
+  ///
+  /// Le script d'une source factice porte des hauteurs, pas du signal : ce
+  /// qu'on veut rejouer n'a aucun rapport avec ce qu'on veut analyser. Les
+  /// deux flux se pilotent donc separement.
+  void emitAudio(Uint8List octets) => _octets.add(octets);
 
   /// **Aucun lissage ici, et c'est delibere.**
   ///
@@ -107,5 +121,6 @@ class FakePitchSource implements PitchSource {
   Future<void> dispose() async {
     await stop();
     await _controller.close();
+    await _octets.close();
   }
 }

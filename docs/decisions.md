@@ -218,6 +218,12 @@ mais un clic se coupe : un accompagnement, non.
 - **Mode accompagnement** : accompagnement joue, micro coupe. On joue avec, on
   n'est pas note.
 
+**Un troisieme cas, qui obeit a la meme regle** (lot O7). Se reecouter dans le
+mode libre emet un son : le micro se ferme donc avant la relecture et se
+rouvre apres, avec une marge pour le tampon de sortie. Ce n'est pas une
+exception -- c'est la regle appliquee a un cas ou elle ne coute rien, puisque
+personne ne joue pendant qu'il s'ecoute.
+
 **Pourquoi pas le casque.** Ca resoudrait tout, et c'etait la voie la plus
 propre techniquement. Ecarte comme contrainte materielle : imposer un casque a
 chaque seance ajoute une friction avant de jouer, exactement la ou le projet
