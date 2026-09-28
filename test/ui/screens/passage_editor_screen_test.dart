@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/import/piece_importer.dart';
+import 'package:violon/core/store/piece_store.dart';
 import 'package:violon/core/play/fake_audio_engine.dart';
 import 'package:violon/core/store/session_store.dart';
 import 'package:violon/main.dart';
@@ -190,6 +192,8 @@ void main() {
       const ViolonApp(
         audioEngineFactory: FakeAudioEngine.new,
         sessionStoreFactory: FakeSessionStore.new,
+        pieceStoreFactory: FakePieceStore.new,
+        documentPickerFactory: FakeDocumentPicker.new,
       ),
     );
     await tester.pump();

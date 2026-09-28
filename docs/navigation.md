@@ -95,6 +95,13 @@ passent devant le passage en cours pour une raison simple : un exercice ne
 demande aucune preparation, il est pret ce soir, alors qu'un passage de morceau
 se saisit note par note. Les devoirs du professeur attendent le jalon 10.
 
+**Etat (H6).** Les points 3 et 4 sont complets : les morceaux importes
+s'alignent sous le passage en cours, puis viennent "Importer un morceau" et
+"Saisir un passage". L'import passe devant la saisie parce qu'il sert le cas
+courant -- un morceau entier -- et que la saisie reste pour les quatre mesures
+qu'on veut travailler ce soir sans fichier. Toucher un morceau ouvre son
+ecran : on y choisit ses mesures, on ne lance pas "tout le morceau".
+
 Le catalogue s'ouvre en plein ecran plutot que dans le tiroir d'outils : on n'y
 passe pas violon en main au milieu d'une prise, on y va pour choisir ce qu'on
 va travailler.

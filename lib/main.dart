@@ -6,16 +6,21 @@ import 'core/device/screen_awake.dart';
 import 'core/exercises/exercise.dart';
 import 'core/exercises/exercise_catalog.dart';
 import 'core/exercises/exercise_progress.dart';
+import 'core/import/imported_piece.dart';
+import 'core/import/piece_importer.dart';
 import 'core/music/demo_passage.dart';
 import 'core/music/passage.dart';
 import 'core/music/pitch_utils.dart';
 import 'core/audio/take_player.dart';
 import 'core/play/audio_engine.dart';
+import 'core/store/piece_store.dart';
 import 'core/store/session_store.dart';
 import 'platform/audio/default_pitch_source.dart';
 import 'platform/audio/soloud_audio_engine.dart';
 import 'platform/audio/soloud_take_player.dart';
 import 'platform/device/wakelock_screen_keeper.dart';
+import 'platform/import/android_document_picker.dart';
+import 'platform/store/prefs_piece_store.dart';
 import 'platform/store/prefs_session_store.dart';
 import 'ui/screens/home_shell.dart';
 import 'ui/screens/session_screen.dart' show PitchSourceFactory;
@@ -27,6 +32,8 @@ void main() {
 }
 
 typedef SessionStoreFactory = SessionStore Function();
+typedef PieceStoreFactory = PieceStore Function();
+typedef DocumentPickerFactory = DocumentPicker Function();
 
 class ViolonApp extends StatefulWidget {
   const ViolonApp({
@@ -35,8 +42,20 @@ class ViolonApp extends StatefulWidget {
     this.takePlayerFactory = defaultTakePlayer,
     this.sessionStoreFactory = defaultSessionStore,
     this.screenKeeperFactory = defaultScreenKeeper,
+    this.pieceStoreFactory = defaultPieceStore,
+    this.documentPickerFactory = defaultDocumentPicker,
+    this.pieceImporter = const PieceImporter(inflate: inflateRaw),
     super.key,
   });
+
+  /// Fabrique du magasin des morceaux, injectable comme la memoire.
+  final PieceStoreFactory pieceStoreFactory;
+
+  /// Fabrique du selecteur de fichiers : un test de widget n'a pas de
+  /// selecteur Android a ouvrir.
+  final DocumentPickerFactory documentPickerFactory;
+
+  final PieceImporter pieceImporter;
 
   /// Fabrique de la source de hauteurs, traversee jusqu'aux ecrans qui
   /// ecoutent.
@@ -67,6 +86,9 @@ class ViolonApp extends StatefulWidget {
 
 class _ViolonAppState extends State<ViolonApp> {
   late final SessionStore _memoire = widget.sessionStoreFactory();
+  late final PieceStore _morceaux = widget.pieceStoreFactory();
+  late final DocumentPicker _selecteur = widget.documentPickerFactory();
+  PieceLibrary _repertoire = PieceLibrary.vide;
 
   /// **Un seul gardien pour toute l'application**, pour la meme raison qu'il
   /// n'y a qu'un moteur de son : les ecrans s'empilent, et deux compteurs
@@ -99,13 +121,31 @@ class _ViolonAppState extends State<ViolonApp> {
   }
 
   Future<void> _relire() async {
-    final RememberedSession lue = await _memoire.load();
+    // Les deux lectures en meme temps : l'application attend la plus lente,
+    // pas leur somme.
+    final (RememberedSession lue, PieceLibrary morceaux) =
+        await (_memoire.load(), _morceaux.load()).wait;
     if (!mounted) {
       return;
     }
     final Exercise? exercice =
         lue.exerciseId == null ? null : ExerciseCatalog.byId(lue.exerciseId!);
+    final RememberedExcerpt? extrait = lue.excerpt;
+    final ImportedPiece? morceau =
+        extrait == null ? null : morceaux.byId(extrait.pieceId);
+    final Passage? extraitGrave = morceau?.excerpt(
+      extrait!.fromMeasure,
+      extrait.toMeasure,
+    );
+    // Au tempo de travail de la veille, pas au tempo du papier.
+    final int? tempo = extrait?.tempoBpm;
+    final Passage? passageDuMorceau = extraitGrave == null || tempo == null
+        ? extraitGrave
+        : extraitGrave.withTempoBpm(tempo);
     setState(() {
+      _repertoire = morceaux;
+      // Un morceau retire depuis ne se rouvre pas : on l'oublie.
+      _extrait = passageDuMorceau == null ? null : extrait;
       _range = lue;
       _relue = true;
       _records = lue.bests;
@@ -117,14 +157,20 @@ class _ViolonAppState extends State<ViolonApp> {
       // manquante de "demarrer en dix secondes" (lot L1).
       if (exercice != null) {
         _passage = exercice.toPassage(tempoBpm: lue.tempoBpm);
+      } else if (passageDuMorceau != null) {
+        _passage = passageDuMorceau;
       }
     });
   }
+
+  /// Le passage de morceau relu, s'il existe encore.
+  RememberedExcerpt? _extrait;
 
   void _ranger({
     double? a4,
     Object? exerciseId = _inchange,
     int? tempoBpm,
+    Object? excerpt = _inchange,
     List<ExerciseBest>? bests,
   }) {
     _range = RememberedSession(
@@ -133,6 +179,9 @@ class _ViolonAppState extends State<ViolonApp> {
           ? _range.exerciseId
           : exerciseId as String?,
       tempoBpm: identical(exerciseId, _inchange) ? _range.tempoBpm : tempoBpm,
+      excerpt: identical(excerpt, _inchange)
+          ? _range.excerpt
+          : excerpt as RememberedExcerpt?,
       bests: bests ?? _range.bests,
     );
     unawaited(_memoire.save(_range));
@@ -162,18 +211,29 @@ class _ViolonAppState extends State<ViolonApp> {
                 a4: _a4,
                 initialBests: _records,
                 initialExercise: _exercice,
+                pieceStore: _morceaux,
+                documentPicker: _selecteur,
+                pieceImporter: widget.pieceImporter,
+                initialPieces: _repertoire,
+                initialExcerpt: _extrait,
                 onPassageChanged: (Passage p) => setState(() => _passage = p),
                 onA4Changed: (double a4) {
                   setState(() => _a4 = a4);
                   _ranger(a4: a4);
                 },
-                onRemember:
-                    (List<ExerciseBest> bests, Exercise? exercice, int? tempo) {
+                onRemember: (
+                  List<ExerciseBest> bests,
+                  Exercise? exercice,
+                  int? tempo,
+                  RememberedExcerpt? extrait,
+                ) {
                   _exercice = exercice;
+                  _extrait = extrait;
                   _ranger(
                     bests: bests,
                     exerciseId: exercice?.id,
                     tempoBpm: tempo,
+                    excerpt: extrait,
                   );
                 },
               ),

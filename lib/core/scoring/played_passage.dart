@@ -112,11 +112,10 @@ PlayedPassage playedPassage(
     );
   }
   return PlayedPassage._(
-    passage: Passage(
-      title: written.title,
-      notes: <ScoreNote>[for (final PlayedNote joue in joues) joue.note],
-      ticksPerBeat: written.ticksPerBeat,
-      writtenTempoBpm: written.writtenTempoBpm,
+    // Meme chiffrage, meme armure, memes mesures : la partition de ce qui a
+    // ete joue se lit a cote de l'autre, elle doit avoir la meme allure.
+    passage: written.withNotes(
+      <ScoreNote>[for (final PlayedNote joue in joues) joue.note],
     ),
     notes: joues,
   );

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../core/music/meter.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/score_note.dart';
 import '../../core/score/score_fit.dart';
@@ -369,6 +370,11 @@ class _ScorePainter extends CustomPainter {
     _paintStaff(canvas, system.widthSpaces);
     _paintBarlines(canvas, staff);
     _paintClef(canvas);
+    _paintKeySignature(canvas, staff);
+    _paintTimeSignature(canvas, staff);
+    for (final PlacedRest rest in staff.rests) {
+      _paintRest(canvas, staff, rest);
+    }
 
     final Map<int, Beam> beamOfNote = <int, Beam>{};
     for (final Beam beam in stems.beams) {
@@ -393,9 +399,137 @@ class _ScorePainter extends CustomPainter {
     for (final Beam beam in stems.beams) {
       _paintBeam(canvas, staff, beam);
     }
+    for (int i = 0; i < staff.notes.length; i++) {
+      _paintTie(canvas, staff, i, stems);
+    }
     for (final PlacedNote note in staff.notes) {
       _paintNote(canvas, staff, note);
     }
+  }
+
+  void _paintKeySignature(Canvas canvas, StaffLayout staff) {
+    final int? quintes = staff.keyFifths;
+    if (quintes == null || quintes == 0) {
+      return;
+    }
+    final String glyph =
+        quintes > 0 ? Smufl.accidentalSharp : Smufl.accidentalFlat;
+    final List<int> pas = StaffGeometry.keySignatureSteps(quintes);
+    for (int i = 0; i < pas.length; i++) {
+      _drawGlyph(
+        canvas,
+        _glyph(glyph, inkColor),
+        staff.keySignatureXSpaces + i * StaffLayout.keyAccidentalSpaces,
+        StaffGeometry.yInSpaces(pas[i]),
+      );
+    }
+  }
+
+  void _paintTimeSignature(Canvas canvas, StaffLayout staff) {
+    final Meter? chiffrage = staff.meter;
+    if (chiffrage == null) {
+      return;
+    }
+    final TextPainter haut =
+        _glyph(Smufl.timeSigDigits(chiffrage.beats), inkColor);
+    final TextPainter bas =
+        _glyph(Smufl.timeSigDigits(chiffrage.beatType), inkColor);
+    // Les deux chiffres se centrent l'un sur l'autre : 12/8 n'a pas la
+    // largeur de 6/8.
+    final double largeur = math.max(_widthSpaces(haut), _widthSpaces(bas));
+    final double x = staff.timeSignatureXSpaces;
+    _drawGlyph(
+      canvas,
+      haut,
+      x + (largeur - _widthSpaces(haut)) / 2,
+      StaffGeometry.yInSpaces(2),
+    );
+    _drawGlyph(
+      canvas,
+      bas,
+      x + (largeur - _widthSpaces(bas)) / 2,
+      StaffGeometry.yInSpaces(-2),
+    );
+  }
+
+  void _paintRest(Canvas canvas, StaffLayout staff, PlacedRest rest) {
+    final String glyph = rest.wholeBar
+        ? Smufl.restWhole
+        : Smufl.restFor(rest.durationTicks, staff.ticksPerBeat);
+    final TextPainter tp = _glyph(glyph, inkColor);
+    final double largeur = _widthSpaces(tp);
+    final double gauche = rest.xSpaces - largeur / 2;
+    _drawGlyph(
+      canvas,
+      tp,
+      gauche,
+      StaffGeometry.yInSpaces(Smufl.restBaselineStep(glyph)),
+    );
+    if (!rest.wholeBar &&
+        StemsAndBeams.isDotted(rest.durationTicks, staff.ticksPerBeat)) {
+      _drawGlyph(
+        canvas,
+        _glyph(Smufl.augmentationDot, inkColor),
+        gauche + largeur + _dotGapSpaces,
+        -0.5,
+      );
+    }
+  }
+
+  /// La liaison de tenue entre une tete et la suivante de la meme note.
+  ///
+  /// **Du cote oppose a la hampe**, comme sur toute partition : sous la note
+  /// si la hampe monte, dessus si elle descend. Une tenue qui passe a la
+  /// ligne s'arrete au bord de la portee.
+  void _paintTie(
+    Canvas canvas,
+    StaffLayout staff,
+    int index,
+    StemsAndBeams stems,
+  ) {
+    final PlacedNote note = staff.notes[index];
+    if (!note.tiedToNext) {
+      return;
+    }
+    final PlacedNote? suivante = index + 1 < staff.notes.length &&
+            identical(staff.notes[index + 1].note, note.note)
+        ? staff.notes[index + 1]
+        : null;
+    StemDirection sens = note.step >= 0 ? StemDirection.down : StemDirection.up;
+    for (final Stem s in stems.stems) {
+      if (s.noteIndex == index) {
+        sens = s.direction;
+      }
+    }
+    final double dessous = sens == StemDirection.up ? 1 : -1;
+    final double x1 = note.xSpaces + 0.7;
+    final double x2 =
+        suivante == null ? staff.widthSpaces - 0.5 : suivante.xSpaces - 0.7;
+    final double y = note.yInSpaces + dessous * 0.7;
+    final double creux = dessous * math.min(1.2, 0.3 + (x2 - x1) * 0.08);
+    final Path arc = Path()
+      ..moveTo(_x(x1), _y(y))
+      ..quadraticBezierTo(
+        _x((x1 + x2) / 2),
+        _y(y + creux),
+        _x(x2),
+        _y(y),
+      )
+      ..quadraticBezierTo(
+        _x((x1 + x2) / 2),
+        // Une epaisseur fixe au milieu, qui s'affine aux extremites : c'est
+        // l'allure d'une liaison gravee, et elle reste visible a 70 cm.
+        _y(y + creux - dessous * 0.3),
+        _x(x1),
+        _y(y),
+      )
+      ..close();
+    canvas.drawPath(
+      arc,
+      Paint()
+        ..color = _colorFor(note)
+        ..style = PaintingStyle.fill,
+    );
   }
 
   // --- Glyphes SMuFL -------------------------------------------------------
@@ -561,7 +695,7 @@ class _ScorePainter extends CustomPainter {
 
   void _paintNote(Canvas canvas, StaffLayout staff, PlacedNote note) {
     final NoteHead head = StemsAndBeams.headFor(
-      note.note.durationTicks,
+      note.durationTicks,
       staff.ticksPerBeat,
     );
     final Color color = _colorFor(note);
@@ -574,10 +708,10 @@ class _ScorePainter extends CustomPainter {
     final double gauche = note.xSpaces - largeur / 2;
     _drawGlyph(canvas, tp, gauche, note.yInSpaces);
 
-    if (note.accidental == Accidental.sharp) {
+    if (note.accidental != Accidental.none) {
       _paintAccidental(canvas, note, gauche, color);
     }
-    if (StemsAndBeams.isDotted(note.note.durationTicks, staff.ticksPerBeat)) {
+    if (StemsAndBeams.isDotted(note.durationTicks, staff.ticksPerBeat)) {
       _paintDot(canvas, note, gauche + largeur, color);
     }
   }
@@ -589,6 +723,9 @@ class _ScorePainter extends CustomPainter {
   /// faire et n'a pas a savoir faire (ADR-007). Une tete pale au bout d'un
   /// intervalle se lit pour ce qu'elle est : la note qui etait ecrite la.
   void _paintGhost(Canvas canvas, StaffLayout staff, PlacedNote note) {
+    if (note.isContinuation) {
+      return;
+    }
     final int? midi = ghostMidiOf?.call(note.note);
     if (midi == null) {
       return;
@@ -600,7 +737,7 @@ class _ScorePainter extends CustomPainter {
 
     final TextPainter tp = _glyph(
       Smufl.noteheadFor(
-        StemsAndBeams.headFor(note.note.durationTicks, staff.ticksPerBeat),
+        StemsAndBeams.headFor(note.durationTicks, staff.ticksPerBeat),
       ),
       pale,
     );
@@ -665,7 +802,11 @@ class _ScorePainter extends CustomPainter {
     double headLeftSpaces,
     Color color,
   ) {
-    final TextPainter tp = _glyph(Smufl.accidentalSharp, color);
+    final String? glyph = Smufl.accidentalFor(note.accidental);
+    if (glyph == null) {
+      return;
+    }
+    final TextPainter tp = _glyph(glyph, color);
     // L'alteration se colle a gauche de la tete, a la meme hauteur.
     _drawGlyph(
       canvas,

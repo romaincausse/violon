@@ -1,3 +1,4 @@
+import 'staff_geometry.dart';
 import 'stems_and_beams.dart';
 
 /// Table des glyphes SMuFL utilises, et la seule metrique qui compte.
@@ -41,7 +42,55 @@ class Smufl {
   static const String noteheadHalf = '\uE0A3';
   static const String noteheadBlack = '\uE0A4';
 
+  static const String accidentalFlat = '\uE260';
+  static const String accidentalNatural = '\uE261';
   static const String accidentalSharp = '\uE262';
+
+  /// Glyphe d'une alteration, ou `null` s'il n'y en a pas a graver.
+  static String? accidentalFor(Accidental accidental) => switch (accidental) {
+        Accidental.sharp => accidentalSharp,
+        Accidental.flat => accidentalFlat,
+        Accidental.natural => accidentalNatural,
+        Accidental.none => null,
+      };
+
+  /// Silences. Leur ligne de base se pose sur la ligne du milieu, sauf la
+  /// pause, qui pend sous la quatrieme ligne : voir [restBaselineStep].
+  static const String restWhole = '\uE4E3';
+  static const String restHalf = '\uE4E4';
+  static const String restQuarter = '\uE4E5';
+  static const String rest8th = '\uE4E6';
+  static const String rest16th = '\uE4E7';
+
+  /// Le silence d'une duree, a la noire pres ; le point se retrouve a part,
+  /// comme pour les notes.
+  static String restFor(int durationTicks, int ticksPerBeat) {
+    final double temps = durationTicks / ticksPerBeat;
+    if (temps >= 4) {
+      return restWhole;
+    }
+    if (temps >= 2) {
+      return restHalf;
+    }
+    if (temps >= 1) {
+      return restQuarter;
+    }
+    if (temps >= 0.5) {
+      return rest8th;
+    }
+    return rest16th;
+  }
+
+  /// Pas ou se pose la ligne de base d'un silence : la pause pend sous la
+  /// quatrieme ligne, tous les autres se centrent sur la ligne du milieu.
+  static int restBaselineStep(String glyph) => glyph == restWhole ? 2 : 0;
+
+  /// Chiffres du chiffrage, de 0 a 9. Chaque chiffre se centre sur sa ligne
+  /// de base : le numerateur sur la quatrieme ligne, le denominateur sur la
+  /// deuxieme.
+  static String timeSigDigits(int value) => String.fromCharCodes(<int>[
+        for (final int c in '$value'.codeUnits) 0xE080 + c - 0x30,
+      ]);
 
   /// Point d'allongement. Le modele ne stocke qu'une duree en ticks : c'est
   /// [StemsAndBeams.isDotted] qui retrouve le point, pas un drapeau porte par

@@ -1,3 +1,4 @@
+import 'meter.dart';
 import 'score_note.dart';
 
 /// Un extrait de partition selectionne pour le travail en boucle.
@@ -9,6 +10,9 @@ class Passage {
     required this.notes,
     required this.ticksPerBeat,
     this.writtenTempoBpm = 80,
+    this.meter,
+    this.keyFifths,
+    this.bars,
   }) : assert(notes.isNotEmpty, 'un passage contient au moins une note');
 
   final String title;
@@ -17,8 +21,66 @@ class Passage {
   /// Resolution temporelle : nombre de ticks pour une noire.
   final int ticksPerBeat;
 
-  /// Tempo indique sur la partition. Le dernier tour d'une session s'y fait.
+  /// Tempo indique sur la partition, a la noire. Le dernier tour d'une
+  /// session s'y fait.
   final int writtenTempoBpm;
+
+  /// Chiffrage, s'il est connu. Un passage saisi ou un exercice genere n'en
+  /// porte pas : la gravure groupe alors par noire, comme elle l'a toujours
+  /// fait.
+  final Meter? meter;
+
+  /// Armure, en nombre de quintes : 2 pour re majeur, -1 pour fa majeur.
+  ///
+  /// `null` quand on ne la connait pas : la gravure ecrit alors chaque
+  /// alteration devant sa note, ce qui est juste, seulement plus charge.
+  final int? keyFifths;
+
+  /// Les mesures, silences compris, quand on les connait.
+  ///
+  /// `null` pour un passage fait de notes jointives : les barres s'y deduisent
+  /// d'un changement de numero de mesure. Un morceau importe les porte
+  /// toujours, parce qu'une mesure de silence n'a aucune note pour la
+  /// signaler.
+  final List<Bar>? bars;
+
+  /// Le tempo dans l'unite du temps battu, pour l'afficher et le battre.
+  /// Sans chiffrage, c'est le tempo a la noire.
+  int get pulseBpm =>
+      meter?.pulseBpm(writtenTempoBpm, ticksPerBeat) ?? writtenTempoBpm;
+
+  /// Temps battus par mesure, ou `null` sans chiffrage.
+  int? get pulsesPerMeasure => meter?.pulsesPerMeasure(ticksPerBeat);
+
+  /// L'indication de tempo telle qu'elle s'ecrit : "92 bpm" a la noire,
+  /// "noire pointee = 94" quand le temps battu est une autre figure.
+  String get tempoText {
+    final Meter? m = meter;
+    if (m == null || m.beatTicks(ticksPerBeat) == ticksPerBeat) {
+      return '$writtenTempoBpm bpm';
+    }
+    return '${m.pulseName(ticksPerBeat)} = $pulseBpm';
+  }
+
+  /// Le meme passage, a un autre tempo exprime en temps battus.
+  ///
+  /// **Ralentir un passage ne change que son tempo** : les notes, les mesures
+  /// et la gravure restent celles du papier. C'est ce que fait un metronome
+  /// qu'on regle plus bas, pas une autre partition.
+  Passage withPulseBpm(int pulse) =>
+      withTempoBpm(meter?.quarterBpm(pulse, ticksPerBeat) ?? pulse);
+
+  /// Le meme passage a un autre tempo, a la noire : pour relire un tempo
+  /// range, sans l'aller-retour par les temps battus qui l'arrondirait.
+  Passage withTempoBpm(int quarterBpm) => Passage(
+        title: title,
+        notes: notes,
+        ticksPerBeat: ticksPerBeat,
+        writtenTempoBpm: quarterBpm,
+        meter: meter,
+        keyFifths: keyFifths,
+        bars: bars,
+      );
 
   int get firstMeasure => notes.first.measure;
   int get lastMeasure => notes.last.measure;
@@ -57,11 +119,46 @@ class Passage {
   Passage slice(int start, int count) {
     final int safeStart = start.clamp(0, notes.length - 1);
     final int safeEnd = (safeStart + count).clamp(safeStart + 1, notes.length);
+    return withNotes(notes.sublist(safeStart, safeEnd));
+  }
+
+  /// Le meme passage, reduit a [subset] : chiffrage, armure et tempo suivent.
+  ///
+  /// Les mesures gardees sont celles que ces notes **touchent dans le
+  /// temps**, pas celles dont elles portent le numero : une note liee
+  /// par-dessus la barre emmene la mesure suivante avec elle. [alsoBars]
+  /// ajoute des mesures sans note, pour un extrait qui finit sur un silence.
+  Passage withNotes(
+    List<ScoreNote> subset, {
+    String? title,
+    bool Function(Bar bar)? alsoBars,
+  }) {
+    final List<Bar>? toutes = bars;
+    int debut = subset.first.onsetTicks;
+    int fin = subset.first.offsetTicks;
+    for (final ScoreNote n in subset) {
+      if (n.onsetTicks < debut) {
+        debut = n.onsetTicks;
+      }
+      if (n.offsetTicks > fin) {
+        fin = n.offsetTicks;
+      }
+    }
     return Passage(
-      title: title,
-      notes: notes.sublist(safeStart, safeEnd),
+      title: title ?? this.title,
+      notes: subset,
       ticksPerBeat: ticksPerBeat,
       writtenTempoBpm: writtenTempoBpm,
+      meter: meter,
+      keyFifths: keyFifths,
+      bars: toutes == null
+          ? null
+          : <Bar>[
+              for (final Bar b in toutes)
+                if ((b.startTicks < fin && b.endTicks > debut) ||
+                    (alsoBars?.call(b) ?? false))
+                  b,
+            ],
     );
   }
 }

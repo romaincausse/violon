@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/import/piece_importer.dart';
+import 'package:violon/core/store/piece_store.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
@@ -47,6 +49,8 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
       pitchSourceFactory: micMuet,
       audioEngineFactory: sonInjecte,
       sessionStoreFactory: memoireInjectee,
+      pieceStoreFactory: FakePieceStore.new,
+      documentPickerFactory: FakeDocumentPicker.new,
     ),
   );
   // Deux images : l'application attend d'avoir relu la memoire avant de
@@ -318,6 +322,35 @@ void main() {
           tester.widget<SessionScreen>(find.byType(SessionScreen));
       expect(ecran.passage.title, hier.titre);
       expect(ecran.passage.writtenTempoBpm, 76);
+    });
+
+    testWidgets('le tempo se regle sur l ecran Jouer, et se retient', (
+      WidgetTester tester,
+    ) async {
+      final Exercise hier = ExerciseCatalog.byId('gamme-sol-majeur-2')!;
+      await poser(
+        tester,
+        memoire: const RememberedSession(
+          exerciseId: 'gamme-sol-majeur-2',
+          tempoBpm: 76,
+        ),
+      );
+
+      await tester.tap(find.byKey(SessionScreen.tempoKey));
+      await tester.pumpAndSettle();
+      // Le tempo ecrit d'un exercice, c'est son tempo vise.
+      expect(find.text('Tempo ecrit : ${hier.tempoVise}'), findsOneWidget);
+      await tester.tap(find.byTooltip('Plus lent'));
+      await tester.pump();
+      await tester.tap(find.text('Jouer a noire = 74'));
+      await tester.pumpAndSettle();
+
+      final SessionScreen ecran =
+          tester.widget<SessionScreen>(find.byType(SessionScreen));
+      expect(ecran.passage.writtenTempoBpm, 74);
+      expect(ecran.passage.title, hier.titre);
+      expect(memoireFactice.current.tempoBpm, 74);
+      expect(memoireFactice.current.exerciseId, hier.id);
     });
 
     testWidgets('la progression relue est celle qui s affiche', (

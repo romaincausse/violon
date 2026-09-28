@@ -108,6 +108,8 @@ class SessionScreen extends StatefulWidget {
     this.pitchSourceFactory = defaultPitchSource,
     this.onResult,
     this.onFullScreen,
+    this.onTempoChanged,
+    this.writtenPulseBpm,
     super.key,
   });
 
@@ -142,6 +144,19 @@ class SessionScreen extends StatefulWidget {
   /// quatre-vingts points de decor en bas de la dalle.
   final ValueChanged<bool>? onFullScreen;
 
+  /// Change le tempo de travail, en temps battus. `null` : le tempo ne se
+  /// regle pas depuis cet ecran.
+  ///
+  /// **Ralentir est le premier geste du travail**, pas un reglage cache : un
+  /// morceau qu'on decouvre ne se joue pas au tempo du papier. Le reglage est
+  /// donc sur le tempo affiche lui-meme, d'un appui, comme la subdivision sur
+  /// le metronome.
+  final ValueChanged<int>? onTempoChanged;
+
+  /// Le tempo ecrit, en temps battus, quand on le connait : c'est vers lui
+  /// qu'on remonte, et la feuille le rappelle.
+  final int? writtenPulseBpm;
+
   /// Bouton de changement de profil d'affichage, pour les tests.
   static const Key profilKey = Key('profil-affichage');
 
@@ -153,6 +168,9 @@ class SessionScreen extends StatefulWidget {
 
   /// Reglage de subdivision du metronome, pour les tests.
   static const Key subdivisionKey = Key('subdivision-metronome');
+
+  /// Le tempo affiche, qui ouvre son reglage.
+  static const Key tempoKey = Key('regler-le-tempo');
 
   /// La ligne qui annonce que la portee montre ce qui a ete joue.
   static const Key partitionJoueeKey = Key('partition-jouee');
@@ -175,7 +193,13 @@ class _SessionScreenState extends State<SessionScreen>
   /// **Bete, et bloquant sans lui** : on ne peut pas commencer un passage
   /// note sans savoir quand partir, et sans decompte la premiere note est
   /// toujours en retard -- une note ratee par la faute de l'application.
-  CountIn get _decompte => CountIn(tempoBpm: widget.passage.writtenTempoBpm);
+  ///
+  /// Il se compte en temps battus : "un, deux" a la noire pointee en 6/8,
+  /// pas six croches ni trois noires.
+  CountIn get _decompte => CountIn(
+        tempoBpm: widget.passage.pulseBpm,
+        beats: widget.passage.pulsesPerMeasure ?? 4,
+      );
 
   bool get _enDecompte => _running && !_decompte.isFinishedAt(_depuisLeDepart);
 
@@ -767,10 +791,9 @@ class _SessionScreenState extends State<SessionScreen>
       children: <Widget>[
         Row(
           children: <Widget>[
-            Text(
-              '${widget.passage.writtenTempoBpm} bpm',
-              style: theme.textTheme.titleMedium,
-            ),
+            // Flexible : le reglage du tempo se reduit, il ne pousse pas le
+            // bouton de sortie hors de l'ecran.
+            Flexible(child: _tempo(theme)),
             const Spacer(),
             IconButton(
               key: SessionScreen.sortiePleinEcranKey,
@@ -920,10 +943,7 @@ class _SessionScreenState extends State<SessionScreen>
       style: theme.textTheme.titleMedium,
       overflow: TextOverflow.ellipsis,
     );
-    final Text tempo = Text(
-      '${passage.writtenTempoBpm} bpm',
-      style: theme.textTheme.titleMedium,
-    );
+    final Widget tempo = _tempo(theme);
     if (vertical) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -935,8 +955,75 @@ class _SessionScreenState extends State<SessionScreen>
     // doit rester lisible dans tous les cas.
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[Flexible(child: mesures), tempo],
+      children: <Widget>[
+        Flexible(child: mesures),
+        const SizedBox(width: 8),
+        Flexible(child: tempo),
+      ],
     );
+  }
+
+  /// Le tempo affiche. Hors prise, un appui ouvre son reglage.
+  ///
+  /// Pendant une prise il ne bouge pas : changer de tempo en plein passage
+  /// decalerait le curseur sous les doigts de l'enfant.
+  Widget _tempo(ThemeData theme) {
+    final Text texte = Text(
+      widget.passage.tempoText,
+      style: theme.textTheme.titleMedium,
+    );
+    final ValueChanged<int>? changer = widget.onTempoChanged;
+    if (changer == null) {
+      return texte;
+    }
+    return Semantics(
+      button: true,
+      label: 'Changer le tempo',
+      child: InkWell(
+        key: SessionScreen.tempoKey,
+        borderRadius: BorderRadius.circular(8),
+        onTap: _running ? null : () => unawaited(_reglerLeTempo(changer)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // "noire pointee = 94" est long : dans la colonne etroite du
+              // paysage, le texte se reduit plutot que de deborder.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: texte,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.expand_more,
+                size: 20,
+                color: _running
+                    ? theme.disabledColor
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reglerLeTempo(ValueChanged<int> changer) async {
+    final int? choisi = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext c) => _FeuilleDuTempo(
+        passage: widget.passage,
+        tempoEcrit: widget.writtenPulseBpm,
+      ),
+    );
+    if (choisi != null && choisi != widget.passage.pulseBpm) {
+      changer(choisi);
+    }
   }
 
   /// Le metronome, et de quoi choisir sa subdivision d'un appui.
@@ -958,7 +1045,8 @@ class _SessionScreenState extends State<SessionScreen>
               children: <Widget>[
                 Expanded(
                   child: MetronomeBar(
-                    tempoBpm: widget.passage.writtenTempoBpm,
+                    tempoBpm: widget.passage.pulseBpm,
+                    beatsPerMeasure: widget.passage.pulsesPerMeasure,
                     running: _running,
                     subdivision: _subdivision,
                   ),
@@ -985,7 +1073,8 @@ class _SessionScreenState extends State<SessionScreen>
         2 => 'croches',
         3 => 'triolet',
         4 => 'doubles',
-        _ => 'noire',
+        _ => widget.passage.meter?.pulseName(widget.passage.ticksPerBeat) ??
+            'noire',
       };
 
   /// Le seul bouton plein de l'ecran.
@@ -1280,6 +1369,112 @@ class _Legende extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+/// Le reglage du tempo de travail, en temps battus.
+///
+/// **Le tempo ecrit reste en vue.** Travailler lentement est prevu ; oublier
+/// ou l'on va ne l'est pas. On termine toujours au tempo ecrit (les regles du
+/// projet), et la feuille le rappelle d'un appui.
+class _FeuilleDuTempo extends StatefulWidget {
+  const _FeuilleDuTempo({required this.passage, required this.tempoEcrit});
+
+  final Passage passage;
+  final int? tempoEcrit;
+
+  @override
+  State<_FeuilleDuTempo> createState() => _FeuilleDuTempoState();
+}
+
+class _FeuilleDuTempoState extends State<_FeuilleDuTempo> {
+  late int _tempo = widget.passage.pulseBpm;
+
+  /// Des bornes en temps battus. En dessous de 30, un temps dure deux
+  /// secondes : ce n'est plus un tempo, c'est du dechiffrage note a note.
+  static const int _min = 30;
+
+  int get _max {
+    final int ecrit = widget.tempoEcrit ?? widget.passage.pulseBpm;
+    final int haut = (ecrit > _tempo ? ecrit : _tempo) + 20;
+    return haut < 240 ? haut : 240;
+  }
+
+  String get _unite =>
+      widget.passage.meter?.pulseName(widget.passage.ticksPerBeat) ?? 'noire';
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final int? ecrit = widget.tempoEcrit;
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Tempo de travail : $_unite = $_tempo',
+                style: theme.textTheme.titleMedium,
+              ),
+              if (ecrit != null)
+                Text(
+                  _tempo == ecrit
+                      ? 'C est le tempo ecrit.'
+                      : 'Tempo ecrit : $ecrit',
+                  style: theme.textTheme.bodySmall,
+                ),
+              Row(
+                children: <Widget>[
+                  IconButton(
+                    tooltip: 'Plus lent',
+                    onPressed: _tempo > _min
+                        ? () => setState(() => _tempo -= 2)
+                        : null,
+                    icon: const Icon(Icons.remove),
+                  ),
+                  Expanded(
+                    child: Slider(
+                      value: _tempo.clamp(_min, _max).toDouble(),
+                      min: _min.toDouble(),
+                      max: _max.toDouble(),
+                      divisions: (_max - _min) ~/ 2,
+                      label: '$_tempo',
+                      semanticFormatterCallback: (double v) =>
+                          '$_unite = ${v.round()}',
+                      onChanged: (double v) =>
+                          setState(() => _tempo = v.round()),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Plus vite',
+                    onPressed: _tempo < _max
+                        ? () => setState(() => _tempo += 2)
+                        : null,
+                    icon: const Icon(Icons.add),
+                  ),
+                ],
+              ),
+              if (ecrit != null && _tempo != ecrit)
+                TextButton(
+                  onPressed: () => setState(() => _tempo = ecrit),
+                  child: Text('Revenir au tempo ecrit ($ecrit)'),
+                ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(_tempo),
+                  child: Text('Jouer a $_unite = $_tempo'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

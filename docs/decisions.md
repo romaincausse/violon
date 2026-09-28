@@ -494,3 +494,62 @@ il faut s'en servir plutot que la contourner.
 - Un motif de doigts ne recoit pas de bourdon : il traverse les quatre cordes,
   aucune note tenue ne lui sert de reference. L'ecran le dit plutot que de
   griser un interrupteur sans explication.
+
+---
+
+## ADR-014 : Importer un morceau, et ce qu'on en fait
+
+**Contexte.** Suivre un eleve suppose d'avoir sa partition en machine
+(ADR-009). La saisie note a note tient pour quatre mesures, pas pour un
+morceau ; elle ne sait ecrire ni un silence, ni une tenue par-dessus la barre,
+ni une mesure a 6/8. Or les morceaux d'un eleve de conservatoire sont
+presque tous sous droits : aucun ne peut etre embarque dans le depot.
+
+**Decision.** **L'application importe du MusicXML, et rien d'autre.**
+
+- **Pas de reconnaissance optique dans l'application.** Une photo se lit
+  ailleurs -- MuseScore, Audiveris, PlayScore --, un adulte corrige, et c'est
+  le MusicXML corrige qui arrive. Une lecture a 95 % serait nuisible : elle
+  ferait reprocher a l'enfant des fautes inventees.
+- **Le fichier se choisit par le selecteur du systeme** (Storage Access
+  Framework). Aucune permission de stockage : l'application ne recoit que le
+  fichier choisi, ce que l'ADR-005 permet. Soixante lignes de Kotlin plutot
+  qu'un plugin de selection de fichiers.
+- **Le morceau se reduit a une ligne, et le dit.** Double corde : la note
+  aigue. Seconde voix, seconde portee, petites notes, autres parties :
+  ignorees. Chaque reduction est affichee sur l'ecran du morceau, sans rouge :
+  ce n'est la faute de personne, mais l'application jugera sur cette
+  partition-la.
+- **Une tenue ne fait qu'une note.** Pour l'oreille et pour le suiveur, un la
+  lie par-dessus la barre est un seul son. La gravure le recoupe en figures
+  liees ; le modele pivot, lui, ne connait qu'une note.
+- **Les reprises ne se deroulent pas.** Le morceau reste dans l'ordre du
+  papier ; rejouer une reprise, c'est revenir en arriere, ce que le suiveur
+  sait faire.
+- **Le lecteur XML est ecrit a la main**, en Dart pur, pour que
+  `lib/core/` n'importe aucun paquet. MusicXML n'emploie qu'un sous-ensemble
+  sage de XML. La decompression du `.mxl` vient de `dart:io`, injectee depuis
+  `lib/platform/`.
+
+**Ce que le modele pivot gagne, et ce qu'il ne gagne pas.** `Passage` porte
+desormais un chiffrage, une armure et ses mesures (silences compris), tous
+facultatifs : un exercice genere ou un passage saisi n'en ont pas et se gravent
+comme avant. `ScoreNote` ne change pas. L'orthographe d'une note -- si bemol ou
+la diese -- se deduit de l'armure au moment de graver, sans etre stockee.
+
+**Le tempo reste a la noire, sauf ce qui se montre.** Crans de tempo, curseur
+et notation comptent a la noire, comme avant. L'indication de tempo, le
+metronome visuel et le decompte parlent en temps battus : "noire pointee =
+94" en 6/8, deux temps de decompte. C'est ce qu'il lit sur son papier et ce
+qu'il compte dans sa tete ; lui afficher 141 serait juste et incomprehensible.
+
+**Consequences.**
+
+- Le graveur apprend les silences, les tenues, l'armure et la mesure
+  composee. Il reste monodique (ADR-007) : chacun de ces ajouts est une
+  propriete d'une ligne, pas une seconde voix.
+- Les morceaux sont ranges dans les preferences locales, a part de la
+  seance : ils s'ecrivent a l'import, la seance a chaque prise.
+- Le degre d'une note dans la tonalite devient connu : le lot I3 n'attend plus
+  que d'etre fait.
+

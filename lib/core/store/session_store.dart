@@ -14,6 +14,7 @@ class RememberedSession {
     this.a4,
     this.exerciseId,
     this.tempoBpm,
+    this.excerpt,
     this.bests = const <ExerciseBest>[],
   });
 
@@ -24,18 +25,24 @@ class RememberedSession {
   final String? exerciseId;
   final int? tempoBpm;
 
+  /// Le passage de morceau travaille en dernier, s'il y en a un. Exclusif de
+  /// [exerciseId] : on travaille l'un ou l'autre.
+  final RememberedExcerpt? excerpt;
+
   /// La progression dans le catalogue.
   final List<ExerciseBest> bests;
 
   static const RememberedSession vide = RememberedSession();
 
-  bool get isEmpty => a4 == null && exerciseId == null && bests.isEmpty;
+  bool get isEmpty =>
+      a4 == null && exerciseId == null && excerpt == null && bests.isEmpty;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'version': _version,
         if (a4 != null) 'a4': a4,
         if (exerciseId != null) 'exercice': exerciseId,
         if (tempoBpm != null) 'tempo': tempoBpm,
+        if (excerpt != null) 'morceau': excerpt!.toJson(),
         'records': <Map<String, Object?>>[
           for (final ExerciseBest best in bests) best.toJson(),
         ],
@@ -74,6 +81,7 @@ class RememberedSession {
         tempoBpm: json['tempo'] is int && (json['tempo'] as int) > 0
             ? json['tempo'] as int
             : null,
+        excerpt: RememberedExcerpt.fromJson(json['morceau']),
         bests: records is List<Object?>
             ? <ExerciseBest>[
                 for (final Object? item in records)
@@ -98,6 +106,60 @@ class RememberedSession {
     }
     final double hz = value.toDouble();
     return hz >= 390 && hz <= 490 ? hz : null;
+  }
+}
+
+/// Un passage de morceau : quel morceau, et de quelle mesure a quelle mesure.
+///
+/// On range la reference, pas les notes : le morceau vit dans son propre
+/// magasin, et le passage se redecoupe a l'ouverture.
+class RememberedExcerpt {
+  const RememberedExcerpt({
+    required this.pieceId,
+    required this.fromMeasure,
+    required this.toMeasure,
+    this.tempoBpm,
+  });
+
+  final String pieceId;
+  final int fromMeasure;
+  final int toMeasure;
+
+  /// Tempo de travail a la noire, s'il differe du tempo ecrit. On reprend
+  /// le lendemain la ou on s'etait arrete, pas au tempo du papier.
+  final int? tempoBpm;
+
+  RememberedExcerpt withTempo(int? tempo) => RememberedExcerpt(
+        pieceId: pieceId,
+        fromMeasure: fromMeasure,
+        toMeasure: toMeasure,
+        tempoBpm: tempo,
+      );
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'id': pieceId,
+        'de': fromMeasure,
+        'a': toMeasure,
+        if (tempoBpm != null) 'tempo': tempoBpm,
+      };
+
+  static RememberedExcerpt? fromJson(Object? json) {
+    if (json is! Map<String, Object?>) {
+      return null;
+    }
+    final Object? id = json['id'];
+    final Object? de = json['de'];
+    final Object? a = json['a'];
+    if (id is! String || de is! int || a is! int || a < de) {
+      return null;
+    }
+    final Object? tempo = json['tempo'];
+    return RememberedExcerpt(
+      pieceId: id,
+      fromMeasure: de,
+      toMeasure: a,
+      tempoBpm: tempo is int && tempo > 0 ? tempo : null,
+    );
   }
 }
 
