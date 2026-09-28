@@ -76,6 +76,36 @@ class FingerPattern {
   ];
 }
 
+/// Ou poser la main pour obtenir une note : une corde, un doigt.
+///
+/// **C'est ce qu'un professeur dit, et ce qu'une hauteur ne dit pas.** Deux
+/// gestes differents donnent la meme note ; seul le motif sait lequel il
+/// demande.
+class FingerPlacement {
+  const FingerPlacement({
+    required this.stringMidi,
+    required this.finger,
+    required this.midi,
+  }) : assert(finger >= 0 && finger <= 4, 'les doigts vont de 0 a 4');
+
+  /// La corde a vide, en MIDI. 55 = sol, 62 = re, 69 = la, 76 = mi.
+  final int stringMidi;
+
+  /// Le doigt, de 0 (corde a vide) a 4.
+  final int finger;
+
+  /// La hauteur obtenue.
+  final int midi;
+
+  bool get isOpenString => finger == 0;
+
+  /// Demi-tons depuis la corde a vide : c'est la ou le doigt se pose.
+  int get semitonesFromNut => midi - stringMidi;
+
+  @override
+  String toString() => 'FingerPlacement(corde=$stringMidi, doigt=$finger)';
+}
+
 /// Une suite de doigts a jouer, independante de la corde et de l'ecartement.
 ///
 /// C'est l'unite de Sevcik : le motif est fixe, on le promene sur les quatre
@@ -104,14 +134,37 @@ class FingerMotif {
   List<int> midis({
     required FingerPattern pattern,
     required List<int> strings,
+  }) =>
+      <int>[
+        for (final FingerPlacement pose
+            in placements(pattern: pattern, strings: strings))
+          pose.midi,
+      ];
+
+  /// Le motif, corde et doigt compris.
+  ///
+  /// **La hauteur ne suffit pas a savoir ou poser la main.** Un la4 se joue au
+  /// premier doigt sur la corde de sol, ou a vide sur la corde de la : la
+  /// meme note, deux gestes differents. Le motif, lui, sait lequel il demande,
+  /// puisqu'il est ecrit en doigts et pas en notes -- c'est tout le principe
+  /// de Sevcik.
+  List<FingerPlacement> placements({
+    required FingerPattern pattern,
+    required List<int> strings,
   }) {
-    final List<int> notes = <int>[];
+    final List<FingerPlacement> poses = <FingerPlacement>[];
     for (final int corde in strings) {
       for (final int doigt in fingers) {
-        notes.add(pattern.midiFor(stringMidi: corde, finger: doigt));
+        poses.add(
+          FingerPlacement(
+            stringMidi: corde,
+            finger: doigt,
+            midi: pattern.midiFor(stringMidi: corde, finger: doigt),
+          ),
+        );
       }
     }
-    return notes;
+    return poses;
   }
 
   int noteCount(int stringCount) => fingers.length * stringCount;

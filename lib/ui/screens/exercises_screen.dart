@@ -15,6 +15,14 @@ enum ExerciseMode {
 
   /// Silence. Elle ecoute, elle note, elle designe quoi rejouer.
   passer,
+
+  /// Note a note : on n'avance que sur la bonne note, et l'aide dit quelle
+  /// corde et quel doigt.
+  ///
+  /// **Reserve aux motifs de doigts** (lot E5). Sur un morceau, bloquer
+  /// detruirait la ligne musicale et punirait ce qu'un enfant qui travaille
+  /// fait naturellement.
+  noteANote,
 }
 
 /// Ce que l'ecran rend quand un exercice est choisi.
@@ -58,6 +66,7 @@ class ExercisesScreen extends StatelessWidget {
   /// Boutons de lancement dans la feuille de choix du tempo.
   static const Key travaillerKey = Key('travailler');
   static const Key passerKey = Key('passer');
+  static const Key noteANoteKey = Key('note-a-note');
 
   /// Reglage du tempo de travail, dans la feuille.
   static const Key tempoKey = Key('tempo-de-travail');
@@ -351,86 +360,109 @@ class _FeuilleTempoState extends State<_FeuilleTempo> {
     final ThemeData theme = Theme.of(context);
     final Exercise exercise = widget.exercise;
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(exercise.titre, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              '${exercise.detail} - ${exercise.source.court}',
-              style: theme.textTheme.bodyMedium,
-            ),
-            if (exercise.conseil != null) ...<Widget>[
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Icon(
-                    Icons.lightbulb_outline,
-                    size: 18,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      exercise.conseil!,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              'Tempo de travail : $_tempo'
-              '${_tempo < exercise.tempoVise ? " (vise : ${exercise.tempoVise})" : ""}',
-              style: theme.textTheme.titleMedium,
-            ),
-            if (widget.tempoPropose > exercise.tempoVise)
+      // **Defilante, et pas seulement au cas ou.** A trois modes, la feuille
+      // depasse la hauteur d'un telephone couche : une colonne qui ne defile
+      // pas rognerait le dernier bouton au lieu de le laisser atteindre --
+      // la meme lecon que le tiroir d'outils.
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(exercise.titre, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
               Text(
-                'Deja tenu a ${widget.best?.meilleurTempoPropre}. '
-                'On monte d un cran ?',
+                '${exercise.detail} - ${exercise.source.court}',
+                style: theme.textTheme.bodyMedium,
+              ),
+              if (exercise.conseil != null) ...<Widget>[
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        exercise.conseil!,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                'Tempo de travail : $_tempo'
+                '${_tempo < exercise.tempoVise ? " (vise : ${exercise.tempoVise})" : ""}',
+                style: theme.textTheme.titleMedium,
+              ),
+              if (widget.tempoPropose > exercise.tempoVise)
+                Text(
+                  'Deja tenu a ${widget.best?.meilleurTempoPropre}. '
+                  'On monte d un cran ?',
+                  style: theme.textTheme.bodySmall,
+                ),
+              Slider(
+                key: ExercisesScreen.tempoKey,
+                value: _tempo.toDouble(),
+                min: _min.toDouble(),
+                max: _max.toDouble(),
+                divisions: (_max - _min) ~/ 2,
+                label: '$_tempo',
+                onChanged: (double v) => setState(() => _tempo = v.round()),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  key: ExercisesScreen.travaillerKey,
+                  onPressed: () => _partir(ExerciseMode.travailler),
+                  icon: const Icon(Icons.blur_on),
+                  label: Text('Travailler a $_tempo'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: ExercisesScreen.passerKey,
+                  onPressed: () => _partir(ExerciseMode.passer),
+                  icon: const Icon(Icons.mic),
+                  label: Text('Le passer a $_tempo'),
+                ),
+              ),
+              // **Seulement pour un motif de doigts.** Sur une gamme ou un
+              // arpege il y a une ligne musicale, et bloquer la casserait : on
+              // ne joue plus de la musique, on repond a un questionnaire.
+              if (exercise is MotifExercise) ...<Widget>[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: ExercisesScreen.noteANoteKey,
+                    onPressed: () => _partir(ExerciseMode.noteANote),
+                    icon: const Icon(Icons.back_hand),
+                    label: const Text('Note a note'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                'Travailler : bourdon et metronome, rien n est note. '
+                'Le passer : silence, elle ecoute et elle note.'
+                '${exercise is MotifExercise ? " Note a note : elle attend la "
+                    "bonne note, et montre le doigt si tu le cherches." : ""}',
                 style: theme.textTheme.bodySmall,
               ),
-            Slider(
-              key: ExercisesScreen.tempoKey,
-              value: _tempo.toDouble(),
-              min: _min.toDouble(),
-              max: _max.toDouble(),
-              divisions: (_max - _min) ~/ 2,
-              label: '$_tempo',
-              onChanged: (double v) => setState(() => _tempo = v.round()),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                key: ExercisesScreen.travaillerKey,
-                onPressed: () => _partir(ExerciseMode.travailler),
-                icon: const Icon(Icons.blur_on),
-                label: Text('Travailler a $_tempo'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                key: ExercisesScreen.passerKey,
-                onPressed: () => _partir(ExerciseMode.passer),
-                icon: const Icon(Icons.mic),
-                label: Text('Le passer a $_tempo'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Travailler : bourdon et metronome, rien n est note. '
-              'Le passer : silence, elle ecoute et elle note.',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

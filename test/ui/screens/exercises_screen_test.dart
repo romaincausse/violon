@@ -253,4 +253,46 @@ void main() {
       });
     }
   });
+
+  group('le mode note a note', () {
+    /// Ouvre la feuille de tempo d'un exercice donne.
+    Future<ExerciseChoice? Function()> feuilleDe(
+      WidgetTester tester,
+      String id,
+    ) async {
+      final ExerciseChoice? Function() choix = await ouvrir(tester);
+      await atteindre(tester, find.byKey(ExercisesScreen.tileKey(id)));
+      await tester.tap(find.byKey(ExercisesScreen.tileKey(id)));
+      await tester.pumpAndSettle();
+      return choix;
+    }
+
+    testWidgets('propose sur un motif de doigts', (WidgetTester tester) async {
+      await feuilleDe(tester, 'motif-en-ligne-2-3');
+      expect(find.byKey(ExercisesScreen.noteANoteKey), findsOneWidget);
+    });
+
+    testWidgets('absent sur une gamme', (WidgetTester tester) async {
+      // **Sur une gamme il y a une ligne musicale, et bloquer la casserait.**
+      // On ne joue plus de la musique, on repond a un questionnaire.
+      final Exercise gamme = ExerciseCatalog.all.firstWhere(
+        (Exercise e) => e.genre == ExerciseKind.gamme,
+      );
+      await feuilleDe(tester, gamme.id);
+      expect(find.byKey(ExercisesScreen.noteANoteKey), findsNothing);
+      expect(find.byKey(ExercisesScreen.travaillerKey), findsOneWidget);
+      expect(find.byKey(ExercisesScreen.passerKey), findsOneWidget);
+    });
+
+    testWidgets('il rend le mode a l appelant', (WidgetTester tester) async {
+      final ExerciseChoice? Function() choix =
+          await feuilleDe(tester, 'motif-en-ligne-2-3');
+      await tester.ensureVisible(find.byKey(ExercisesScreen.noteANoteKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ExercisesScreen.noteANoteKey));
+      await tester.pumpAndSettle();
+      expect(choix()?.mode, ExerciseMode.noteANote);
+      expect(choix()?.exercise.id, 'motif-en-ligne-2-3');
+    });
+  });
 }

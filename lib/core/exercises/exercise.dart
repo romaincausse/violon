@@ -159,6 +159,13 @@ final class MotifExercise extends Exercise {
   @override
   List<int> get midis => motif.midis(pattern: pattern, strings: strings);
 
+  /// Le motif, corde et doigt compris.
+  ///
+  /// C'est ce que le mode note a note montre quand l'eleve cherche : un motif
+  /// est ecrit en doigts, il sait donc ou il demande de poser la main.
+  List<FingerPlacement> get placements =>
+      motif.placements(pattern: pattern, strings: strings);
+
   @override
   int? get tonicPitchClass => null;
 

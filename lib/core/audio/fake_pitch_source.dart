@@ -104,6 +104,13 @@ class FakePitchSource implements PitchSource {
     });
   }
 
+  /// Emet une hauteur, maintenant, hors script.
+  ///
+  /// Le pendant de [emitAudio] pour les hauteurs. Un script decrit une prise
+  /// du debut a la fin ; certains tests ont besoin de conduire l'ecran note
+  /// par note, en regardant ce qu'il fait entre deux.
+  void emit(PitchEstimate estimate) => _emettre(estimate);
+
   /// Emet tout le script immediatement : pratique pour les tests unitaires.
   void emitAll() {
     for (final PitchEstimate estimate in script) {

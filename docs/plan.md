@@ -54,7 +54,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 |---|-------|------|-------------------|----------------|
 | 1 | Le retour qui se voit | 12 | 0 | Ca devient agreable, tout de suite |
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
-| 3 | Les gammes et les exercices | 5 | 2 | Utile **tous les jours**, sans rien preparer |
+| 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
@@ -64,7 +64,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**73 lots, 73 soirees restantes**, dont **23 de *must*** -- le reste
+**73 lots, 71 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -916,7 +916,7 @@ le rattachement de l'activite apres une mise en arriere-plan, ce qu'un
 
 ## Jalon 3 - Les gammes et les exercices
 
-**Quatre lots livres (PR #40), un ajoute.** Un catalogue de dix-neuf exercices
+**Cinq lots livres**, quatre en PR #40 et E5 apres coup. Un catalogue de dix-neuf exercices
 repartis sur six paliers, generes et non saisis, et une progression qui
 designe la prochaine tache. E5 rouvre le jalon. Voir `docs/exercices.md` pour
 le detail de ce qui est fidele aux methodes et de ce qui ne l'est pas.
@@ -939,7 +939,7 @@ Or c'est le cas d'usage ideal pour cette application :
 | ~~E2~~ | ~~Progression de difficulte et score~~ | | ★★★ | fait |
 | ~~E3~~ | ~~Travailler au bourdon et au metronome~~ | | ★★★ | fait |
 | ~~E4~~ | ~~Le cran de tempo suivant~~ | | ★★★ | fait |
-| E5 | Le mode note a note, pour les doigts seulement | | ★★ | 2 |
+| ~~E5~~ | ~~Le mode note a note, pour les doigts seulement~~ | | ★★ | fait |
 
 ### E1 - Catalogue d'exercices issus des methodes
 
@@ -1103,6 +1103,55 @@ au moment precis ou l'enfant en a besoin, on lui cache ce qu'il doit lire.
 Ce lot ne depend pas du suiveur : savoir si la note attendue vient d'etre
 jouee ne demande que `LiveTuning`, qui existe. Il se fait donc avant le jalon
 6, et il alimentera le banc d'essai du jalon 5 en prises propres.
+
+#### Fait
+
+**Un troisieme mode**, a cote de *Travailler* et de *Le passer*, et propose
+**uniquement sur un motif de doigts** : sur une gamme il y a une ligne
+musicale, et bloquer la casserait.
+
+La machine a trois temps vit dans `NoteByNote`, du Dart pur avec une horloge
+injectee : on cherche, l'aide arrive, puis **on passe** -- et la note manquee
+part dans `toRework` au lieu de disparaitre. Aucun appui nulle part.
+
+**La validation compte des trames justes d'affilee, pas une mediane.** Ailleurs
+on juge une note tenue dont on connait le debut ; ici l'enfant *cherche*, et il
+traverse la bonne note en glissant. Une mediane sur toute la recherche dirait
+faux, et une seule trame validerait un passage au vol. La tolerance, elle,
+reste celle de partout ailleurs : un bareme different apprendrait a l'oreille
+que "juste" veut dire deux choses.
+
+**Sans micro, l'exercice avance quand meme.** L'horloge ne depend pas de la
+capture : mieux vaut un exercice qui defile qu'un mur.
+
+#### Le schema de manche, et ce que l'appareil en a dit
+
+Le manche est dessine a partir de la **vraie** geometrie d'une corde : un doigt
+qui monte de n demi-tons tombe a `1 - 2^(-n/12)` de sa longueur. Les doigts se
+resserrent donc en montant, exactement comme sous la main. Des ecarts egaux
+donneraient un manche de guitare, et un schema faux est pire qu'une absence de
+schema.
+
+Trois choses que seul l'ecran pouvait dire, et qu'il a dites :
+
+- **La premiere position n'occupe que le premier tiers d'une corde.** Rapporte
+  a la corde entiere, le schema l'ecrasait contre le sillet et les quatre
+  pastilles se recouvraient, numeros compris. On ne dessine donc que jusqu'au
+  neuvieme demi-ton -- la position, plus de quoi voir que le manche continue.
+- **Une pastille de taille fixe ne peut pas marcher.** Le demi-ton de
+  l'ecartement fait dix-sept points de haut en portrait et onze en paysage :
+  une taille reglee a la main mord sur sa voisine des que la place se reduit.
+  Le rayon suit donc l'ecart le plus serre, et le chevauchement devient
+  impossible par construction. Un test le verifie sur quatre hauteurs et les
+  quatre ecartements.
+- **Le doigt demande se distingue par la couleur, pas par la taille**, pour la
+  meme raison : le grossir reviendrait a le faire mordre sur ses voisins.
+
+Ce qui reste visible, et qui est tout le sujet : **le 2 et le 3 se touchent**
+quand l'ecartement le demande, et pas les autres.
+
+**A cote de la musique, jamais dessus** -- la seule chose qu'on refuse a la
+concurrente sur ce lot.
 
 ---
 
