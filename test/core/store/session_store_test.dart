@@ -62,6 +62,29 @@ void main() {
       expect(lue.bests.single.exerciseId, 'gamme-sol-majeur-2');
     });
 
+    test('le passage de morceau se relit, et un passage abime s oublie', () {
+      const RememberedSession s = RememberedSession(
+        excerpt: RememberedExcerpt(
+          pieceId: 'into-the-stars-1234',
+          fromMeasure: 15,
+          toMeasure: 22,
+        ),
+      );
+      final RememberedExcerpt? relu =
+          RememberedSession.decode(s.encode()).excerpt;
+      expect(relu?.pieceId, 'into-the-stars-1234');
+      expect(relu?.fromMeasure, 15);
+      expect(relu?.toMeasure, 22);
+      expect(s.isEmpty, isFalse);
+
+      expect(
+        RememberedSession.decode(
+          '{"version":1,"morceau":{"id":"x","de":9,"a":3}}',
+        ).excerpt,
+        isNull,
+      );
+    });
+
     test('un diapason aberrant est refuse', () {
       // Une valeur folle relue en silence rendrait toute la justesse fausse,
       // et l'enfant serait declare faux partout sans qu'on sache pourquoi.
