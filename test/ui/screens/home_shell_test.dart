@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/import/piece_importer.dart';
+import 'package:violon/core/store/piece_store.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
@@ -47,6 +49,8 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
       pitchSourceFactory: micMuet,
       audioEngineFactory: sonInjecte,
       sessionStoreFactory: memoireInjectee,
+      pieceStoreFactory: FakePieceStore.new,
+      documentPickerFactory: FakeDocumentPicker.new,
     ),
   );
   // Deux images : l'application attend d'avoir relu la memoire avant de

@@ -5,10 +5,15 @@ import 'package:flutter/material.dart';
 import '../../core/exercises/exercise.dart';
 import '../../core/exercises/exercise_catalog.dart';
 import '../../core/exercises/exercise_progress.dart';
+import '../../core/import/imported_piece.dart';
+import '../../core/import/musicxml_reader.dart';
+import '../../core/import/piece_importer.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/audio/take_player.dart';
 import '../../core/play/audio_engine.dart';
+import '../../core/store/piece_store.dart';
+import '../../core/store/session_store.dart';
 import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
@@ -17,6 +22,7 @@ import 'note_by_note_screen.dart';
 import 'training_screen.dart';
 import 'mic_check_screen.dart';
 import 'passage_editor_screen.dart';
+import 'piece_screen.dart';
 import 'session_screen.dart';
 import 'tuner_screen.dart';
 
@@ -42,10 +48,24 @@ class HomeShell extends StatefulWidget {
     required this.audioEngineFactory,
     required this.takePlayerFactory,
     required this.onRemember,
+    required this.pieceStore,
+    required this.documentPicker,
+    required this.pieceImporter,
     this.initialBests = const <ExerciseBest>[],
     this.initialExercise,
+    this.initialPieces = PieceLibrary.vide,
+    this.initialExcerpt,
     super.key,
   });
+
+  /// Les morceaux importes, et ce qu'il faut pour en importer (lot H6).
+  final PieceStore pieceStore;
+  final DocumentPicker documentPicker;
+  final PieceImporter pieceImporter;
+  final PieceLibrary initialPieces;
+
+  /// Le passage de morceau travaille en dernier, s'il y en avait un.
+  final RememberedExcerpt? initialExcerpt;
 
   final PitchSourceFactory pitchSourceFactory;
 
@@ -74,8 +94,12 @@ class HomeShell extends StatefulWidget {
   /// La coquille ne range rien elle-meme : elle previent, et c'est `ViolonApp`
   /// qui ecrit. Deux ecrivains sur la meme cle, et la derniere ecriture efface
   /// ce que l'autre venait d'ajouter.
-  final void Function(List<ExerciseBest> bests, Exercise? exercice, int? tempo)
-      onRemember;
+  final void Function(
+    List<ExerciseBest> bests,
+    Exercise? exercice,
+    int? tempo,
+    RememberedExcerpt? extrait,
+  ) onRemember;
   final Passage passage;
   final double a4;
   final ValueChanged<Passage> onPassageChanged;
@@ -86,6 +110,8 @@ class HomeShell extends StatefulWidget {
 
   /// Entree du catalogue de gammes et d'exercices, pour les tests.
   static const Key exercicesKey = Key('ouvrir-les-exercices');
+
+  static const Key importerKey = Key('importer-un-morceau');
 
   static const Key bourdonKey = Key('ouvrir-le-bourdon');
   static const Key metronomeKey = Key('ouvrir-le-metronome');
@@ -131,11 +157,114 @@ class _HomeShellState extends State<HomeShell> {
   late int? _tempo =
       widget.initialExercise == null ? null : widget.passage.writtenTempoBpm;
 
+  /// Les morceaux du repertoire. La coquille les tient et les range elle-meme :
+  /// contrairement a la seance, ils ne s'ecrivent qu'a l'import.
+  late PieceLibrary _morceaux = widget.initialPieces;
+
+  /// Le passage de morceau en cours, exclusif de [_exercice].
+  late RememberedExcerpt? _extrait = widget.initialExcerpt;
+
   void _seRappeler() => widget.onRemember(
         _progres.bests.values.toList(growable: false),
         _exercice,
         _tempo,
+        _extrait,
       );
+
+  void _dire(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Choisit un fichier, le lit, le range, et ouvre le morceau.
+  ///
+  /// **Chaque echec se dit en une phrase qui dit quoi faire**, et aucun ne
+  /// laisse l'application dans un etat intermediaire : un morceau est range
+  /// en entier, ou pas du tout.
+  Future<void> _importer() async {
+    final PickedDocument? document;
+    try {
+      document = await widget.documentPicker.pick();
+    } on Exception {
+      _dire('Le fichier n a pas pu etre ouvert.');
+      return;
+    }
+    if (document == null || !mounted) {
+      return;
+    }
+    final ImportedPiece morceau;
+    try {
+      morceau = widget.pieceImporter.read(document);
+    } on ImportException catch (e) {
+      _dire(e.message);
+      return;
+    }
+    final PieceLibrary avant = _morceaux;
+    setState(() => _morceaux = _morceaux.withPiece(morceau));
+    try {
+      await widget.pieceStore.save(_morceaux);
+    } on Exception {
+      if (mounted) {
+        setState(() => _morceaux = avant);
+        _dire('Le morceau n a pas pu etre range sur le telephone.');
+      }
+      return;
+    }
+    if (mounted) {
+      await _ouvrirLeMorceau(morceau);
+    }
+  }
+
+  Future<void> _ouvrirLeMorceau(ImportedPiece morceau) async {
+    final RememberedExcerpt? dernier =
+        _extrait?.pieceId == morceau.id ? _extrait : null;
+    final PieceAction? action = await Navigator.of(context).push<PieceAction>(
+      MaterialPageRoute<PieceAction>(
+        builder: (BuildContext c) => PieceScreen(
+          piece: morceau,
+          initialFrom: dernier?.fromMeasure,
+          initialTo: dernier?.toMeasure,
+        ),
+      ),
+    );
+    if (!mounted || action == null) {
+      return;
+    }
+    switch (action) {
+      case WorkBars(from: final int de, to: final int a):
+        final Passage? passage = morceau.excerpt(de, a);
+        if (passage == null) {
+          return;
+        }
+        // Un passage de morceau n'est pas un exercice : il ne doit rien faire
+        // avancer dans le catalogue.
+        _exercice = null;
+        _tempo = null;
+        _extrait = RememberedExcerpt(
+            pieceId: morceau.id, fromMeasure: de, toMeasure: a);
+        _seRappeler();
+        widget.onPassageChanged(passage);
+        setState(() => _destination = 0);
+      case RemovePiece():
+        final PieceLibrary avant = _morceaux;
+        setState(() => _morceaux = _morceaux.without(morceau.id));
+        try {
+          await widget.pieceStore.save(_morceaux);
+        } on Exception {
+          if (mounted) {
+            setState(() => _morceaux = avant);
+            _dire('Le morceau n a pas pu etre retire.');
+          }
+          return;
+        }
+        if (_extrait?.pieceId == morceau.id) {
+          // Le passage en cours reste jouable ce soir ; on cesse seulement de
+          // le rouvrir demain sur un morceau qui n'existe plus.
+          _extrait = null;
+          _seRappeler();
+        }
+    }
+  }
 
   /// Note la prise dans la progression.
   ///
@@ -234,6 +363,7 @@ class _HomeShellState extends State<HomeShell> {
     }
     _exercice = choix.exercise;
     _tempo = choix.tempoBpm;
+    _extrait = null;
     _seRappeler();
     widget.onPassageChanged(
       choix.exercise.toPassage(tempoBpm: choix.tempoBpm),
@@ -341,6 +471,7 @@ class _HomeShellState extends State<HomeShell> {
       // prise sur un tout autre passage serait comptee pour lui.
       _exercice = null;
       _tempo = null;
+      _extrait = null;
       _seRappeler();
       widget.onPassageChanged(saisi);
       // On revient jouer : saisir un passage, c'est vouloir le travailler.
@@ -380,6 +511,9 @@ class _HomeShellState extends State<HomeShell> {
               exercice: _exercice,
               onSaisir: () => unawaited(_saisirUnPassage()),
               onExercices: () => unawaited(_ouvrirLesExercices()),
+              morceaux: _morceaux,
+              onImporter: () => unawaited(_importer()),
+              onMorceau: (ImportedPiece m) => unawaited(_ouvrirLeMorceau(m)),
             ),
       bottomNavigationBar: _pleinEcran
           ? null
@@ -430,6 +564,9 @@ class _Repertoire extends StatelessWidget {
     required this.exercice,
     required this.onSaisir,
     required this.onExercices,
+    required this.morceaux,
+    required this.onImporter,
+    required this.onMorceau,
   });
 
   final Passage passage;
@@ -441,6 +578,9 @@ class _Repertoire extends StatelessWidget {
 
   final VoidCallback onSaisir;
   final VoidCallback onExercices;
+  final PieceLibrary morceaux;
+  final VoidCallback onImporter;
+  final ValueChanged<ImportedPiece> onMorceau;
 
   @override
   Widget build(BuildContext context) {
@@ -503,8 +643,42 @@ class _Repertoire extends StatelessWidget {
                 trailing: const Icon(Icons.check_circle_outline),
               ),
             ),
+            const SizedBox(height: 16),
+            Text('Les morceaux', style: theme.textTheme.titleSmall),
+            const SizedBox(height: 4),
+            if (morceaux.pieces.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'Un morceau s importe en MusicXML, exporte depuis MuseScore '
+                  'ou un autre logiciel de partition.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            for (final ImportedPiece m in morceaux.pieces)
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.library_music_outlined),
+                  title: Text(m.title),
+                  subtitle: Text(
+                    <String>[
+                      if (m.composer != null) m.composer!,
+                      '${m.lastMeasure - m.firstMeasure + 1} mesures',
+                    ].join(' - '),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => onMorceau(m),
+                ),
+              ),
             const SizedBox(height: 8),
             FilledButton.tonalIcon(
+              key: HomeShell.importerKey,
+              onPressed: onImporter,
+              icon: const Icon(Icons.file_open_outlined),
+              label: const Text('Importer un morceau'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
               onPressed: onSaisir,
               icon: const Icon(Icons.edit_note),
               label: const Text('Saisir un passage'),
