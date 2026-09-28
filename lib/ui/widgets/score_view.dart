@@ -519,7 +519,7 @@ class _ScorePainter extends CustomPainter {
         _x((x1 + x2) / 2),
         // Une epaisseur fixe au milieu, qui s'affine aux extremites : c'est
         // l'allure d'une liaison gravee, et elle reste visible a 70 cm.
-        _y(y + creux - dessous * 0.22),
+        _y(y + creux - dessous * 0.3),
         _x(x1),
         _y(y),
       )

@@ -632,13 +632,13 @@ class _Repertoire extends StatelessWidget {
                       // Un exercice ne se decrit pas par ses numeros de
                       // mesure : ils ne sont ecrits sur aucune partition.
                       ? '${exercice!.source.court} - '
-                          '${passage.writtenTempoBpm} bpm'
+                          '${passage.tempoText}'
                       : passage.measureCount == 1
                           ? 'Mesure ${passage.firstMeasure} - '
-                              '${passage.writtenTempoBpm} bpm'
+                              '${passage.tempoText}'
                           : 'Mesures ${passage.firstMeasure} a '
                               '${passage.lastMeasure} - '
-                              '${passage.writtenTempoBpm} bpm',
+                              '${passage.tempoText}',
                 ),
                 trailing: const Icon(Icons.check_circle_outline),
               ),

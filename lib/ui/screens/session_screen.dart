@@ -175,7 +175,13 @@ class _SessionScreenState extends State<SessionScreen>
   /// **Bete, et bloquant sans lui** : on ne peut pas commencer un passage
   /// note sans savoir quand partir, et sans decompte la premiere note est
   /// toujours en retard -- une note ratee par la faute de l'application.
-  CountIn get _decompte => CountIn(tempoBpm: widget.passage.writtenTempoBpm);
+  ///
+  /// Il se compte en temps battus : "un, deux" a la noire pointee en 6/8,
+  /// pas six croches ni trois noires.
+  CountIn get _decompte => CountIn(
+        tempoBpm: widget.passage.pulseBpm,
+        beats: widget.passage.pulsesPerMeasure ?? 4,
+      );
 
   bool get _enDecompte => _running && !_decompte.isFinishedAt(_depuisLeDepart);
 
@@ -768,7 +774,7 @@ class _SessionScreenState extends State<SessionScreen>
         Row(
           children: <Widget>[
             Text(
-              '${widget.passage.writtenTempoBpm} bpm',
+              widget.passage.tempoText,
               style: theme.textTheme.titleMedium,
             ),
             const Spacer(),
@@ -921,7 +927,7 @@ class _SessionScreenState extends State<SessionScreen>
       overflow: TextOverflow.ellipsis,
     );
     final Text tempo = Text(
-      '${passage.writtenTempoBpm} bpm',
+      passage.tempoText,
       style: theme.textTheme.titleMedium,
     );
     if (vertical) {
@@ -958,7 +964,8 @@ class _SessionScreenState extends State<SessionScreen>
               children: <Widget>[
                 Expanded(
                   child: MetronomeBar(
-                    tempoBpm: widget.passage.writtenTempoBpm,
+                    tempoBpm: widget.passage.pulseBpm,
+                    beatsPerMeasure: widget.passage.pulsesPerMeasure,
                     running: _running,
                     subdivision: _subdivision,
                   ),
@@ -985,7 +992,8 @@ class _SessionScreenState extends State<SessionScreen>
         2 => 'croches',
         3 => 'triolet',
         4 => 'doubles',
-        _ => 'noire',
+        _ => widget.passage.meter?.pulseName(widget.passage.ticksPerBeat) ??
+            'noire',
       };
 
   /// Le seul bouton plein de l'ecran.

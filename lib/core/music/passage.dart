@@ -44,6 +44,24 @@ class Passage {
   /// signaler.
   final List<Bar>? bars;
 
+  /// Le tempo dans l'unite du temps battu, pour l'afficher et le battre.
+  /// Sans chiffrage, c'est le tempo a la noire.
+  int get pulseBpm =>
+      meter?.pulseBpm(writtenTempoBpm, ticksPerBeat) ?? writtenTempoBpm;
+
+  /// Temps battus par mesure, ou `null` sans chiffrage.
+  int? get pulsesPerMeasure => meter?.pulsesPerMeasure(ticksPerBeat);
+
+  /// L'indication de tempo telle qu'elle s'ecrit : "92 bpm" a la noire,
+  /// "noire pointee = 94" quand le temps battu est une autre figure.
+  String get tempoText {
+    final Meter? m = meter;
+    if (m == null || m.beatTicks(ticksPerBeat) == ticksPerBeat) {
+      return '$writtenTempoBpm bpm';
+    }
+    return '${m.pulseName(ticksPerBeat)} = $pulseBpm';
+  }
+
   int get firstMeasure => notes.first.measure;
   int get lastMeasure => notes.last.measure;
   int get measureCount => lastMeasure - firstMeasure + 1;

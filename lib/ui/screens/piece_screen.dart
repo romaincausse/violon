@@ -115,7 +115,7 @@ class _PieceScreenState extends State<PieceScreen> {
       if (piece.composer != null) piece.composer!,
       '${_derniere - _premiere + 1} mesures',
       if (tout.meter != null) '${tout.meter}',
-      'noire = ${tout.writtenTempoBpm}',
+      tout.tempoText,
     ];
 
     return Scaffold(
@@ -152,6 +152,8 @@ class _PieceScreenState extends State<PieceScreen> {
                 divisions: _derniere - _premiere,
                 values: RangeValues(_de.toDouble(), _a.toDouble()),
                 labels: RangeLabels('$_de', '$_a'),
+                // Un lecteur d'ecran doit dire "mesure 15", pas "48 %".
+                semanticFormatterCallback: (double v) => 'mesure ${v.round()}',
                 onChanged: (RangeValues v) => setState(() {
                   _de = v.start.round();
                   _a = v.end.round();
