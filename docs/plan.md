@@ -60,11 +60,11 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 16 | Le progres devient visible |
+| 9 | La memoire | 8 | 13 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
 
-**73 lots, 71 soirees restantes**, dont **23 de *must*** -- le reste
+**73 lots, 68 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -1476,7 +1476,7 @@ et la notation du rythme, et attend donc sa place.
 | H5 | Journal de seance | | ★★ | 1 |
 | H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
 | M2 | Avant / apres audible | | ★★★ | 2 |
-| H6 | Import d'un morceau entier | | ★★ | 3 |
+| ~~H6~~ | ~~Import d'un morceau entier~~ | | ★★ | fait |
 | I3 | Justesse par degre dans la tonalite | | ★★ | 2 |
 
 **H3 - Erreurs systematiques.** Le differenciateur. Les fautes d'un violoniste
@@ -1511,6 +1511,35 @@ tient pour un passage, pas pour un morceau. L'OMR (reconnaissance optique)
 reste **hors de l'application** : une lecture a 95 % n'est pas 95 % utile ici,
 elle est nuisible, car l'application reprocherait a l'enfant une faute de
 rythme qu'elle a elle-meme inventee.
+
+**Remonte et fait, comme H1.** La premiere piece du banc d'essai (P1), *Into
+the Stars*, est en 6/8 avec des silences et des tenues par-dessus la barre :
+l'ecran de saisie ne savait ecrire ni l'un ni l'autre. Surtout, importer les
+morceaux des eleves est ce qui fait de l'application un outil pour le
+repertoire, pas seulement pour les gammes. Decision et garde-fous : ADR-014.
+
+Ce que le lot livre :
+
+- **Lire le MusicXML** (`.musicxml` en clair, `.mxl` compresse), en Dart pur :
+  hauteurs, durees, mesures et leurs numeros, levee, armure, chiffrage, tempo,
+  tenues fondues en une seule note, liaisons. Ce qui ne tient pas sur une
+  ligne -- doubles cordes, seconde voix, petites notes, autres parties -- est
+  reduit **et dit** a l'ecran du morceau.
+- **Choisir un fichier sans permission** : le selecteur du systeme, par
+  soixante lignes de Kotlin plutot qu'un plugin.
+- **Ranger les morceaux** sur le telephone, et rouvrir l'application le
+  lendemain sur les memes mesures.
+- **Choisir ses mesures** : huit par defaut, le passage choisi grave aussitot.
+- **Graver un vrai morceau** : silences et pauses, notes coupees a la barre et
+  liees, croches groupees par temps battu (trois en 6/8), armure, becarres et
+  bemols selon la tonalite, chiffrage en tete.
+- **Le tempo dans l'unite du temps battu** : "noire pointee = 94" comme sur le
+  papier, metronome visuel et decompte a la noire pointee. Le reste de
+  l'application continue de compter a la noire.
+
+Laisse pour plus tard : les liaisons se lisent mais ne se dessinent pas, et
+un changement d'armure ou de mesure en cours de morceau garde la gravure du
+debut (les hauteurs, elles, restent justes).
 
 ---
 
@@ -1624,7 +1653,7 @@ moment ou ils servent, pas ce qu'ils font.
 | ID | Titre | PR | Devient |
 |----|-------|----|---------|
 | Z1 | Suppression du boucleur a cartes | #7 | - |
-| - | Saisie manuelle d'un passage | #5 | Seule entree de partition jusqu'a H6 |
+| - | Saisie manuelle d'un passage | #5 | Reste pour un passage court ; un morceau s'importe (H6) |
 | G1 | Police Bravura et metriques SMuFL | #15 | Inchange |
 | G2 | Mise en page d'une portee monodique | #6 | Inchange |
 | G3 | Hampes, crochets, ligatures | #9 | Inchange |

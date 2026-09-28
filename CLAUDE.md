@@ -72,6 +72,7 @@ lib/
   core/            <- logique pure, testable, sans aucun paquet
     audio/         <- detection de hauteur, attaques, abstraction du micro
     music/         <- modele de notes, conversions, passages, saisie
+    import/        <- lecture MusicXML (.musicxml, .mxl), morceaux importes
     score/         <- mise en page d'une portee monodique
     follow/        <- suiveur, alignement joue / attendu (le coeur)
     scoring/       <- notation de la justesse et du rythme
@@ -96,9 +97,11 @@ Quatre regles structurantes :
    dans `lib/platform/` cote implementation ; `PitchSource` rend des hauteurs ;
    `AudioEngine` est la sortie, et n'expose que deux choses -- tenir une note a
    une frequence exacte, poser un clic a un instant exact (ADR-012).
-   `SessionStore` suit la meme regle pour le stockage local et `ScreenKeeper`
-   pour l'ecran : `lib/core/` decrit ce qu'on se rappelle et quand l'ecran doit
-   rester allume, `lib/platform/` sait ou le ranger et quel drapeau poser.
+   `SessionStore` et `PieceStore` suivent la meme regle pour le stockage local,
+   `ScreenKeeper` pour l'ecran et `DocumentPicker` pour le choix d'un fichier :
+   `lib/core/` decrit ce qu'on se rappelle, quand l'ecran doit rester allume et
+   quels octets il attend, `lib/platform/` sait ou le ranger, quel drapeau
+   poser et comment ouvrir le selecteur du systeme (ADR-014).
    Ce sont les seules couches a reecrire pour porter sur iOS, et les seules a
    remplacer pour developper l'interface sous Flutter Web. Rien au-dessus ne
    connait le micro ni le haut-parleur.
