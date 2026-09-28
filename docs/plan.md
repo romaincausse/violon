@@ -62,9 +62,9 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
-| 11 | L'accompagnement | 4 | 11 | On joue avec quelqu'un |
+| 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
-**73 lots, 68 soirees restantes**, dont **23 de *must*** -- le reste
+**73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
 juste et complet dont on n'a pas envie de se servir a echoue.
 
@@ -1568,13 +1568,35 @@ L'export reste un geste volontaire, sur son telephone, avec ses donnees.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| J4 | Accompagnement deduit du passage | | ★★★ | 3 |
+| ~~J4~~ | ~~Accompagnement deduit du passage~~ | | ★★★ | fait |
 | J2 | Calibration de latence | | ★★ | 2 |
 | J5 | Accompagnement qui suit | | ★ | 5 |
 | D6 | Retour haptique hors ecoute | | ★★ | 1 |
 
 Le moteur audio (J1) et le metronome sonore (J3) ont ete avances au jalon 4,
 tires par le bourdon.
+
+**J4 - Fait, avance avant le jalon 5.** Il ne depend pas du suiveur : ici
+c'est l'application qui mene, dans un mode ou elle joue et n'ecoute pas
+(ADR-008). Decision et garde-fous : ADR-015.
+
+- **L'eleve choisit ce qu'elle joue** : la partie ecrite du fichier importe
+  (le piano, le plus souvent -- les autres parties du MusicXML ne sont plus
+  jetees), une basse et des accords deduits de la melodie, ou la melodie
+  elle-meme pour l'entendre et s'y caler.
+- **Et avec quoi** : piano, violon, violoncelle, flute, orgue, clarinette. De
+  vrais instruments enregistres (VSCO 2 CE, domaine public), 1,8 Mo pour les
+  six, chaque echantillon **mesure** pour sonner a la frequence exacte, au
+  diapason du violon.
+- **L'harmonisation** est deterministe et explicable : un accord par mesure
+  ou demi-mesure, choisi pour contenir la melodie, les enchainements usuels
+  favorises. Le VII bemol emprunte sort quand la melodie baisse la septieme,
+  ce qu'*Into the Stars* fait aux mesures 9 a 12.
+- **Le bourdon** gagne le meme choix de son. Le synthetique reste propose en
+  premier : c'est lui qui fait le mieux entendre les battements.
+
+Laisse pour plus tard : le choix d'instrument ne se retient pas d'une seance
+a l'autre, et l'accompagnement ne se regle pas en volume par voix.
 
 **D6 - Retour haptique.** Tentant, mais un telephone qui vibre sur un pupitre
 en bois **est une source sonore** qui entre dans le micro. Le vibreur est donc

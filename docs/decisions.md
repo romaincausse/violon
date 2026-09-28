@@ -553,3 +553,61 @@ qu'il compte dans sa tete ; lui afficher 141 serait juste et incomprehensible.
 - Le degre d'une note dans la tonalite devient connu : le lot I3 n'attend plus
   que d'etre fait.
 
+---
+
+## ADR-015 : L'accompagnement, et ce que le moteur de son apprend pour lui
+
+**Contexte.** L'ADR-012 limitait le moteur de son a deux choses : tenir une
+note a une frequence exacte, poser un clic a un instant exact. L'accompagnement
+(J4) demande de jouer des **instruments**, et l'utilisateur a demande de
+pouvoir les choisir -- piano, violon, flute... -- pour l'accompagnement comme
+pour le bourdon. Il a aussi voulu que l'eleve choisisse ce que joue
+l'accompagnement : la partie ecrite, des accords, ou la melodie.
+
+**Decision.**
+
+- **Des instruments enregistres, pas synthetises.** Echantillons de VSCO 2
+  Community Edition (Versilian Studios, CC0), prepares par
+  `tool/echantillons.py` : un tous les trois a cinq demi-tons, coupe, mis au
+  meme niveau, boucle sans couture pour les instruments qui tiennent, compresse
+  en OGG. 1,8 Mo pour six instruments. Une synthese en Dart aurait ete plus
+  legere et testable, mais un piano synthetique ne donne envie de jouer avec
+  personne.
+- **Chaque echantillon est mesure.** Sa hauteur reelle -- et non celle de son
+  nom -- est relevee au centieme de hertz, et la note joue a la vitesse qui
+  l'amene a la frequence voulue. L'accompagnement sonne ainsi au diapason
+  mesure sur le violon, comme le bourdon, pour la meme raison : sinon il ferait
+  battre l'instrument contre lui. La mesure a d'ailleurs refuse un fichier dont
+  le nom mentait d'un demi-ton.
+- **Le moteur gagne une horloge.** `now()` rend l'instant de l'horloge du son,
+  `scheduleNote` pose une note a un instant de cette horloge et l'eteint a un
+  autre, en fondu, sans clic. C'est l'extension exacte de l'ADR-012 : rien
+  n'est declenche, tout est planifie, et un minuteur qui se reveille en retard
+  ne deplace aucune note. `flutter_soloud` 4.1.7 le permet deja
+  (`playScheduled`, `fadeScheduled`) : aucune dependance n'est ajoutee.
+- **Une note hors tessiture change d'octave**, elle ne se deforme pas : une
+  basse de piano confiee a une flute monte d'une octave, comme le ferait un
+  arrangeur.
+- **Trois contenus, au choix de l'eleve.** La partie ecrite du fichier (les
+  parties que l'import jetait sont desormais gardees), une basse et des accords
+  deduits de la melodie, ou la melodie elle-meme. Les accords sont une
+  **proposition** : l'ecran le dit, et la partie ecrite passe devant quand elle
+  existe.
+
+**L'ADR-008 tient.** L'accompagnement est un ecran a part, ou le micro n'est
+jamais ouvert et ou rien n'est note. L'application y mene, et c'est voulu :
+l'accompagnement qui *suit* l'eleve (J5) reste bloque par la contradiction du
+jalon 11 -- on ne peut pas ecouter pendant qu'on joue.
+
+**Consequences.**
+
+- `AudioEngine` expose quatre choses au lieu de deux : tenir une note, poser
+  un clic, faire sonner un instrument a un instant exact, et lire son horloge.
+  Il reste la seule frontiere de sortie, et `SoloudAudioEngine` la seule classe
+  qui connaisse le moteur.
+- Le bourdon peut sonner avec un instrument qui tient la note. Le synthetique
+  reste propose en premier : riche en harmoniques, c'est lui qui fait le mieux
+  entendre les battements.
+- Les credits de VSCO 2 CE, demandes par ses auteurs, sont dans
+  `assets/sons/LICENCE.txt`.
+
