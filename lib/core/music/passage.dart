@@ -84,10 +84,28 @@ class Passage {
     return withNotes(notes.sublist(safeStart, safeEnd));
   }
 
-  /// Le meme passage, reduit a [subset] : chiffrage, armure et tempo suivent,
-  /// et seules les mesures que ces notes touchent sont gardees.
-  Passage withNotes(List<ScoreNote> subset, {String? title}) {
+  /// Le meme passage, reduit a [subset] : chiffrage, armure et tempo suivent.
+  ///
+  /// Les mesures gardees sont celles que ces notes **touchent dans le
+  /// temps**, pas celles dont elles portent le numero : une note liee
+  /// par-dessus la barre emmene la mesure suivante avec elle. [alsoBars]
+  /// ajoute des mesures sans note, pour un extrait qui finit sur un silence.
+  Passage withNotes(
+    List<ScoreNote> subset, {
+    String? title,
+    bool Function(Bar bar)? alsoBars,
+  }) {
     final List<Bar>? toutes = bars;
+    int debut = subset.first.onsetTicks;
+    int fin = subset.first.offsetTicks;
+    for (final ScoreNote n in subset) {
+      if (n.onsetTicks < debut) {
+        debut = n.onsetTicks;
+      }
+      if (n.offsetTicks > fin) {
+        fin = n.offsetTicks;
+      }
+    }
     return Passage(
       title: title ?? this.title,
       notes: subset,
@@ -99,10 +117,8 @@ class Passage {
           ? null
           : <Bar>[
               for (final Bar b in toutes)
-                if (b.number >= subset.first.measure &&
-                    b.number <= subset.last.measure &&
-                    b.startTicks < subset.last.offsetTicks &&
-                    b.endTicks > subset.first.onsetTicks)
+                if ((b.startTicks < fin && b.endTicks > debut) ||
+                    (alsoBars?.call(b) ?? false))
                   b,
             ],
     );

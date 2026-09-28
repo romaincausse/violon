@@ -60,6 +60,9 @@ class ImportedPiece {
     final bool tout = from <= firstMeasure && to >= lastMeasure;
     return passage.withNotes(
       notes,
+      // Une mesure de silence demandee reste la : on compte ses temps de
+      // pause sur le papier, il faut les compter ici aussi.
+      alsoBars: (Bar b) => b.number >= from && b.number <= to,
       title: tout
           ? title
           : from == to

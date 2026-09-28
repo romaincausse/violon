@@ -293,6 +293,26 @@ void main() {
       expect(e.bars!.map((Bar b) => b.number), <int>[2, 3, 4]);
     });
 
+    test('un extrait garde la mesure ou deborde sa derniere tenue', () {
+      final ImportedPiece p = MusicXmlReader.read(
+        partition(
+          '<measure number="1">$sixHuit'
+          '${note('A4', 6, extra: '<tie type="start"/>')}</measure>'
+          '<measure number="2">${note('A4', 6, extra: '<tie type="stop"/>')}'
+          '</measure>'
+          '<measure number="3">${note('B4', 6)}</measure>',
+        ),
+      );
+      expect(p.excerpt(1, 1)!.bars!.map((Bar b) => b.number), <int>[1, 2]);
+    });
+
+    test('un extrait qui finit sur un silence garde sa mesure de silence', () {
+      expect(
+        piece().excerpt(1, 3)!.bars!.map((Bar b) => b.number),
+        <int>[1, 2, 3],
+      );
+    });
+
     test('un extrait sans note n existe pas', () {
       expect(piece().excerpt(3, 3), isNull);
     });

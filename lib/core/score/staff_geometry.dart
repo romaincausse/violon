@@ -1,10 +1,33 @@
 /// Alteration a dessiner devant une note.
 ///
-/// Pas de bemol : [ScoreNote] ne stocke qu'un numero MIDI, sans orthographe
-/// enharmonique, et le reste de l'application n'affiche que des dieses.
-/// Introduire le bemol ici demanderait d'ajouter l'orthographe au modele
-/// pivot, ce qui deborde de la gravure.
-enum Accidental { none, sharp }
+/// **L'orthographe vient de l'armure, pas du modele.** [ScoreNote] ne stocke
+/// qu'un numero MIDI. Sans armure connue, tout s'ecrit en dieses, comme
+/// toujours ; avec une armure, une touche noire s'ecrit comme la tonalite
+/// l'ecrit -- si bemol en fa majeur, pas la diese -- et le becarre apparait
+/// quand une note quitte l'armure.
+enum Accidental { none, sharp, flat, natural }
+
+/// Une hauteur ecrite : sa lettre, son octave et son alteration.
+class SpelledPitch {
+  const SpelledPitch({
+    required this.letter,
+    required this.octave,
+    required this.alter,
+  });
+
+  /// Degre depuis do : 0 pour do, 6 pour si.
+  final int letter;
+  final int octave;
+
+  /// -1 bemol, 0 naturel, +1 diese.
+  final int alter;
+
+  /// Pas sur la portee, 0 sur la ligne du milieu.
+  int get step =>
+      7 * octave +
+      letter -
+      StaffGeometry.diatonicIndex(StaffGeometry.middleLineMidi);
+}
 
 /// Geometrie d'une portee en cle de sol.
 ///
@@ -47,6 +70,76 @@ class StaffGeometry {
   /// Pas sur la portee, 0 sur la ligne du milieu, positif vers l'aigu.
   static int stepOf(int midi) =>
       diatonicIndex(midi) - diatonicIndex(middleLineMidi);
+
+  /// Classe de hauteur de chaque lettre naturelle, de do a si.
+  static const List<int> _naturelle = <int>[0, 2, 4, 5, 7, 9, 11];
+
+  /// Ordre des dieses et des bemols a l'armure, en lettres.
+  static const List<int> _ordreDesDieses = <int>[3, 0, 4, 1, 5, 2, 6];
+  static const List<int> _ordreDesBemols = <int>[6, 2, 5, 1, 4, 0, 3];
+
+  /// Alteration que l'armure donne a chaque lettre.
+  static List<int> keyAlterations(int keyFifths) {
+    final List<int> alterations = List<int>.filled(7, 0);
+    final int n = keyFifths.abs().clamp(0, 7);
+    for (int i = 0; i < n; i++) {
+      if (keyFifths > 0) {
+        alterations[_ordreDesDieses[i]] = 1;
+      } else {
+        alterations[_ordreDesBemols[i]] = -1;
+      }
+    }
+    return alterations;
+  }
+
+  /// Pas des alterations de l'armure, dans l'ordre ou on les grave.
+  ///
+  /// Les positions sont celles de la cle de sol : le fa# sur la ligne du
+  /// haut, le si bemol sur la ligne du milieu.
+  static List<int> keySignatureSteps(int keyFifths) {
+    const List<int> dieses = <int>[4, 1, 5, 2, -1, 3, 0];
+    const List<int> bemols = <int>[0, 3, -1, 2, -2, 1, -3];
+    final int n = keyFifths.abs().clamp(0, 7);
+    return (keyFifths >= 0 ? dieses : bemols).take(n).toList();
+  }
+
+  /// Ecrit [midi] comme la tonalite l'ecrit.
+  ///
+  /// Une note de la gamme prend l'orthographe de l'armure. Une note etrangere
+  /// prend un diese en tonalite a dieses, un bemol en tonalite a bemols, et
+  /// reste naturelle si c'est une touche blanche -- ce que ferait un graveur
+  /// sur une partition d'eleve. Sans armure, tout s'ecrit en dieses.
+  static SpelledPitch spell(int midi, {int? keyFifths}) {
+    final int pc = midi % 12;
+    final List<int> armure = keyAlterations(keyFifths ?? 0);
+    int? lettre;
+    int alteration = 0;
+    for (int l = 0; l < 7; l++) {
+      if ((_naturelle[l] + armure[l]) % 12 == pc) {
+        lettre = l;
+        alteration = armure[l];
+        break;
+      }
+    }
+    if (lettre == null) {
+      final int blanche = _naturelle.indexOf(pc);
+      if (blanche >= 0) {
+        lettre = blanche;
+        alteration = 0;
+      } else if ((keyFifths ?? 0) < 0) {
+        lettre = _naturelle.indexOf((pc + 1) % 12);
+        alteration = -1;
+      } else {
+        lettre = _naturelle.indexOf((pc + 11) % 12);
+        alteration = 1;
+      }
+    }
+    return SpelledPitch(
+      letter: lettre,
+      octave: (midi - alteration) ~/ 12 - 1,
+      alter: alteration,
+    );
+  }
 
   static Accidental accidentalOf(int midi) =>
       _sharpPitchClasses.contains(midi % 12)

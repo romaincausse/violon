@@ -119,8 +119,7 @@ class StemsAndBeams {
     final List<Stem> stems = <Stem>[];
     for (int i = 0; i < layout.notes.length; i++) {
       final PlacedNote placed = layout.notes[i];
-      final int flags =
-          _flagCount(placed.note.durationTicks, layout.ticksPerBeat);
+      final int flags = _flagCount(placed.durationTicks, layout.ticksPerBeat);
       if (flags < 0) {
         continue; // Une ronde n'a pas de hampe.
       }
@@ -170,7 +169,7 @@ class StemsAndBeams {
           beamCount: group
               .map(
                 (int i) => _flagCount(
-                  layout.notes[i].note.durationTicks,
+                  layout.notes[i].durationTicks,
                   layout.ticksPerBeat,
                 ),
               )
@@ -277,12 +276,17 @@ class StemsAndBeams {
     return normale > milieu ? normale : milieu;
   }
 
-  /// Regroupe les notes a crochet par temps, sans franchir de barre.
+  /// Regroupe les notes a crochet par temps, sans franchir de barre ni de
+  /// silence.
+  ///
+  /// Le temps est celui qu'on bat ([StaffLayout.beamUnitTicks]) et se compte
+  /// depuis la barre : trois croches en 6/8, deux en 3/4.
   static List<List<int>> _groupByBeat(StaffLayout layout) {
     final List<List<int>> groups = <List<int>>[];
     List<int> current = <int>[];
     int? currentBeat;
     int? currentMeasure;
+    int? previousEnd;
 
     void flush() {
       if (current.length > 1) {
@@ -293,23 +297,28 @@ class StemsAndBeams {
 
     for (int i = 0; i < layout.notes.length; i++) {
       final PlacedNote placed = layout.notes[i];
-      final int flags = _flagCount(
-        placed.note.durationTicks,
-        layout.ticksPerBeat,
-      );
+      final int flags = _flagCount(placed.durationTicks, layout.ticksPerBeat);
       if (flags < 1) {
         flush();
         currentBeat = null;
         currentMeasure = null;
+        previousEnd = null;
         continue;
       }
-      final int beat = placed.note.onsetTicks ~/ layout.ticksPerBeat;
-      if (beat != currentBeat || placed.note.measure != currentMeasure) {
+      final int beat =
+          (placed.onsetTicks - placed.barStartTicks) ~/ layout.beamUnitTicks;
+      // Un silence entre deux croches coupe la ligature : relier par-dessus
+      // ferait croire qu'elles se suivent.
+      final bool jointive = previousEnd == placed.onsetTicks;
+      if (beat != currentBeat ||
+          placed.measure != currentMeasure ||
+          !jointive) {
         flush();
         currentBeat = beat;
-        currentMeasure = placed.note.measure;
+        currentMeasure = placed.measure;
       }
       current.add(i);
+      previousEnd = placed.onsetTicks + placed.durationTicks;
     }
     flush();
     return groups;

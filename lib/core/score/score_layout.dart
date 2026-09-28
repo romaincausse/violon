@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
+import '../music/meter.dart';
 import '../music/passage.dart';
-import '../music/score_note.dart';
 import 'staff_geometry.dart';
 import 'staff_layout.dart';
 import 'stems_and_beams.dart';
@@ -65,21 +65,22 @@ class ScoreLayout {
     int? maxSystems,
     bool justify = false,
   }) {
-    final List<List<ScoreNote>> mesures = _parMesure(passage.notes);
-    final List<List<ScoreNote>> groupes = <List<ScoreNote>>[];
-    List<ScoreNote> courant = <ScoreNote>[];
+    final List<Bar> mesures = StaffLayout.barsOf(passage);
+    final List<List<Bar>> groupes = <List<Bar>>[];
+    List<Bar> courant = <Bar>[];
 
-    for (final List<ScoreNote> mesure in mesures) {
+    for (final Bar mesure in mesures) {
       final bool plafondAtteint =
           maxSystems != null && groupes.length + 1 >= maxSystems;
       if (courant.isEmpty || plafondAtteint) {
-        courant = <ScoreNote>[...courant, ...mesure];
+        courant = <Bar>[...courant, mesure];
         continue;
       }
-      final List<ScoreNote> essai = <ScoreNote>[...courant, ...mesure];
-      if (_largeurDe(passage, essai) > maxWidthSpaces) {
+      final List<Bar> essai = <Bar>[...courant, mesure];
+      if (_largeurDe(passage, essai, premier: groupes.isEmpty) >
+          maxWidthSpaces) {
         groupes.add(courant);
-        courant = mesure;
+        courant = <Bar>[mesure];
       } else {
         courant = essai;
       }
@@ -91,9 +92,18 @@ class ScoreLayout {
         for (int i = 0; i < groupes.length; i++)
           StaffSystem(
             layout: StaffLayout.of(
-              _sousPassage(passage, groupes[i]),
+              passage,
+              bars: groupes[i],
+              // Le chiffrage se grave une fois, en tete du morceau ; la cle et
+              // l'armure se repetent a chaque ligne.
+              showTimeSignature: i == 0,
               stretchToSpaces: justify &&
-                      _meriteDEtreEtire(passage, groupes[i], maxWidthSpaces)
+                      _meriteDEtreEtire(
+                        passage,
+                        groupes[i],
+                        maxWidthSpaces,
+                        premier: i == 0,
+                      )
                   ? maxWidthSpaces
                   : null,
             ),
@@ -145,20 +155,13 @@ class ScoreLayout {
       .map((StaffSystem s) => s.layout.highestStep)
       .reduce((int a, int b) => a > b ? a : b);
 
-  static List<List<ScoreNote>> _parMesure(List<ScoreNote> notes) {
-    final List<List<ScoreNote>> mesures = <List<ScoreNote>>[];
-    for (final ScoreNote note in notes) {
-      if (mesures.isEmpty || mesures.last.first.measure != note.measure) {
-        mesures.add(<ScoreNote>[note]);
-      } else {
-        mesures.last.add(note);
-      }
-    }
-    return mesures;
-  }
-
-  static double _largeurDe(Passage passage, List<ScoreNote> notes) =>
-      StaffLayout.of(_sousPassage(passage, notes)).widthSpaces;
+  static double _largeurDe(
+    Passage passage,
+    List<Bar> mesures, {
+    required bool premier,
+  }) =>
+      StaffLayout.of(passage, bars: mesures, showTimeSignature: premier)
+          .widthSpaces;
 
   /// Un systeme deja a moitie plein se justifie ; un reste de fin, non.
   ///
@@ -171,19 +174,13 @@ class ScoreLayout {
 
   static bool _meriteDEtreEtire(
     Passage passage,
-    List<ScoreNote> notes,
-    double maxWidthSpaces,
-  ) =>
+    List<Bar> mesures,
+    double maxWidthSpaces, {
+    required bool premier,
+  }) =>
       maxWidthSpaces.isFinite &&
-      _largeurDe(passage, notes) >= maxWidthSpaces * _remplissageMinimal;
-
-  static Passage _sousPassage(Passage passage, List<ScoreNote> notes) =>
-      Passage(
-        title: passage.title,
-        notes: notes,
-        ticksPerBeat: passage.ticksPerBeat,
-        writtenTempoBpm: passage.writtenTempoBpm,
-      );
+      _largeurDe(passage, mesures, premier: premier) >=
+          maxWidthSpaces * _remplissageMinimal;
 }
 
 /// Reserve verticale d'un systeme, en espaces de portee.
