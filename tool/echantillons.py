@@ -3,7 +3,7 @@
 #
 #   python3 tool/echantillons.py [dossier-de-cache]
 #
-# Demande numpy et soundfile (pip install numpy soundfile). Ecrit dans
+# Demande numpy, scipy et soundfile (pip install numpy scipy soundfile). Ecrit dans
 # assets/sons/ un OGG par echantillon et un index, instruments.json.
 #
 # Pourquoi un script plutot que des fichiers poses a la main : chaque
@@ -19,8 +19,11 @@ import sys
 import urllib.parse
 import urllib.request
 
+from math import gcd
+
 import numpy as np
 import soundfile as sf
+from scipy.signal import resample_poly
 
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SORTIE = os.path.join(RACINE, 'assets', 'sons')
@@ -105,11 +108,12 @@ def telecharger(chemin, cache):
 
 
 def reechantillonner(x, sr):
+    # Filtre polyphase : une interpolation lineaire replierait l'aigu en
+    # sifflements, audibles sur une note tenue.
     if sr == TAUX:
         return x
-    n = int(round(len(x) * TAUX / sr))
-    t = np.linspace(0, len(x) - 1, n)
-    return np.interp(t, np.arange(len(x)), x)
+    g = gcd(TAUX, sr)
+    return resample_poly(x, TAUX // g, sr // g)
 
 
 def hauteur(x, sr, attendu):
@@ -137,18 +141,106 @@ def debut(x):
     return max(0, i - int(0.005 * TAUX))
 
 
-def boucle(x, sr, depart=0.9, longueur=1.2, fondu=0.25):
-    # Une boucle sans couture : la fin du corps se fond dans son debut.
-    a = int(depart * sr)
-    n = int(longueur * sr)
-    f = int(fondu * sr)
-    corps = x[a:a + n].copy()
-    queue = x[a + n:a + n + f]
-    if len(queue) < f:
-        raise ValueError('echantillon trop court pour boucler')
-    r = np.linspace(0, 1, f)
-    corps[:f] = corps[:f] * np.sqrt(r) + queue * np.sqrt(1 - r)
-    return np.concatenate([x[:a], corps]), a / sr
+def enveloppe(x, sr, fenetre=0.2):
+    # Niveau efficace glissant, echantillon par echantillon.
+    n = int(fenetre * sr)
+    h = np.hanning(n)
+    h /= h.sum()
+    return np.sqrt(np.convolve(x * x, h, mode='same') + 1e-12)
+
+
+def boucle(x, sr):
+    """Une boucle de tenue qui ne s'entend pas.
+
+    Trois defauts s'entendaient sur la premiere version, une boucle courte
+    (1,2 s) fondue a l'aveugle : le fondu melangeait deux copies du meme son
+    dephasees (un "wah" a chaque tour), et le souffle de l'archet ou de
+    l'instrumentiste revenait toutes les 1,2 s. D'ou :
+
+    - **une boucle longue**, prise dans toute la tenue de l'enregistrement
+      (jusqu'a cinq secondes) : le vibrato et les irregularites ne se repetent
+      plus assez vite pour qu'on les reconnaisse ;
+    - **un niveau aplati** sur toute la tenue : plus de houle a chaque tour ;
+    - **une fin choisie pour ressembler au debut** : parmi les fins possibles,
+      celle dont la forme d'onde correle le mieux avec le point de retour, de
+      sorte que le fondu melange deux signaux en phase ;
+    - **un fondu lineaire**, le bon pour deux signaux en phase.
+    """
+    env = enveloppe(x, sr)
+    t0 = int(0.6 * sr)
+    reference = float(np.median(env[t0:]))
+    tenue = np.where(env[t0:] >= 0.5 * reference)[0]
+    t1 = t0 + int(tenue[-1]) - int(0.3 * sr)
+
+    # Aplatir le niveau de la tenue, en entrant en douceur apres l'attaque.
+    niveau = float(np.median(env[t0:t1]))
+    gain = np.ones(len(x))
+    gain[t0:] = niveau / np.maximum(env[t0:], niveau * 0.2)
+    rampe = int(0.1 * sr)
+    gain[t0:t0 + rampe] = 1 + (gain[t0:t0 + rampe] - 1) * np.linspace(0, 1, rampe)
+    x = x * gain
+
+    a = t0 + int(0.2 * sr)
+    longueur = min(t1 - int(0.35 * sr) - a, int(5.0 * sr))
+    if longueur < int(1.0 * sr):
+        raise ValueError('tenue trop courte pour boucler')
+
+    # La fin qui ressemble le plus au debut, dans la derniere seconde.
+    w = int(0.04 * sr)
+    modele = x[a - w:a + w]
+    modele = modele / (np.linalg.norm(modele) + 1e-12)
+    e_min = a + longueur - int(1.0 * sr)
+    zone = x[e_min - w:a + longueur + w]
+    corr = np.correlate(zone, modele, mode='valid')
+    energie = np.sqrt(np.convolve(zone * zone, np.ones(2 * w), mode='valid'))
+    score = corr / (energie + 1e-12)
+    e = e_min + int(np.argmax(score))
+    rho = float(np.clip(np.max(score), 0, 1))
+
+    # Un fondu a puissance constante **quelle que soit la ressemblance** :
+    # lineaire pour deux signaux en phase, il creuserait de trois decibels
+    # entre deux signaux sans rapport -- un pupitre de violoncelles, un orgue
+    # dans sa reverberation. On divise par la puissance attendue du melange.
+    fondu = int((0.15 if rho > 0.9 else 0.35) * sr)
+    corps = x[a:e].copy()
+    r = np.linspace(0, 1, fondu)
+    melange = x[a:a + fondu] * r + x[e:e + fondu] * (1 - r)
+    puissance = np.sqrt(r * r + (1 - r) * (1 - r) + 2 * rho * r * (1 - r))
+    melange = melange / puissance
+    # Sur un tiers de seconde, deux copies du meme son derivent l'une par
+    # rapport a l'autre -- un rien de justesse, un pupitre qui respire -- et
+    # s'annulent en partie : un creux de quatre a six decibels au milieu du
+    # fondu, a chaque tour. La tenue ayant ete aplatie a un niveau connu, on y
+    # ramene le fondu, instant par instant.
+    marge = int(0.05 * sr)
+    autour = np.concatenate([x[a - marge:a], melange, x[a + fondu:a + fondu + marge]])
+    mesure = enveloppe(autour, sr, fenetre=0.05)[marge:marge + fondu]
+    melange = melange * np.clip(niveau / mesure, 0.5, 2.0)
+    corps[:fondu] = melange
+    return np.concatenate([x[:a], corps]), a / sr, rho
+
+
+def ecart_au_raccord(x, sr, depart):
+    # Ce que le raccord ajoute a la houle naturelle de la tenue, en decibels :
+    # on rejoue trois tours et on compare la variation de niveau autour des
+    # raccords a celle du milieu de la boucle.
+    a = int(round(depart * sr))
+    corps = x[a:]
+    y = np.concatenate([x[:a], corps, corps, corps])
+    e = enveloppe(y, sr, fenetre=0.05)
+    d = int(0.4 * sr)
+
+    def houle(c):
+        z = e[c - d:c + d]
+        return 20 * np.log10(z.max() / z.min())
+
+    raccords = max(houle(a + len(corps)), houle(a + 2 * len(corps)))
+    return raccords - houle(a + len(corps) + len(corps) // 2)
+
+
+# Au-dela, un raccord s'entend a chaque tour : on refuse l'echantillon plutot
+# que de livrer un bourdon qui hoquette.
+ECART_MAX_DB = 2.5
 
 
 def main():
@@ -176,10 +268,17 @@ def main():
         niveaux = [np.sqrt(np.mean(x[:int(1.5 * TAUX)] ** 2)) for *_, x in brut]
         for (chemin, attendu, hz, x), niveau in zip(brut, niveaux):
             x = x * (NIVEAU / niveau)
+            # Le fichier doit s'arreter exactement la ou la boucle repart : le
+            # decodeur OGG ne doit rien ajouter, ce que verifie le test.
             entree = {'midi': attendu, 'hz': round(hz, 3)}
             if tient:
-                x, depart = boucle(x, TAUX)
+                x, depart, ressemblance = boucle(x, TAUX)
                 entree['loopStart'] = round(depart, 4)
+                ecart = ecart_au_raccord(x, TAUX, depart)
+                if ecart > ECART_MAX_DB:
+                    raise SystemExit(f'{chemin}: le raccord de boucle s entend '
+                                     f'({ecart:+.1f} dB, ressemblance '
+                                     f'{ressemblance:.2f})')
             else:
                 x = x[:int(3.0 * TAUX)]
                 x[-int(0.3 * TAUX):] *= np.linspace(1, 0, int(0.3 * TAUX))

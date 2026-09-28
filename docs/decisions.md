@@ -570,7 +570,7 @@ l'accompagnement : la partie ecrite, des accords, ou la melodie.
   Community Edition (Versilian Studios, CC0), prepares par
   `tool/echantillons.py` : un tous les trois a cinq demi-tons, coupe, mis au
   meme niveau, boucle sans couture pour les instruments qui tiennent, compresse
-  en OGG. 1,8 Mo pour six instruments. Une synthese en Dart aurait ete plus
+  en OGG. 3,2 Mo pour six instruments. Une synthese en Dart aurait ete plus
   legere et testable, mais un piano synthetique ne donne envie de jouer avec
   personne.
 - **Chaque echantillon est mesure.** Sa hauteur reelle -- et non celle de son
@@ -585,6 +585,14 @@ l'accompagnement : la partie ecrite, des accords, ou la melodie.
   n'est declenche, tout est planifie, et un minuteur qui se reveille en retard
   ne deplace aucune note. `flutter_soloud` 4.1.7 le permet deja
   (`playScheduled`, `fadeScheduled`) : aucune dependance n'est ajoutee.
+- **Une boucle ne doit pas s'entendre, et c'est mesure.** La premiere
+  version bouclait 1,2 s fondues a l'aveugle : le souffle de l'archet et un
+  "wah" revenaient a chaque tour, sur tous les instruments, et l'oreille l'a
+  entendu sur l'appareil. Les boucles sont desormais longues (quatre a cinq
+  secondes), le niveau de la tenue est aplati, la fin est choisie pour
+  ressembler au debut, et le fondu est ramene a ce niveau instant par
+  instant. L'outil rejoue chaque boucle et **refuse** un echantillon dont le
+  raccord ajoute plus de 2,5 dB a la houle naturelle de la tenue.
 - **Une note hors tessiture change d'octave**, elle ne se deforme pas : une
   basse de piano confiee a une flute monte d'une octave, comme le ferait un
   arrangeur.
