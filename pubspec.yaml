@@ -87,7 +87,7 @@ flutter:
   uses-material-design: true
 
   # Echantillons d'instruments (VSCO 2 CE, CC0) pour l'accompagnement et le
-  # bourdon : 3,2 Mo pour six instruments. Refaits par tool/echantillons.py,
+  # bourdon : 3,5 Mo pour six instruments. Refaits par tool/echantillons.py,
   # licence et credits dans assets/sons/LICENCE.txt.
   assets:
     - assets/sons/

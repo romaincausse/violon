@@ -47,16 +47,24 @@ def midi_de(nom, decalage=0):
 
 # (fichier, midi nominal). Un echantillon tous les trois a cinq demi-tons :
 # au-dela de trois demi-tons de transposition, un timbre se deforme.
+#
+# **Toujours la nuance la plus nette.** La premiere version prenait le violon
+# joue piano : chaque note y commence par un crescendo, et l'attaque mettait
+# plus d'une seconde a venir -- molle a l'oreille, et en retard sur le temps
+# dans l'accompagnement. Le niveau est de toute facon remis au meme, seule
+# l'attaque change : forte pour le violon, la plus forte pour le violoncelle
+# et la clarinette, mezzo-forte pour le piano (plus timbre que le pianissimo,
+# aussi rapide).
 def piano():
     carte = [21 + 2 * i for i in range(44)] + [108]
-    return [(f'Keys/Upright Piano/Player_dyn1_rr1_{i:03d}.wav', m)
+    return [(f'Keys/Upright Piano/Player_dyn2_rr1_{i:03d}.wav', m)
             for i, m in enumerate(carte) if 37 <= m <= 101 and (m - 37) % 4 == 0]
 
 
 def violon():
     noms = ['G3', 'A3', 'C4', 'E4', 'G4', 'A4', 'C5', 'E5', 'G5', 'A5',
             'C6', 'E6', 'G6', 'A6']
-    return [(f'Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_{n}_p.wav', midi_de(n))
+    return [(f'Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_{n}_f.wav', midi_de(n))
             for n in noms]
 
 
@@ -65,7 +73,7 @@ def violoncelle():
     # du violoncelle (do2). La mesure le confirmera.
     noms = ['C1', 'E1', 'G1', 'B1', 'D2', 'F2', 'A2', 'C3', 'E3', 'G3',
             'B3', 'D4', 'F4']
-    return [(f'Strings/Cello Section/susvib/susvib_{n}_v1_1.wav',
+    return [(f'Strings/Cello Section/susvib/susvib_{n}_v3_1.wav',
              midi_de(n, 12)) for n in noms]
 
 
@@ -84,7 +92,7 @@ def orgue():
 def clarinette():
     # F#5 manque : le fichier de ce nom sonne fa, la mesure l'a refuse.
     noms = ['D2', 'F2', 'A#2', 'D3', 'F3', 'A#3', 'D4', 'F4', 'A#4', 'D5']
-    return [(f'Woodwinds/Clarinet/susLong/DCClar_susLong_{n}_v2_rr1_sum.wav',
+    return [(f'Woodwinds/Clarinet/susLong/DCClar_susLong_{n}_v3_rr1_sum.wav',
              midi_de(n, 12)) for n in noms]
 
 
@@ -136,9 +144,50 @@ def hauteur(x, sr, attendu):
 
 
 def debut(x):
-    seuil = np.max(np.abs(x)) * 10 ** (-40 / 20)
-    i = int(np.argmax(np.abs(x) > seuil))
-    return max(0, i - int(0.005 * TAUX))
+    # Le son commence la ou il est deja la : a 20 % de son niveau, pas au
+    # premier frottement. Un archet qui s'installe, un souffle qui s'etablit
+    # durent parfois un quart de seconde ; ce qu'on attend d'un
+    # accompagnement, c'est la note, a l'heure.
+    env = enveloppe(x, TAUX, fenetre=0.02)
+    reference = env[:int(2.0 * TAUX)].max()
+    i = int(np.argmax(env > reference * SEUIL_DEBUT))
+    return max(0, i - int(0.003 * TAUX))
+
+
+def raffermir(x):
+    # Ce qui reste d'une attaque lente, une fois le debut coupe, n'est plus un
+    # silence : c'est une houle -- l'archet qui s'installe, le pupitre de
+    # violoncelles qui s'accorde en jouant. On la releve, comme le bouton
+    # "attaque" d'un echantillonneur : le niveau doit atteindre 70 % en
+    # ATTAQUE_CIBLE_MS, en gardant le grain du debut (le mordant de l'archet),
+    # simplement plus tot. Le gain est borne : un souffle ne devient pas un
+    # coup de canon.
+    env = enveloppe(x, TAUX, fenetre=0.02)
+    reference = env[:int(2.0 * TAUX)].max()
+    cible = 0.7 * reference
+    atteint = int(np.argmax(env > cible))
+    if atteint == 0:
+        return x
+    t = np.arange(atteint)
+    voulu = cible * np.minimum(1, t / (ATTAQUE_CIBLE_MS * TAUX / 1000))
+    gain = np.clip(voulu / np.maximum(env[:atteint], 1e-9), 1, 4)
+    lisse = int(0.01 * TAUX)
+    gain = np.convolve(
+        np.concatenate([gain, np.ones(lisse)]),
+        np.ones(lisse) / lisse,
+        mode='same',
+    )[:atteint]
+    y = x.copy()
+    y[:atteint] *= np.maximum(gain, 1)
+    return y
+
+
+def attaque_ms(x):
+    # Du debut du fichier a 70 % du niveau : ce que l'oreille entend comme
+    # l'arrivee de la note.
+    env = enveloppe(x, TAUX, fenetre=0.02)
+    reference = env[:int(2.0 * TAUX)].max()
+    return 1000 * int(np.argmax(env > reference * 0.7)) / TAUX
 
 
 def enveloppe(x, sr, fenetre=0.2):
@@ -180,28 +229,56 @@ def boucle(x, sr):
     gain[t0:t0 + rampe] = 1 + (gain[t0:t0 + rampe] - 1) * np.linspace(0, 1, rampe)
     x = x * gain
 
-    a = t0 + int(0.2 * sr)
-    longueur = min(t1 - int(0.35 * sr) - a, int(5.0 * sr))
-    if longueur < int(1.0 * sr):
-        raise ValueError('tenue trop courte pour boucler')
-
-    # La fin qui ressemble le plus au debut, dans la derniere seconde.
+    # Le debut **et** la fin qui se ressemblent le mieux : on essaie plusieurs
+    # points de depart, et pour chacun la meilleure fin dans la derniere
+    # seconde de la tenue.
     w = int(0.04 * sr)
-    modele = x[a - w:a + w]
-    modele = modele / (np.linalg.norm(modele) + 1e-12)
-    e_min = a + longueur - int(1.0 * sr)
-    zone = x[e_min - w:a + longueur + w]
-    corr = np.correlate(zone, modele, mode='valid')
-    energie = np.sqrt(np.convolve(zone * zone, np.ones(2 * w), mode='valid'))
-    score = corr / (energie + 1e-12)
-    e = e_min + int(np.argmax(score))
-    rho = float(np.clip(np.max(score), 0, 1))
+    fin_max = t1 - int(0.35 * sr)
+    # Stabilite locale du niveau, en decibels : un creux naturel pres du
+    # raccord reviendrait au meme endroit a chaque tour, et se reconnaitrait.
+    fine = enveloppe(x, sr, fenetre=0.05)
+    d = int(0.2 * sr)
 
+    def houle(c):
+        z = fine[max(0, c - d):c + d]
+        return 20 * np.log10(z.max() / z.min())
+
+    meilleur = None
+    for depart in np.arange(t0 + 0.2 * sr, t0 + 1.2 * sr, 0.1 * sr).astype(int):
+        longueur = min(fin_max - depart, int(5.0 * sr))
+        if longueur < int(1.0 * sr):
+            continue
+        modele = x[depart - w:depart + w]
+        modele = modele / (np.linalg.norm(modele) + 1e-12)
+        e_min = depart + longueur - int(1.0 * sr)
+        zone = x[e_min - w:depart + longueur + w]
+        corr = np.correlate(zone, modele, mode='valid')
+        energie = np.sqrt(np.convolve(zone * zone, np.ones(2 * w), mode='valid'))
+        score = corr / (energie + 1e-12)
+        # Les dix fins les plus ressemblantes, departagees par la stabilite
+        # du niveau autour d'elles et autour du depart.
+        for i in np.argsort(score)[-10:]:
+            fin = e_min + int(i)
+            note = float(score[i]) - 0.08 * (houle(int(depart)) + houle(fin))
+            if meilleur is None or note > meilleur[3]:
+                meilleur = (int(depart), fin, float(score[i]), note)
+    if meilleur is None:
+        raise ValueError('tenue trop courte pour boucler')
+    a, e, rho, _ = meilleur
+    rho = float(np.clip(rho, 0, 1))
+
+    # **Court quand les deux points se ressemblent**, long sinon. Sur un tiers
+    # de seconde, deux copies d'un violon derivent l'une par rapport a l'autre
+    # jusqu'a s'opposer et s'annuler : un trou de dix decibels au milieu du
+    # fondu, que rien ne rattrape. Soixante millisecondes n'en laissent pas le
+    # temps. Le fondu long ne sert qu'aux sons sans phase commune -- un pupitre
+    # de violoncelles, un orgue dans sa reverberation --, qui ne s'annulent
+    # pas.
+    fondu = int((0.06 if rho >= 0.6 else 0.35) * sr)
     # Un fondu a puissance constante **quelle que soit la ressemblance** :
     # lineaire pour deux signaux en phase, il creuserait de trois decibels
     # entre deux signaux sans rapport -- un pupitre de violoncelles, un orgue
     # dans sa reverberation. On divise par la puissance attendue du melange.
-    fondu = int((0.15 if rho > 0.9 else 0.35) * sr)
     corps = x[a:e].copy()
     r = np.linspace(0, 1, fondu)
     melange = x[a:a + fondu] * r + x[e:e + fondu] * (1 - r)
@@ -223,20 +300,39 @@ def boucle(x, sr):
 def ecart_au_raccord(x, sr, depart):
     # Ce que le raccord ajoute a la houle naturelle de la tenue, en decibels :
     # on rejoue trois tours et on compare la variation de niveau autour des
-    # raccords a celle du milieu de la boucle.
+    # raccords a celle de quarante points pris dans la boucle.
+    #
+    # **Une fenetre etroite, et beaucoup de points de comparaison.** Une note
+    # de violon vit : elle a ses creux de cinq decibels, n'importe ou. Une
+    # fenetre large autour du raccord en attrapait un, a un dixieme de seconde
+    # du raccord, et accusait le raccord d'un creux qui appartenait a la note.
+    # Deux dixiemes de seconde de part et d'autre couvrent le plus long fondu.
     a = int(round(depart * sr))
     corps = x[a:]
     y = np.concatenate([x[:a], corps, corps, corps])
     e = enveloppe(y, sr, fenetre=0.05)
-    d = int(0.4 * sr)
+    d = int(0.2 * sr)
 
     def houle(c):
         z = e[c - d:c + d]
         return 20 * np.log10(z.max() / z.min())
 
     raccords = max(houle(a + len(corps)), houle(a + 2 * len(corps)))
-    return raccords - houle(a + len(corps) + len(corps) // 2)
+    ailleurs = [houle(a + len(corps) + int(f * len(corps)))
+                for f in np.linspace(0.05, 0.95, 40)]
+    return raccords - float(np.median(ailleurs))
 
+
+# Ou commence un echantillon, en part de son niveau.
+SEUIL_DEBUT = 0.2
+
+# Ce qu'on vise : une note de violon detachee arrive en cinquante
+# millisecondes environ.
+ATTAQUE_CIBLE_MS = 50
+
+# Au-dela, une attaque s'entend molle, et une note d'accompagnement arrive en
+# retard sur le temps.
+ATTAQUE_MAX_MS = 150
 
 # Au-dela, un raccord s'entend a chaque tour : on refuse l'echantillon plutot
 # que de livrer un bourdon qui hoquette.
@@ -257,6 +353,14 @@ def main():
             x, sr = sf.read(telecharger(chemin, cache), always_2d=True)
             x = reechantillonner(x.mean(axis=1), sr)
             x = x[debut(x):]
+            # Trois millisecondes d'entree en fondu : couper une forme d'onde
+            # en plein vol ferait un clic.
+            entree_fondu = int(0.003 * TAUX)
+            x[:entree_fondu] *= np.linspace(0, 1, entree_fondu)
+            x = raffermir(x)
+            ms = attaque_ms(x)
+            if ms > ATTAQUE_MAX_MS:
+                raise SystemExit(f'{chemin}: attaque trop lente ({ms:.0f} ms)')
             hz = hauteur(x, TAUX, attendu)
             ecart = 1200 * np.log2(hz / (440 * 2 ** ((attendu - 69) / 12)))
             if abs(ecart) > 60:

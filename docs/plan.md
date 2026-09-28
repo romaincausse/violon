@@ -1585,7 +1585,7 @@ c'est l'application qui mene, dans un mode ou elle joue et n'ecoute pas
   jetees), une basse et des accords deduits de la melodie, ou la melodie
   elle-meme pour l'entendre et s'y caler.
 - **Et avec quoi** : piano, violon, violoncelle, flute, orgue, clarinette. De
-  vrais instruments enregistres (VSCO 2 CE, domaine public), 3,2 Mo pour les
+  vrais instruments enregistres (VSCO 2 CE, domaine public), 3,5 Mo pour les
   six, chaque echantillon **mesure** pour sonner a la frequence exacte, au
   diapason du violon.
 - **L'harmonisation** est deterministe et explicable : un accord par mesure

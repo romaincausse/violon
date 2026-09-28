@@ -570,7 +570,7 @@ l'accompagnement : la partie ecrite, des accords, ou la melodie.
   Community Edition (Versilian Studios, CC0), prepares par
   `tool/echantillons.py` : un tous les trois a cinq demi-tons, coupe, mis au
   meme niveau, boucle sans couture pour les instruments qui tiennent, compresse
-  en OGG. 3,2 Mo pour six instruments. Une synthese en Dart aurait ete plus
+  en OGG. 3,5 Mo pour six instruments. Une synthese en Dart aurait ete plus
   legere et testable, mais un piano synthetique ne donne envie de jouer avec
   personne.
 - **Chaque echantillon est mesure.** Sa hauteur reelle -- et non celle de son
@@ -593,6 +593,14 @@ l'accompagnement : la partie ecrite, des accords, ou la melodie.
   ressembler au debut, et le fondu est ramene a ce niveau instant par
   instant. L'outil rejoue chaque boucle et **refuse** un echantillon dont le
   raccord ajoute plus de 2,5 dB a la houle naturelle de la tenue.
+- **Une attaque nette, et c'est mesure aussi.** Le violon avait ete pris
+  dans sa nuance piano : chaque note y commence par un crescendo, et le son
+  mettait plus d'une seconde a arriver -- molle a l'oreille, en retard sur le
+  temps dans l'accompagnement. On prend desormais la nuance la plus nette de
+  chaque instrument, on coupe le debut ou le son n'est pas encore la, et on
+  releve ce qui reste de houle pour que la note atteigne son niveau en une
+  cinquantaine de millisecondes. L'outil refuse un echantillon dont l'attaque
+  depasse 150 ms ; la mediane est de 51 ms pour le violon, contre 1,3 s avant.
 - **Une note hors tessiture change d'octave**, elle ne se deforme pas : une
   basse de piano confiee a une flute monte d'une octave, comme le ferait un
   arrangeur.
