@@ -1,3 +1,4 @@
+import 'meter.dart';
 import 'score_note.dart';
 
 /// Un extrait de partition selectionne pour le travail en boucle.
@@ -9,6 +10,9 @@ class Passage {
     required this.notes,
     required this.ticksPerBeat,
     this.writtenTempoBpm = 80,
+    this.meter,
+    this.keyFifths,
+    this.bars,
   }) : assert(notes.isNotEmpty, 'un passage contient au moins une note');
 
   final String title;
@@ -17,8 +21,28 @@ class Passage {
   /// Resolution temporelle : nombre de ticks pour une noire.
   final int ticksPerBeat;
 
-  /// Tempo indique sur la partition. Le dernier tour d'une session s'y fait.
+  /// Tempo indique sur la partition, a la noire. Le dernier tour d'une
+  /// session s'y fait.
   final int writtenTempoBpm;
+
+  /// Chiffrage, s'il est connu. Un passage saisi ou un exercice genere n'en
+  /// porte pas : la gravure groupe alors par noire, comme elle l'a toujours
+  /// fait.
+  final Meter? meter;
+
+  /// Armure, en nombre de quintes : 2 pour re majeur, -1 pour fa majeur.
+  ///
+  /// `null` quand on ne la connait pas : la gravure ecrit alors chaque
+  /// alteration devant sa note, ce qui est juste, seulement plus charge.
+  final int? keyFifths;
+
+  /// Les mesures, silences compris, quand on les connait.
+  ///
+  /// `null` pour un passage fait de notes jointives : les barres s'y deduisent
+  /// d'un changement de numero de mesure. Un morceau importe les porte
+  /// toujours, parce qu'une mesure de silence n'a aucune note pour la
+  /// signaler.
+  final List<Bar>? bars;
 
   int get firstMeasure => notes.first.measure;
   int get lastMeasure => notes.last.measure;
@@ -57,11 +81,30 @@ class Passage {
   Passage slice(int start, int count) {
     final int safeStart = start.clamp(0, notes.length - 1);
     final int safeEnd = (safeStart + count).clamp(safeStart + 1, notes.length);
+    return withNotes(notes.sublist(safeStart, safeEnd));
+  }
+
+  /// Le meme passage, reduit a [subset] : chiffrage, armure et tempo suivent,
+  /// et seules les mesures que ces notes touchent sont gardees.
+  Passage withNotes(List<ScoreNote> subset, {String? title}) {
+    final List<Bar>? toutes = bars;
     return Passage(
-      title: title,
-      notes: notes.sublist(safeStart, safeEnd),
+      title: title ?? this.title,
+      notes: subset,
       ticksPerBeat: ticksPerBeat,
       writtenTempoBpm: writtenTempoBpm,
+      meter: meter,
+      keyFifths: keyFifths,
+      bars: toutes == null
+          ? null
+          : <Bar>[
+              for (final Bar b in toutes)
+                if (b.number >= subset.first.measure &&
+                    b.number <= subset.last.measure &&
+                    b.startTicks < subset.last.offsetTicks &&
+                    b.endTicks > subset.first.onsetTicks)
+                  b,
+            ],
     );
   }
 }
