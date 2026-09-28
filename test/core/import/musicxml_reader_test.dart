@@ -4,6 +4,7 @@ import 'package:violon/core/import/musicxml_reader.dart';
 import 'package:violon/core/music/meter.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/score_note.dart';
+import 'package:violon/core/play/accompaniment.dart';
 
 import 'musicxml_fixtures.dart';
 
@@ -128,6 +129,40 @@ void main() {
       );
       expect(p.passage.notes.single.midi, 69);
       expect(p.warnings.single, contains('"Violon"'));
+    });
+
+    test('les autres parties deviennent l accompagnement, calees par mesure',
+        () {
+      final ImportedPiece p = MusicXmlReader.read(
+        partition(
+          '<measure number="0" implicit="yes">$sixHuit${note('A4', 1)}'
+          '</measure>'
+          '<measure number="1">${note('D5', 6)}</measure>',
+          parties: '<part id="P2">'
+              '<measure number="0"><attributes><divisions>4</divisions>'
+              '</attributes><note><rest/><duration>2</duration></note>'
+              '</measure>'
+              '<measure number="1">'
+              '<note><pitch><step>D</step><octave>3</octave></pitch>'
+              '<duration>6</duration><tie type="start"/></note>'
+              '<note><chord/><pitch><step>F</step><alter>1</alter>'
+              '<octave>3</octave></pitch><duration>6</duration></note>'
+              '<note><pitch><step>D</step><octave>3</octave></pitch>'
+              '<duration>6</duration><tie type="stop"/></note>'
+              '</measure></part>',
+        ),
+      );
+      // La levee dure une croche : le re du piano tombe sur le premier temps
+      // de la mesure 1, a 240 ticks, et sa tenue ne fait qu'une note.
+      expect(
+        p.accompaniment.map((AccompanimentNote n) =>
+            '${n.midi} ${n.onsetTicks} ${n.durationTicks}'),
+        <String>['50 240 1440', '54 240 720'],
+      );
+      expect(p.passage.notes.map((ScoreNote n) => n.midi), <int>[69, 74]);
+      final ImportedPiece relu = ImportedPiece.fromJson(p.toJson())!;
+      expect(relu.accompaniment, hasLength(2));
+      expect(relu.accompanimentFor(p.excerpt(1, 1)!), hasLength(2));
     });
 
     test('le tempo du metronome se ramene a la noire', () {

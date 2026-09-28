@@ -1,6 +1,7 @@
 import '../music/meter.dart';
 import '../music/passage.dart';
 import '../music/score_note.dart';
+import '../play/accompaniment.dart';
 
 /// Un morceau entier, importe d'un fichier, et range sur le telephone.
 ///
@@ -16,7 +17,15 @@ class ImportedPiece {
     this.composer,
     this.slurredInto = const <String>{},
     this.warnings = const <String>[],
+    this.accompaniment = const <AccompanimentNote>[],
   });
+
+  /// Les autres parties du fichier -- la partie de piano, le plus souvent --
+  /// dans le temps du morceau. Vide quand le fichier n'a que la partie
+  /// suivie.
+  final List<AccompanimentNote> accompaniment;
+
+  bool get hasAccompaniment => accompaniment.isNotEmpty;
 
   /// Identifiant stable, tire du contenu : reimporter le meme fichier
   /// remplace le morceau au lieu de le dedoubler.
@@ -78,6 +87,10 @@ class ImportedPiece {
         if (composer != null) 'composer': composer,
         'warnings': warnings,
         'slurredInto': slurredInto.toList(),
+        if (accompaniment.isNotEmpty)
+          'accompagnement': <Map<String, Object?>>[
+            for (final AccompanimentNote n in accompaniment) n.toJson(),
+          ],
         'passage': passageToJson(passage),
       };
 
@@ -101,6 +114,7 @@ class ImportedPiece {
     final Object? composer = json['composer'];
     final Object? warnings = json['warnings'];
     final Object? liees = json['slurredInto'];
+    final Object? accompagnement = json['accompagnement'];
     return ImportedPiece(
       id: id,
       title: title,
@@ -118,7 +132,25 @@ class ImportedPiece {
                 if (l is String) l
             }
           : const <String>{},
+      accompaniment: accompagnement is List<Object?>
+          ? <AccompanimentNote>[
+              for (final Object? n in accompagnement)
+                if (AccompanimentNote.fromJson(n)
+                    case final AccompanimentNote note)
+                  note,
+            ]
+          : const <AccompanimentNote>[],
     );
+  }
+
+  /// L'accompagnement ecrit qui tombe dans [passage], ou vide.
+  List<AccompanimentNote> accompanimentFor(Passage passage) {
+    final List<Bar>? mesures = passage.bars;
+    if (accompaniment.isEmpty || mesures == null || mesures.isEmpty) {
+      return const <AccompanimentNote>[];
+    }
+    return clipTo(
+        accompaniment, mesures.first.startTicks, mesures.last.endTicks);
   }
 }
 
