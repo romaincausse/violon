@@ -1,0 +1,480 @@
+{
+ "source": "VSCO 2 Community Edition (CC0 1.0)",
+ "instruments": [
+  {
+   "id": "piano",
+   "name": "Piano",
+   "sustains": false,
+   "samples": [
+    {
+     "midi": 37,
+     "hz": 70.137,
+     "file": "piano_37.ogg"
+    },
+    {
+     "midi": 41,
+     "hz": 86.522,
+     "file": "piano_41.ogg"
+    },
+    {
+     "midi": 45,
+     "hz": 109.124,
+     "file": "piano_45.ogg"
+    },
+    {
+     "midi": 49,
+     "hz": 138.808,
+     "file": "piano_49.ogg"
+    },
+    {
+     "midi": 53,
+     "hz": 174.427,
+     "file": "piano_53.ogg"
+    },
+    {
+     "midi": 57,
+     "hz": 219.88,
+     "file": "piano_57.ogg"
+    },
+    {
+     "midi": 61,
+     "hz": 277.47,
+     "file": "piano_61.ogg"
+    },
+    {
+     "midi": 65,
+     "hz": 349.37,
+     "file": "piano_65.ogg"
+    },
+    {
+     "midi": 69,
+     "hz": 440.722,
+     "file": "piano_69.ogg"
+    },
+    {
+     "midi": 73,
+     "hz": 556.036,
+     "file": "piano_73.ogg"
+    },
+    {
+     "midi": 77,
+     "hz": 699.788,
+     "file": "piano_77.ogg"
+    },
+    {
+     "midi": 81,
+     "hz": 882.857,
+     "file": "piano_81.ogg"
+    },
+    {
+     "midi": 85,
+     "hz": 1117.435,
+     "file": "piano_85.ogg"
+    },
+    {
+     "midi": 89,
+     "hz": 1408.363,
+     "file": "piano_89.ogg"
+    },
+    {
+     "midi": 93,
+     "hz": 1777.567,
+     "file": "piano_93.ogg"
+    },
+    {
+     "midi": 97,
+     "hz": 2232.625,
+     "file": "piano_97.ogg"
+    },
+    {
+     "midi": 101,
+     "hz": 2843.527,
+     "file": "piano_101.ogg"
+    }
+   ]
+  },
+  {
+   "id": "violon",
+   "name": "Violon",
+   "sustains": true,
+   "samples": [
+    {
+     "midi": 55,
+     "hz": 195.553,
+     "loopStart": 0.8,
+     "file": "violon_55.ogg"
+    },
+    {
+     "midi": 57,
+     "hz": 220.293,
+     "loopStart": 0.8,
+     "file": "violon_57.ogg"
+    },
+    {
+     "midi": 60,
+     "hz": 265.032,
+     "loopStart": 0.8,
+     "file": "violon_60.ogg"
+    },
+    {
+     "midi": 64,
+     "hz": 330.804,
+     "loopStart": 0.8,
+     "file": "violon_64.ogg"
+    },
+    {
+     "midi": 67,
+     "hz": 395.766,
+     "loopStart": 0.8,
+     "file": "violon_67.ogg"
+    },
+    {
+     "midi": 69,
+     "hz": 440.816,
+     "loopStart": 0.8,
+     "file": "violon_69.ogg"
+    },
+    {
+     "midi": 72,
+     "hz": 522.726,
+     "loopStart": 0.8,
+     "file": "violon_72.ogg"
+    },
+    {
+     "midi": 76,
+     "hz": 661.045,
+     "loopStart": 0.8,
+     "file": "violon_76.ogg"
+    },
+    {
+     "midi": 79,
+     "hz": 782.19,
+     "loopStart": 0.8,
+     "file": "violon_79.ogg"
+    },
+    {
+     "midi": 81,
+     "hz": 876.66,
+     "loopStart": 0.8,
+     "file": "violon_81.ogg"
+    },
+    {
+     "midi": 84,
+     "hz": 1040.648,
+     "loopStart": 0.8,
+     "file": "violon_84.ogg"
+    },
+    {
+     "midi": 88,
+     "hz": 1328.4,
+     "loopStart": 0.8,
+     "file": "violon_88.ogg"
+    },
+    {
+     "midi": 91,
+     "hz": 1565.655,
+     "loopStart": 0.8,
+     "file": "violon_91.ogg"
+    },
+    {
+     "midi": 93,
+     "hz": 1755.929,
+     "loopStart": 0.8,
+     "file": "violon_93.ogg"
+    }
+   ]
+  },
+  {
+   "id": "violoncelle",
+   "name": "Violoncelle",
+   "sustains": true,
+   "samples": [
+    {
+     "midi": 36,
+     "hz": 65.5,
+     "loopStart": 0.8,
+     "file": "violoncelle_36.ogg"
+    },
+    {
+     "midi": 40,
+     "hz": 82.366,
+     "loopStart": 0.8,
+     "file": "violoncelle_40.ogg"
+    },
+    {
+     "midi": 43,
+     "hz": 97.929,
+     "loopStart": 0.8,
+     "file": "violoncelle_43.ogg"
+    },
+    {
+     "midi": 47,
+     "hz": 123.527,
+     "loopStart": 0.8,
+     "file": "violoncelle_47.ogg"
+    },
+    {
+     "midi": 50,
+     "hz": 148.491,
+     "loopStart": 0.8,
+     "file": "violoncelle_50.ogg"
+    },
+    {
+     "midi": 53,
+     "hz": 175.009,
+     "loopStart": 0.8,
+     "file": "violoncelle_53.ogg"
+    },
+    {
+     "midi": 57,
+     "hz": 220.255,
+     "loopStart": 0.8,
+     "file": "violoncelle_57.ogg"
+    },
+    {
+     "midi": 60,
+     "hz": 262.108,
+     "loopStart": 0.8,
+     "file": "violoncelle_60.ogg"
+    },
+    {
+     "midi": 64,
+     "hz": 330.134,
+     "loopStart": 0.8,
+     "file": "violoncelle_64.ogg"
+    },
+    {
+     "midi": 67,
+     "hz": 392.229,
+     "loopStart": 0.8,
+     "file": "violoncelle_67.ogg"
+    },
+    {
+     "midi": 71,
+     "hz": 492.256,
+     "loopStart": 0.8,
+     "file": "violoncelle_71.ogg"
+    },
+    {
+     "midi": 74,
+     "hz": 585.997,
+     "loopStart": 0.8,
+     "file": "violoncelle_74.ogg"
+    },
+    {
+     "midi": 77,
+     "hz": 700.825,
+     "loopStart": 0.8,
+     "file": "violoncelle_77.ogg"
+    }
+   ]
+  },
+  {
+   "id": "flute",
+   "name": "Flute",
+   "sustains": true,
+   "samples": [
+    {
+     "midi": 60,
+     "hz": 261.164,
+     "loopStart": 0.8,
+     "file": "flute_60.ogg"
+    },
+    {
+     "midi": 64,
+     "hz": 329.092,
+     "loopStart": 0.8,
+     "file": "flute_64.ogg"
+    },
+    {
+     "midi": 69,
+     "hz": 439.78,
+     "loopStart": 0.8,
+     "file": "flute_69.ogg"
+    },
+    {
+     "midi": 72,
+     "hz": 523.475,
+     "loopStart": 0.8,
+     "file": "flute_72.ogg"
+    },
+    {
+     "midi": 76,
+     "hz": 658.627,
+     "loopStart": 0.8,
+     "file": "flute_76.ogg"
+    },
+    {
+     "midi": 81,
+     "hz": 874.473,
+     "loopStart": 0.8,
+     "file": "flute_81.ogg"
+    },
+    {
+     "midi": 84,
+     "hz": 1048.342,
+     "loopStart": 0.8,
+     "file": "flute_84.ogg"
+    },
+    {
+     "midi": 88,
+     "hz": 1316.566,
+     "loopStart": 0.8,
+     "file": "flute_88.ogg"
+    },
+    {
+     "midi": 93,
+     "hz": 1762.045,
+     "loopStart": 0.8,
+     "file": "flute_93.ogg"
+    },
+    {
+     "midi": 96,
+     "hz": 2094.624,
+     "loopStart": 0.8,
+     "file": "flute_96.ogg"
+    }
+   ]
+  },
+  {
+   "id": "orgue",
+   "name": "Orgue",
+   "sustains": true,
+   "samples": [
+    {
+     "midi": 36,
+     "hz": 65.321,
+     "loopStart": 0.8,
+     "file": "orgue_36.ogg"
+    },
+    {
+     "midi": 42,
+     "hz": 93.067,
+     "loopStart": 0.8,
+     "file": "orgue_42.ogg"
+    },
+    {
+     "midi": 48,
+     "hz": 131.178,
+     "loopStart": 0.8,
+     "file": "orgue_48.ogg"
+    },
+    {
+     "midi": 54,
+     "hz": 185.231,
+     "loopStart": 0.8,
+     "file": "orgue_54.ogg"
+    },
+    {
+     "midi": 60,
+     "hz": 261.031,
+     "loopStart": 0.8,
+     "file": "orgue_60.ogg"
+    },
+    {
+     "midi": 66,
+     "hz": 370.016,
+     "loopStart": 0.8,
+     "file": "orgue_66.ogg"
+    },
+    {
+     "midi": 72,
+     "hz": 522.471,
+     "loopStart": 0.8,
+     "file": "orgue_72.ogg"
+    },
+    {
+     "midi": 78,
+     "hz": 739.842,
+     "loopStart": 0.8,
+     "file": "orgue_78.ogg"
+    },
+    {
+     "midi": 84,
+     "hz": 1044.163,
+     "loopStart": 0.8,
+     "file": "orgue_84.ogg"
+    },
+    {
+     "midi": 90,
+     "hz": 1478.864,
+     "loopStart": 0.8,
+     "file": "orgue_90.ogg"
+    },
+    {
+     "midi": 96,
+     "hz": 2088.095,
+     "loopStart": 0.8,
+     "file": "orgue_96.ogg"
+    }
+   ]
+  },
+  {
+   "id": "clarinette",
+   "name": "Clarinette",
+   "sustains": true,
+   "samples": [
+    {
+     "midi": 50,
+     "hz": 147.145,
+     "loopStart": 0.8,
+     "file": "clarinette_50.ogg"
+    },
+    {
+     "midi": 53,
+     "hz": 174.75,
+     "loopStart": 0.8,
+     "file": "clarinette_53.ogg"
+    },
+    {
+     "midi": 58,
+     "hz": 233.2,
+     "loopStart": 0.8,
+     "file": "clarinette_58.ogg"
+    },
+    {
+     "midi": 62,
+     "hz": 294.027,
+     "loopStart": 0.8,
+     "file": "clarinette_62.ogg"
+    },
+    {
+     "midi": 65,
+     "hz": 350.307,
+     "loopStart": 0.8,
+     "file": "clarinette_65.ogg"
+    },
+    {
+     "midi": 70,
+     "hz": 466.832,
+     "loopStart": 0.8,
+     "file": "clarinette_70.ogg"
+    },
+    {
+     "midi": 74,
+     "hz": 588.212,
+     "loopStart": 0.8,
+     "file": "clarinette_74.ogg"
+    },
+    {
+     "midi": 77,
+     "hz": 700.457,
+     "loopStart": 0.8,
+     "file": "clarinette_77.ogg"
+    },
+    {
+     "midi": 82,
+     "hz": 934.166,
+     "loopStart": 0.8,
+     "file": "clarinette_82.ogg"
+    },
+    {
+     "midi": 86,
+     "hz": 1178.859,
+     "loopStart": 0.8,
+     "file": "clarinette_86.ogg"
+    }
+   ]
+  }
+ ]
+}

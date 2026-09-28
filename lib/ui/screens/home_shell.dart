@@ -11,9 +11,11 @@ import '../../core/import/piece_importer.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/audio/take_player.dart';
+import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/session_store.dart';
+import 'accompaniment_screen.dart';
 import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
@@ -184,6 +186,25 @@ class _HomeShellState extends State<HomeShell> {
       return _morceaux.byId(extrait.pieceId)?.passage.pulseBpm;
     }
     return null;
+  }
+
+  /// Ouvre l'accompagnement du passage en cours, avec la partie ecrite du
+  /// morceau quand il en vient d'un.
+  Future<void> _accompagner() async {
+    final RememberedExcerpt? extrait = _extrait;
+    final ImportedPiece? morceau =
+        extrait == null ? null : _morceaux.byId(extrait.pieceId);
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext c) => AccompanimentScreen(
+          passage: widget.passage,
+          engine: _son,
+          a4: widget.a4,
+          scoreAccompaniment: morceau?.accompanimentFor(widget.passage) ??
+              const <AccompanimentNote>[],
+        ),
+      ),
+    );
   }
 
   /// Le meme passage, a un autre tempo -- et on s'en souvient.
@@ -530,6 +551,7 @@ class _HomeShellState extends State<HomeShell> {
               onChangePassage: () => unawaited(_saisirUnPassage()),
               onTempoChanged: _changerDeTempo,
               writtenPulseBpm: _tempoEcrit,
+              onAccompany: () => unawaited(_accompagner()),
               // Accorder est la premiere chose de chaque seance : elle
               // merite son raccourci, en plus du tiroir.
               onFullScreen: (bool plein) => setState(() => _pleinEcran = plein),

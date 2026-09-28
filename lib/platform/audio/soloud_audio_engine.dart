@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 import '../../core/play/audio_engine.dart';
 import '../../core/play/click_sound.dart';
+import '../../core/play/instrument.dart';
 import '../../core/play/metronome_clock.dart';
 
 /// Le moteur de son, branche sur SoLoud (ADR-012).
@@ -15,8 +19,39 @@ import '../../core/play/metronome_clock.dart';
 ///    derive, quoi que fasse l'interface pendant ce temps ;
 ///  - `setWaveformFreq` fixe une frequence exacte, donc le bourdon sonne au
 ///    diapason mesure et non a 440 par defaut.
+///
+/// L'accompagnement (ADR-015) en ajoute deux : `playScheduled` pose une note
+/// a un instant de l'horloge du moteur, `fadeScheduled` l'eteint a un autre,
+/// sans clic et a l'echantillon pres. Un echantillon enregistre joue a la
+/// vitesse qui l'amene a la frequence voulue : la hauteur reste exacte.
 class SoloudAudioEngine implements AudioEngine {
-  SoloudAudioEngine({SoLoud? soloud}) : _injecte = soloud;
+  SoloudAudioEngine({SoLoud? soloud, AssetBundle? bundle})
+      : _injecte = soloud,
+        _bundle = bundle;
+
+  final AssetBundle? _bundle;
+
+  /// L'index des instruments, relu une fois.
+  InstrumentLibrary? _bibliotheque;
+
+  /// Les echantillons deja charges, par fichier.
+  final Map<String, AudioSource> _echantillons = <String, AudioSource>{};
+
+  /// Ou vivent les sons embarques.
+  static const String dossier = 'assets/sons';
+
+  /// Extinction d'une note tenue : assez courte pour detacher deux croches,
+  /// assez longue pour ne pas claquer.
+  static const Duration _relache = Duration(milliseconds: 70);
+
+  /// Un piano ne s'arrete pas net quand on leve le doigt : l'etouffoir met un
+  /// instant a retomber.
+  static const Duration _relachePiano = Duration(milliseconds: 250);
+
+  /// Voix simultanees permises. Seize par defaut : un accord, sa basse, une
+  /// melodie et les notes deja posees pour la seconde qui vient les depassent,
+  /// et SoLoud couperait alors les plus anciennes -- en pleine note.
+  static const int _voix = 64;
 
   final SoLoud? _injecte;
 
@@ -63,6 +98,105 @@ class SoloudAudioEngine implements AudioEngine {
     // `lowLatency` reduit la taille du tampon : un clic planifie dans 20 ms
     // doit pouvoir etre pose dans 20 ms.
     await _soloud.init(sampleRate: sampleRate, lowLatency: true);
+    _soloud.setMaxActiveVoiceCount(_voix);
+  }
+
+  @override
+  Future<InstrumentLibrary> instruments() async {
+    final InstrumentLibrary? deja = _bibliotheque;
+    if (deja != null) {
+      return deja;
+    }
+    try {
+      final String brut =
+          await (_bundle ?? rootBundle).loadString('$dossier/instruments.json');
+      return _bibliotheque = InstrumentLibrary.fromJson(jsonDecode(brut));
+    } on Exception {
+      // Sans index, pas d'instrument : l'accompagnement le dira, le reste de
+      // l'application continue de marcher.
+      return _bibliotheque = InstrumentLibrary.vide;
+    }
+  }
+
+  @override
+  Future<void> prepareInstrument(String instrument) async {
+    await start();
+    final Instrument? i = (await instruments()).byId(instrument);
+    if (i == null) {
+      return;
+    }
+    for (final InstrumentSample s in i.samples) {
+      await _echantillon(s);
+    }
+  }
+
+  Future<AudioSource> _echantillon(InstrumentSample s) async {
+    final AudioSource? deja = _echantillons[s.file];
+    if (deja != null) {
+      return deja;
+    }
+    final AudioSource source = await _soloud.loadAsset(
+      '$dossier/${s.file}',
+      assetBundle: _bundle,
+    );
+    _echantillons[s.file] = source;
+    _sources.add(source);
+    return source;
+  }
+
+  @override
+  Future<Duration> now() async {
+    await start();
+    return _soloud.getEngineTime();
+  }
+
+  @override
+  Future<void> scheduleNote({
+    required String instrument,
+    required Duration at,
+    required double frequencyHz,
+    required Duration duration,
+    double volume = 0.5,
+  }) async {
+    await start();
+    final Instrument? i = (await instruments()).byId(instrument);
+    if (i == null) {
+      return;
+    }
+    final SamplePlayback lecture = i.playbackFor(frequencyHz);
+    final AudioSource source = await _echantillon(lecture.sample);
+    final SoundHandle handle =
+        _soloud.playScheduled(source, at, volume: volume);
+    _soloud.setRelativePlaySpeed(handle, lecture.speed);
+    final Duration? boucle = lecture.sample.loopStart;
+    if (i.sustains && boucle != null) {
+      // Une note tenue plus longue que l'enregistrement boucle sur sa tenue,
+      // jamais sur son attaque.
+      _soloud
+        ..setLooping(handle, true)
+        ..setLoopPoint(handle, boucle);
+    }
+    _soloud.fadeScheduled(
+      handle,
+      at + duration,
+      0,
+      i.sustains ? _relache : _relachePiano,
+      thenStop: true,
+    );
+    _enCours.add(handle);
+    _enCours.removeWhere(
+      (SoundHandle h) => h != handle && !_soloud.getIsValidVoiceHandle(h),
+    );
+  }
+
+  @override
+  Future<void> scheduleClickAt({
+    required Duration at,
+    PulseAccent accent = PulseAccent.beat,
+  }) async {
+    await start();
+    final AudioSource source = await _sourceDeClic(accent);
+    _enCours.add(_soloud.playScheduled(source, at));
   }
 
   /// Frequence d'echantillonnage demandee au moteur.
@@ -78,8 +212,21 @@ class SoloudAudioEngine implements AudioEngine {
     required double frequencyHz,
     double volume = 0.3,
     DroneTimbre timbre = DroneTimbre.dentDeScie,
+    String? instrument,
   }) async {
     await start();
+    if (instrument != null) {
+      final Instrument? i = (await instruments()).byId(instrument);
+      if (i != null && i.sustains) {
+        final _SoloudSampledDrone voix = _SoloudSampledDrone(
+          engine: this,
+          instrument: i,
+          volume: volume,
+        );
+        await voix.setFrequency(frequencyHz);
+        return voix;
+      }
+    }
     final AudioSource source = await _soloud.loadWaveform(
       _ondePour(timbre),
       false,
@@ -170,6 +317,7 @@ class SoloudAudioEngine implements AudioEngine {
     }
     _sources.clear();
     _clics.clear();
+    _echantillons.clear();
     _soloud.deinit();
   }
 }
@@ -213,6 +361,89 @@ class _SoloudDrone implements DroneVoice {
     await _soloud.stop(handle);
     await _soloud.disposeSource(source);
     onStopped();
+  }
+}
+
+/// Un bourdon d'instrument enregistre : l'echantillon le plus proche, en
+/// boucle sur sa tenue, a la vitesse qui donne la frequence exacte.
+///
+/// **Changer de note ne coupe pas le son**, comme pour le bourdon
+/// synthetique : tant que l'echantillon reste le plus proche, seule la
+/// vitesse change ; sinon le nouveau entre pendant que l'ancien s'efface.
+class _SoloudSampledDrone implements DroneVoice {
+  _SoloudSampledDrone({
+    required this.engine,
+    required this.instrument,
+    required double volume,
+  }) : _volume = volume;
+
+  final SoloudAudioEngine engine;
+  final Instrument instrument;
+  double _volume;
+  SoundHandle? _handle;
+  InstrumentSample? _echantillon;
+  bool _arrete = false;
+
+  SoLoud get _soloud => engine._soloud;
+
+  static const Duration _fondu = Duration(milliseconds: 120);
+
+  @override
+  Future<void> setFrequency(double frequencyHz) async {
+    if (_arrete) {
+      return;
+    }
+    final SamplePlayback lecture = instrument.playbackFor(frequencyHz);
+    final SoundHandle? actuel = _handle;
+    if (actuel != null && identical(lecture.sample, _echantillon)) {
+      _soloud.setRelativePlaySpeed(actuel, lecture.speed);
+      return;
+    }
+    final AudioSource source = await engine._echantillon(lecture.sample);
+    final SoundHandle nouveau = _soloud.play(
+      source,
+      volume: actuel == null ? _volume : 0,
+      looping: true,
+      loopingStartAt: lecture.sample.loopStart ?? Duration.zero,
+    );
+    _soloud.setRelativePlaySpeed(nouveau, lecture.speed);
+    engine._enCours.add(nouveau);
+    if (actuel != null) {
+      _soloud
+        ..fadeVolume(nouveau, _volume, _fondu)
+        ..fadeVolume(actuel, 0, _fondu)
+        ..scheduleStop(actuel, _fondu);
+      engine._enCours.remove(actuel);
+    }
+    _handle = nouveau;
+    _echantillon = lecture.sample;
+  }
+
+  @override
+  Future<void> setVolume(double volume) async {
+    _volume = volume;
+    final SoundHandle? h = _handle;
+    if (_arrete || h == null) {
+      return;
+    }
+    _soloud.setVolume(h, volume);
+  }
+
+  @override
+  Future<void> stop() async {
+    if (_arrete) {
+      return;
+    }
+    _arrete = true;
+    final SoundHandle? h = _handle;
+    if (h != null) {
+      // S'eteindre plutot que se couper : un bourdon qui claque a l'arret
+      // fait sursauter.
+      _soloud
+        ..fadeVolume(h, 0, _fondu)
+        ..scheduleStop(h, _fondu);
+      engine._enCours.remove(h);
+    }
   }
 }
 

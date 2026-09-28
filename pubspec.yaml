@@ -86,6 +86,12 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Echantillons d'instruments (VSCO 2 CE, CC0) pour l'accompagnement et le
+  # bourdon : 3,2 Mo pour six instruments. Refaits par tool/echantillons.py,
+  # licence et credits dans assets/sons/LICENCE.txt.
+  assets:
+    - assets/sons/
+
   # Bravura, la police de reference SMuFL, sous licence SIL OFL.
   # Livree telle quelle : la licence lui attache un "Reserved Font Name",
   # donc toute version modifiee -- un sous-ensemble de glyphes, par exemple --

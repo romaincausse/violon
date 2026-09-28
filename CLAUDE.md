@@ -95,8 +95,10 @@ Quatre regles structurantes :
 2. **`AudioCapture`, `PitchSource` et `AudioEngine` sont les seules frontieres
    avec le materiel audio.** `AudioCapture` ne connait que des octets et vit
    dans `lib/platform/` cote implementation ; `PitchSource` rend des hauteurs ;
-   `AudioEngine` est la sortie, et n'expose que deux choses -- tenir une note a
-   une frequence exacte, poser un clic a un instant exact (ADR-012).
+   `AudioEngine` est la sortie, et n'expose que ce qu'on lui demande -- tenir
+   une note a une frequence exacte, poser un clic a un instant exact
+   (ADR-012), faire sonner un instrument enregistre a un instant de sa propre
+   horloge (ADR-015).
    `SessionStore` et `PieceStore` suivent la meme regle pour le stockage local,
    `ScreenKeeper` pour l'ecran et `DocumentPicker` pour le choix d'un fichier :
    `lib/core/` decrit ce qu'on se rappelle, quand l'ecran doit rester allume et

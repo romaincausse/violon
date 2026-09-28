@@ -1,4 +1,5 @@
 import '../music/meter.dart';
+import '../play/accompaniment.dart';
 import '../music/passage.dart';
 import '../music/score_note.dart';
 import 'imported_piece.dart';
@@ -102,8 +103,8 @@ class MusicXmlReader {
     if (parties.length > 1) {
       final String nom = _nomDePartie(racine, parties.first) ?? 'la premiere';
       _avertissements.add(
-        'La partition contient ${parties.length} parties : seule "$nom" '
-        'est lue.',
+        'La partition contient ${parties.length} parties : "$nom" est '
+        'suivie, les autres servent d accompagnement.',
       );
     }
 
@@ -153,7 +154,92 @@ class MusicXmlReader {
       passage: passage,
       slurredInto: liees,
       warnings: List<String>.unmodifiable(_avertissements),
+      accompaniment: <AccompanimentNote>[
+        for (final XmlElement partie in parties.skip(1))
+          ..._accompagnement(partie),
+      ]..sort(
+          (AccompanimentNote a, AccompanimentNote b) =>
+              a.onsetTicks.compareTo(b.onsetTicks),
+        ),
     );
+  }
+
+  /// Toutes les notes d'une autre partie : accords, voix et portees
+  /// comprises, puisque c'est un accompagnement qu'on ecoute et non une ligne
+  /// qu'on suit.
+  ///
+  /// **Calees sur les mesures de la partie suivie**, par leur rang : la
+  /// mesure 15 du piano tombe sur la mesure 15 du violon, meme si une levee
+  /// ou une mesure incomplete decale le compte des temps.
+  List<AccompanimentNote> _accompagnement(XmlElement partie) {
+    final List<AccompanimentNote> notes = <AccompanimentNote>[];
+    int divisions = 1;
+    int rang = 0;
+    for (final XmlElement mesure in partie.childrenNamed('measure')) {
+      if (rang >= _mesures.length) {
+        break;
+      }
+      final int debut = _mesures[rang++].startTicks;
+      int curseur = 0;
+      int derniere = 0;
+      for (final XmlElement e in mesure.children) {
+        switch (e.name) {
+          case 'attributes':
+            final int? d = int.tryParse(e.childText('divisions') ?? '');
+            if (d != null && d > 0) {
+              divisions = d;
+            }
+          case 'backup':
+            curseur -= _duree(e);
+          case 'forward':
+            curseur += _duree(e);
+          case 'note':
+            if (e.child('grace') != null || e.child('cue') != null) {
+              continue;
+            }
+            final int duree = _duree(e);
+            final bool accord = e.child('chord') != null;
+            final int position = accord ? curseur - derniere : curseur;
+            if (!accord) {
+              derniere = duree;
+              curseur += duree;
+            }
+            final int? midi = _hauteur(e.child('pitch'));
+            if (midi == null || e.child('rest') != null || duree <= 0) {
+              continue;
+            }
+            final int onset =
+                debut + (position * ticksPerBeat / divisions).round();
+            final int ticks = (duree * ticksPerBeat / divisions).round();
+            final bool prolonge = e
+                .childrenNamed('tie')
+                .any((XmlElement t) => t.attributes['type'] == 'stop');
+            final int i = prolonge
+                ? notes.lastIndexWhere(
+                    (AccompanimentNote n) =>
+                        n.midi == midi && n.offsetTicks == onset,
+                  )
+                : -1;
+            if (i >= 0) {
+              final AccompanimentNote n = notes[i];
+              notes[i] = AccompanimentNote(
+                midi: n.midi,
+                onsetTicks: n.onsetTicks,
+                durationTicks: n.durationTicks + ticks,
+              );
+            } else {
+              notes.add(
+                AccompanimentNote(
+                  midi: midi,
+                  onsetTicks: onset,
+                  durationTicks: ticks,
+                ),
+              );
+            }
+        }
+      }
+    }
+    return notes;
   }
 
   /// Lit une mesure et rend sa duree, en ticks.

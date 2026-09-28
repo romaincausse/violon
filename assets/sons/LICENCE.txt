@@ -1,0 +1,13 @@
+Echantillons d'instruments de l'application Violon
+===================================================
+
+Source : VSCO 2 Community Edition, par Versilian Studios.
+https://github.com/sgossner/VSCO-2-CE
+Licence : CC0 1.0 Universal (domaine public).
+
+Credits, comme les auteurs le demandent :
+- Versilian Studios / Sam Gossner (violon, violoncelle, flute, clarinette) ;
+- Ivy Audio / Simon Dalzell (piano droit, orgue).
+
+Les fichiers ont ete coupes, mis en boucle, mis au meme niveau et compresses
+par tool/echantillons.py, qui permet de les refaire a l'identique.
