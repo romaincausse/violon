@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+# Prepare les echantillons d'instruments de l'application depuis VSCO 2 CE.
+#
+#   python3 tool/echantillons.py [dossier-de-cache]
+#
+# Demande numpy, scipy et soundfile (pip install numpy scipy soundfile). Ecrit dans
+# assets/sons/ un OGG par echantillon et un index, instruments.json.
+#
+# Pourquoi un script plutot que des fichiers poses a la main : chaque
+# echantillon est **mesure** (sa hauteur reelle, au centieme de hertz), coupe,
+# boucle et compresse toujours de la meme facon. Refaire les assets doit
+# redonner les memes assets.
+#
+# Source : VSCO 2 Community Edition, Versilian Studios, CC0 1.0.
+# https://github.com/sgossner/VSCO-2-CE
+import json
+import os
+import sys
+import urllib.parse
+import urllib.request
+
+from math import gcd
+
+import numpy as np
+import soundfile as sf
+from scipy.signal import resample_poly
+
+RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SORTIE = os.path.join(RACINE, 'assets', 'sons')
+DEPOT = 'https://raw.githubusercontent.com/sgossner/VSCO-2-CE/master/'
+# Niveau efficace commun, bien sous la saturation : l'accompagnement additionne
+# plusieurs voix, et un accord de piano ne doit pas ecreter.
+NIVEAU = 0.06
+TAUX = 32000  # Assez pour un violon (harmoniques utiles sous 12 kHz), moitie moins lourd.
+
+NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
+
+
+def midi_de(nom, decalage=0):
+    # 'A#3' -> 70 + decalage d'octave propre a l'instrument
+    lettre, reste = nom[0], nom[1:]
+    alt = 0
+    if reste.startswith('#'):
+        alt, reste = 1, reste[1:]
+    return (int(reste) + 1) * 12 + NOTES[lettre] + alt + decalage
+
+
+# (fichier, midi nominal). Un echantillon tous les trois a cinq demi-tons :
+# au-dela de trois demi-tons de transposition, un timbre se deforme.
+def piano():
+    carte = [21 + 2 * i for i in range(44)] + [108]
+    return [(f'Keys/Upright Piano/Player_dyn1_rr1_{i:03d}.wav', m)
+            for i, m in enumerate(carte) if 37 <= m <= 101 and (m - 37) % 4 == 0]
+
+
+def violon():
+    noms = ['G3', 'A3', 'C4', 'E4', 'G4', 'A4', 'C5', 'E5', 'G5', 'A5',
+            'C6', 'E6', 'G6', 'A6']
+    return [(f'Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_{n}_p.wav', midi_de(n))
+            for n in noms]
+
+
+def violoncelle():
+    # Les noms de ce dossier sont decales d'une octave : C1 est le do grave
+    # du violoncelle (do2). La mesure le confirmera.
+    noms = ['C1', 'E1', 'G1', 'B1', 'D2', 'F2', 'A2', 'C3', 'E3', 'G3',
+            'B3', 'D4', 'F4']
+    return [(f'Strings/Cello Section/susvib/susvib_{n}_v1_1.wav',
+             midi_de(n, 12)) for n in noms]
+
+
+def flute():
+    noms = ['C3', 'E3', 'A3', 'C4', 'E4', 'A4', 'C5', 'E5', 'A5', 'C6']
+    return [(f'Woodwinds/Flute/susvib/LDFlute_susvib_{n}_v1_1.wav',
+             midi_de(n, 12)) for n in noms]
+
+
+def orgue():
+    # Man3Open_01 est le do2 ; un fichier tous les trois demi-tons.
+    return [(f'Keys/Organ/Loud/Rode_Man3Open_{i:02d}.wav', 35 + i)
+            for i in range(1, 62, 3) if 36 <= 35 + i <= 96 and (i - 1) % 6 == 0]
+
+
+def clarinette():
+    # F#5 manque : le fichier de ce nom sonne fa, la mesure l'a refuse.
+    noms = ['D2', 'F2', 'A#2', 'D3', 'F3', 'A#3', 'D4', 'F4', 'A#4', 'D5']
+    return [(f'Woodwinds/Clarinet/susLong/DCClar_susLong_{n}_v2_rr1_sum.wav',
+             midi_de(n, 12)) for n in noms]
+
+
+INSTRUMENTS = {
+    # id: (liste, tient la note, nom affiche)
+    'piano': (piano, False, 'Piano'),
+    'violon': (violon, True, 'Violon'),
+    'violoncelle': (violoncelle, True, 'Violoncelle'),
+    'flute': (flute, True, 'Flute'),
+    'orgue': (orgue, True, 'Orgue'),
+    'clarinette': (clarinette, True, 'Clarinette'),
+}
+
+
+def telecharger(chemin, cache):
+    local = os.path.join(cache, chemin.replace('/', '__'))
+    if not os.path.exists(local):
+        url = DEPOT + urllib.parse.quote(chemin)
+        urllib.request.urlretrieve(url, local)
+    return local
+
+
+def reechantillonner(x, sr):
+    # Filtre polyphase : une interpolation lineaire replierait l'aigu en
+    # sifflements, audibles sur une note tenue.
+    if sr == TAUX:
+        return x
+    g = gcd(TAUX, sr)
+    return resample_poly(x, TAUX // g, sr // g)
+
+
+def hauteur(x, sr, attendu):
+    # Pic du spectre pres de la fondamentale attendue, sur la partie tenue :
+    # on mesure l'accord reel de l'echantillon, pas sa note. Le spectre est
+    # tres suralimente en zeros (un dixieme de hertz par case) et le pic
+    # interpole : une autocorrelation manquait de finesse dans l'aigu, ou une
+    # periode ne fait qu'une quinzaine d'echantillons.
+    seg = x[int(0.3 * sr):int(1.3 * sr)]
+    seg = (seg - seg.mean()) * np.hanning(len(seg))
+    n = 1 << 19
+    spectre = np.log(np.abs(np.fft.rfft(seg, n)) + 1e-12)
+    f0 = 440 * 2 ** ((attendu - 69) / 12)
+    lo = int(f0 / 1.06 * n / sr)
+    hi = int(f0 * 1.06 * n / sr)
+    i = lo + int(np.argmax(spectre[lo:hi]))
+    a, b, c = spectre[i - 1], spectre[i], spectre[i + 1]
+    i = i + 0.5 * (a - c) / (a - 2 * b + c)
+    return i * sr / n
+
+
+def debut(x):
+    seuil = np.max(np.abs(x)) * 10 ** (-40 / 20)
+    i = int(np.argmax(np.abs(x) > seuil))
+    return max(0, i - int(0.005 * TAUX))
+
+
+def enveloppe(x, sr, fenetre=0.2):
+    # Niveau efficace glissant, echantillon par echantillon.
+    n = int(fenetre * sr)
+    h = np.hanning(n)
+    h /= h.sum()
+    return np.sqrt(np.convolve(x * x, h, mode='same') + 1e-12)
+
+
+def boucle(x, sr):
+    """Une boucle de tenue qui ne s'entend pas.
+
+    Trois defauts s'entendaient sur la premiere version, une boucle courte
+    (1,2 s) fondue a l'aveugle : le fondu melangeait deux copies du meme son
+    dephasees (un "wah" a chaque tour), et le souffle de l'archet ou de
+    l'instrumentiste revenait toutes les 1,2 s. D'ou :
+
+    - **une boucle longue**, prise dans toute la tenue de l'enregistrement
+      (jusqu'a cinq secondes) : le vibrato et les irregularites ne se repetent
+      plus assez vite pour qu'on les reconnaisse ;
+    - **un niveau aplati** sur toute la tenue : plus de houle a chaque tour ;
+    - **une fin choisie pour ressembler au debut** : parmi les fins possibles,
+      celle dont la forme d'onde correle le mieux avec le point de retour, de
+      sorte que le fondu melange deux signaux en phase ;
+    - **un fondu lineaire**, le bon pour deux signaux en phase.
+    """
+    env = enveloppe(x, sr)
+    t0 = int(0.6 * sr)
+    reference = float(np.median(env[t0:]))
+    tenue = np.where(env[t0:] >= 0.5 * reference)[0]
+    t1 = t0 + int(tenue[-1]) - int(0.3 * sr)
+
+    # Aplatir le niveau de la tenue, en entrant en douceur apres l'attaque.
+    niveau = float(np.median(env[t0:t1]))
+    gain = np.ones(len(x))
+    gain[t0:] = niveau / np.maximum(env[t0:], niveau * 0.2)
+    rampe = int(0.1 * sr)
+    gain[t0:t0 + rampe] = 1 + (gain[t0:t0 + rampe] - 1) * np.linspace(0, 1, rampe)
+    x = x * gain
+
+    a = t0 + int(0.2 * sr)
+    longueur = min(t1 - int(0.35 * sr) - a, int(5.0 * sr))
+    if longueur < int(1.0 * sr):
+        raise ValueError('tenue trop courte pour boucler')
+
+    # La fin qui ressemble le plus au debut, dans la derniere seconde.
+    w = int(0.04 * sr)
+    modele = x[a - w:a + w]
+    modele = modele / (np.linalg.norm(modele) + 1e-12)
+    e_min = a + longueur - int(1.0 * sr)
+    zone = x[e_min - w:a + longueur + w]
+    corr = np.correlate(zone, modele, mode='valid')
+    energie = np.sqrt(np.convolve(zone * zone, np.ones(2 * w), mode='valid'))
+    score = corr / (energie + 1e-12)
+    e = e_min + int(np.argmax(score))
+    rho = float(np.clip(np.max(score), 0, 1))
+
+    # Un fondu a puissance constante **quelle que soit la ressemblance** :
+    # lineaire pour deux signaux en phase, il creuserait de trois decibels
+    # entre deux signaux sans rapport -- un pupitre de violoncelles, un orgue
+    # dans sa reverberation. On divise par la puissance attendue du melange.
+    fondu = int((0.15 if rho > 0.9 else 0.35) * sr)
+    corps = x[a:e].copy()
+    r = np.linspace(0, 1, fondu)
+    melange = x[a:a + fondu] * r + x[e:e + fondu] * (1 - r)
+    puissance = np.sqrt(r * r + (1 - r) * (1 - r) + 2 * rho * r * (1 - r))
+    melange = melange / puissance
+    # Sur un tiers de seconde, deux copies du meme son derivent l'une par
+    # rapport a l'autre -- un rien de justesse, un pupitre qui respire -- et
+    # s'annulent en partie : un creux de quatre a six decibels au milieu du
+    # fondu, a chaque tour. La tenue ayant ete aplatie a un niveau connu, on y
+    # ramene le fondu, instant par instant.
+    marge = int(0.05 * sr)
+    autour = np.concatenate([x[a - marge:a], melange, x[a + fondu:a + fondu + marge]])
+    mesure = enveloppe(autour, sr, fenetre=0.05)[marge:marge + fondu]
+    melange = melange * np.clip(niveau / mesure, 0.5, 2.0)
+    corps[:fondu] = melange
+    return np.concatenate([x[:a], corps]), a / sr, rho
+
+
+def ecart_au_raccord(x, sr, depart):
+    # Ce que le raccord ajoute a la houle naturelle de la tenue, en decibels :
+    # on rejoue trois tours et on compare la variation de niveau autour des
+    # raccords a celle du milieu de la boucle.
+    a = int(round(depart * sr))
+    corps = x[a:]
+    y = np.concatenate([x[:a], corps, corps, corps])
+    e = enveloppe(y, sr, fenetre=0.05)
+    d = int(0.4 * sr)
+
+    def houle(c):
+        z = e[c - d:c + d]
+        return 20 * np.log10(z.max() / z.min())
+
+    raccords = max(houle(a + len(corps)), houle(a + 2 * len(corps)))
+    return raccords - houle(a + len(corps) + len(corps) // 2)
+
+
+# Au-dela, un raccord s'entend a chaque tour : on refuse l'echantillon plutot
+# que de livrer un bourdon qui hoquette.
+ECART_MAX_DB = 2.5
+
+
+def main():
+    cache = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
+        '~/.cache/violon-vsco')
+    os.makedirs(cache, exist_ok=True)
+    os.makedirs(SORTIE, exist_ok=True)
+    index = {'source': 'VSCO 2 Community Edition (CC0 1.0)',
+             'instruments': []}
+    for ident, (liste, tient, nom) in INSTRUMENTS.items():
+        echantillons = []
+        brut = []
+        for chemin, attendu in liste():
+            x, sr = sf.read(telecharger(chemin, cache), always_2d=True)
+            x = reechantillonner(x.mean(axis=1), sr)
+            x = x[debut(x):]
+            hz = hauteur(x, TAUX, attendu)
+            ecart = 1200 * np.log2(hz / (440 * 2 ** ((attendu - 69) / 12)))
+            if abs(ecart) > 60:
+                raise SystemExit(f'{chemin}: {hz:.1f} Hz, {ecart:+.0f} cents '
+                                 f'de la note attendue')
+            brut.append((chemin, attendu, hz, x))
+        # Meme niveau pour tous : sinon la melodie monterait et baisserait
+        # d'un echantillon a l'autre.
+        niveaux = [np.sqrt(np.mean(x[:int(1.5 * TAUX)] ** 2)) for *_, x in brut]
+        for (chemin, attendu, hz, x), niveau in zip(brut, niveaux):
+            x = x * (NIVEAU / niveau)
+            # Le fichier doit s'arreter exactement la ou la boucle repart : le
+            # decodeur OGG ne doit rien ajouter, ce que verifie le test.
+            entree = {'midi': attendu, 'hz': round(hz, 3)}
+            if tient:
+                x, depart, ressemblance = boucle(x, TAUX)
+                entree['loopStart'] = round(depart, 4)
+                ecart = ecart_au_raccord(x, TAUX, depart)
+                if ecart > ECART_MAX_DB:
+                    raise SystemExit(f'{chemin}: le raccord de boucle s entend '
+                                     f'({ecart:+.1f} dB, ressemblance '
+                                     f'{ressemblance:.2f})')
+            else:
+                x = x[:int(3.0 * TAUX)]
+                x[-int(0.3 * TAUX):] *= np.linspace(1, 0, int(0.3 * TAUX))
+            fichier = f'{ident}_{attendu}.ogg'
+            entree['file'] = fichier
+            echantillons.append(entree)
+            sf.write(os.path.join(SORTIE, fichier), x.clip(-1, 1), TAUX,
+                     format='OGG', subtype='VORBIS')
+        index['instruments'].append({'id': ident, 'name': nom,
+                                     'sustains': tient,
+                                     'samples': echantillons})
+        print(f'{nom}: {len(echantillons)} echantillons')
+    with open(os.path.join(SORTIE, 'instruments.json'), 'w') as f:
+        json.dump(index, f, indent=1)
+
+
+if __name__ == '__main__':
+    main()

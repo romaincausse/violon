@@ -110,6 +110,7 @@ class SessionScreen extends StatefulWidget {
     this.onFullScreen,
     this.onTempoChanged,
     this.writtenPulseBpm,
+    this.onAccompany,
     super.key,
   });
 
@@ -157,6 +158,10 @@ class SessionScreen extends StatefulWidget {
   /// qu'on remonte, et la feuille le rappelle.
   final int? writtenPulseBpm;
 
+  /// Ouvre l'accompagnement du passage : un autre mode, ou l'application
+  /// joue et n'ecoute pas (ADR-008). `null` : pas d'accompagnement.
+  final VoidCallback? onAccompany;
+
   /// Bouton de changement de profil d'affichage, pour les tests.
   static const Key profilKey = Key('profil-affichage');
 
@@ -168,6 +173,9 @@ class SessionScreen extends StatefulWidget {
 
   /// Reglage de subdivision du metronome, pour les tests.
   static const Key subdivisionKey = Key('subdivision-metronome');
+
+  /// Le bouton de l'accompagnement.
+  static const Key accompagnementKey = Key('ouvrir-l-accompagnement');
 
   /// Le tempo affiche, qui ouvre son reglage.
   static const Key tempoKey = Key('regler-le-tempo');
@@ -1082,11 +1090,32 @@ class _SessionScreenState extends State<SessionScreen>
   /// Tout le reste de l'interface est en encre sur papier ; lancer la prise
   /// est la seule chose qu'on vient y faire, et c'est la seule qui porte la
   /// couleur.
-  Widget _bouton() => FilledButton.icon(
-        onPressed: _running ? _stop : _start,
-        icon: Icon(_running ? Icons.stop : Icons.play_arrow),
-        label: Text(_running ? 'Arreter' : 'Jouer le passage'),
-      );
+  Widget _bouton() {
+    final Widget jouer = FilledButton.icon(
+      onPressed: _running ? _stop : _start,
+      icon: Icon(_running ? Icons.stop : Icons.play_arrow),
+      label: Text(_running ? 'Arreter' : 'Jouer le passage'),
+    );
+    final VoidCallback? accompagner = widget.onAccompany;
+    if (accompagner == null || _running) {
+      return jouer;
+    }
+    // A cote du bouton, pas dans la barre : c'est une autre facon de jouer
+    // le meme passage, et la barre est deja pleine. Contour seulement -- le
+    // seul bouton plein de l'ecran reste celui qui lance la prise notee.
+    return Row(
+      children: <Widget>[
+        IconButton.outlined(
+          key: SessionScreen.accompagnementKey,
+          onPressed: accompagner,
+          icon: const Icon(Icons.piano),
+          tooltip: 'Jouer avec accompagnement',
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: jouer),
+      ],
+    );
+  }
 
   /// L'echelle des notes de l'exercice.
   ///

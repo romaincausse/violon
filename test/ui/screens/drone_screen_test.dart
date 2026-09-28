@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/play/drone.dart';
 import 'package:violon/core/play/fake_audio_engine.dart';
+import 'package:violon/core/play/instrument.dart';
 import 'package:violon/ui/screens/drone_screen.dart';
 
 void main() {
@@ -89,6 +90,9 @@ void main() {
     ) async {
       final FakeAudioEngine moteur = await poser(tester);
       await faireSonner(tester);
+      // Les reglages defilent : le volume est sous le choix du son.
+      await tester.ensureVisible(find.byKey(DroneScreen.volumeKey));
+      await tester.pumpAndSettle();
       await tester.drag(
         find.byKey(DroneScreen.volumeKey),
         const Offset(-200, 0),
@@ -97,6 +101,62 @@ void main() {
       for (final FakeDroneVoice voix in moteur.sounding) {
         expect(voix.volume, lessThan(0.3));
       }
+    });
+
+    testWidgets('le son se choisit : synthetique d abord, puis un instrument',
+        (WidgetTester tester) async {
+      final FakeAudioEngine moteur = await poser(tester);
+      await tester.pumpAndSettle();
+      // Le piano s'eteint : il ne peut pas tenir un bourdon.
+      expect(find.byKey(DroneScreen.sonKey('piano')), findsNothing);
+      expect(find.byKey(DroneScreen.sonKey('violon')), findsOneWidget);
+
+      await faireSonner(tester);
+      expect(moteur.sounding.map((FakeDroneVoice v) => v.instrument),
+          everyElement(isNull));
+
+      // Changer de son en sonnant relance les voix avec le nouveau.
+      await tester.tap(find.byKey(DroneScreen.sonKey('orgue')));
+      await tester.pumpAndSettle();
+      expect(moteur.sounding, hasLength(2));
+      expect(moteur.sounding.map((FakeDroneVoice v) => v.instrument),
+          everyElement('orgue'));
+      // Sol a 196 Hz tient dans la tessiture de l'orgue de test : inchange.
+      expect(moteur.sounding.first.frequencyHz, closeTo(196.0, 0.01));
+    });
+
+    testWidgets('un instrument trop aigu recoit le bourdon a l octave', (
+      WidgetTester tester,
+    ) async {
+      final FakeAudioEngine moteur = FakeAudioEngine(
+        library: InstrumentLibrary(<Instrument>[
+          Instrument(
+            id: 'flute',
+            name: 'Flute',
+            sustains: true,
+            samples: const <InstrumentSample>[
+              InstrumentSample(
+                midi: 72,
+                hz: 523.25,
+                file: 'f.ogg',
+                loopStart: Duration(milliseconds: 900),
+              ),
+            ],
+          ),
+        ]),
+      );
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(home: DroneScreen(engine: moteur)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(DroneScreen.sonKey('flute')));
+      await tester.pumpAndSettle();
+      await faireSonner(tester);
+      // Sol3 (196 Hz) monte d'une octave : sol4 est l'octave la plus proche
+      // de la tessiture de la flute.
+      expect(moteur.sounding.first.frequencyHz, closeTo(392.0, 0.01));
     });
 
     testWidgets('arreter coupe tout', (WidgetTester tester) async {

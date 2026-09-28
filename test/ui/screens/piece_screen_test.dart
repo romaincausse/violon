@@ -116,7 +116,7 @@ void main() {
         ),
       );
       expect(find.text('Ce que l import a simplifie'), findsOneWidget);
-      expect(find.textContaining('seule "Violon"'), findsOneWidget);
+      expect(find.textContaining('"Violon" est suivie'), findsOneWidget);
     });
   });
 }
