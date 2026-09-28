@@ -133,10 +133,15 @@ class _ViolonAppState extends State<ViolonApp> {
     final RememberedExcerpt? extrait = lue.excerpt;
     final ImportedPiece? morceau =
         extrait == null ? null : morceaux.byId(extrait.pieceId);
-    final Passage? passageDuMorceau = morceau?.excerpt(
+    final Passage? extraitGrave = morceau?.excerpt(
       extrait!.fromMeasure,
       extrait.toMeasure,
     );
+    // Au tempo de travail de la veille, pas au tempo du papier.
+    final int? tempo = extrait?.tempoBpm;
+    final Passage? passageDuMorceau = extraitGrave == null || tempo == null
+        ? extraitGrave
+        : extraitGrave.withTempoBpm(tempo);
     setState(() {
       _repertoire = morceaux;
       // Un morceau retire depuis ne se rouvre pas : on l'oublie.

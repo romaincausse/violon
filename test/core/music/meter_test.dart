@@ -31,6 +31,13 @@ void main() {
       expect(m.pulseBpm(141, 480), 94);
     });
 
+    test('le tempo en temps battus se ramene a la noire', () {
+      expect(const Meter(6, 8).quarterBpm(94, 480), 141);
+      expect(const Meter(6, 8).quarterBpm(60, 480), 90);
+      expect(const Meter(2, 2).quarterBpm(60, 480), 120);
+      expect(const Meter(4, 4).quarterBpm(72, 480), 72);
+    });
+
     test('3/4, 2/2 et 3/8 se battent a leur unite', () {
       expect(const Meter(3, 4).isCompound, isFalse);
       expect(const Meter(3, 4).pulsesPerMeasure(480), 3);
@@ -45,6 +52,32 @@ void main() {
       expect(Meter.fromJson(const Meter(6, 8).toJson()), const Meter(6, 8));
       expect(Meter.fromJson(<String, Object?>{'beats': 0}), isNull);
       expect(Meter.fromJson('6/8'), isNull);
+    });
+  });
+
+  group('Passage a un autre tempo', () {
+    test('ne change que le tempo', () {
+      final Passage p = Passage(
+        title: 'x',
+        notes: passage().notes,
+        ticksPerBeat: 480,
+        writtenTempoBpm: 141,
+        meter: const Meter(6, 8),
+        keyFifths: 2,
+        bars: const <Bar>[Bar(number: 1, startTicks: 0, durationTicks: 1440)],
+      );
+      final Passage lent = p.withPulseBpm(60);
+      expect(lent.writtenTempoBpm, 90);
+      expect(lent.tempoText, 'noire pointee = 60');
+      expect(lent.notes, same(p.notes));
+      expect(lent.bars, same(p.bars));
+      expect(lent.keyFifths, 2);
+      expect(lent.meter, const Meter(6, 8));
+      expect(p.withTempoBpm(141).pulseBpm, 94);
+    });
+
+    test('sans chiffrage, le temps battu est la noire', () {
+      expect(passage(tempo: 92).withPulseBpm(60).writtenTempoBpm, 60);
     });
   });
 

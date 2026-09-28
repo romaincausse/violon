@@ -100,6 +100,46 @@ void main() {
       expect(find.text('Gavotte - mesures 1 a 8'), findsWidgets);
     });
 
+    testWidgets('on ralentit sur l ecran Jouer, et on le retrouve demain', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await allerAuRepertoire(tester);
+      await importer(tester);
+      await tester.tap(find.byKey(PieceScreen.travaillerKey));
+      await tester.pumpAndSettle();
+
+      // Sans tempo dans le fichier : noire = 80, soit noire pointee = 53.
+      expect(find.text('noire pointee = 53'), findsOneWidget);
+      await tester.tap(find.byKey(SessionScreen.tempoKey));
+      await tester.pumpAndSettle();
+      expect(find.text('C est le tempo ecrit.'), findsOneWidget);
+      for (int i = 0; i < 4; i++) {
+        await tester.tap(find.byTooltip('Plus lent'));
+        await tester.pump();
+      }
+      expect(find.text('Tempo ecrit : 53'), findsOneWidget);
+      await tester.tap(find.text('Jouer a noire pointee = 45'));
+      await tester.pumpAndSettle();
+      expect(find.text('noire pointee = 45'), findsOneWidget);
+      expect(memoire.current.excerpt?.tempoBpm, 68);
+
+      // Le lendemain, au tempo de travail.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await poser(tester);
+      expect(find.text('noire pointee = 45'), findsOneWidget);
+
+      // Et on revient au tempo ecrit d'un appui.
+      await tester.tap(find.byKey(SessionScreen.tempoKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Revenir au tempo ecrit (53)'));
+      await tester.pump();
+      await tester.tap(find.text('Jouer a noire pointee = 53'));
+      await tester.pumpAndSettle();
+      expect(find.text('noire pointee = 53'), findsOneWidget);
+      expect(memoire.current.excerpt?.tempoBpm, isNull);
+    });
+
     testWidgets('le morceau reste au repertoire et se rouvre', (
       WidgetTester tester,
     ) async {

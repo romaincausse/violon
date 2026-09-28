@@ -1536,6 +1536,10 @@ Ce que le lot livre :
 - **Le tempo dans l'unite du temps battu** : "noire pointee = 94" comme sur le
   papier, metronome visuel et decompte a la noire pointee. Le reste de
   l'application continue de compter a la noire.
+- **Changer le tempo depuis l'ecran Jouer** : un appui sur le tempo affiche
+  ouvre son reglage, en temps battus, le tempo ecrit toujours rappele. Sans
+  lui, un morceau importe restait bloque au tempo du papier. Le tempo de
+  travail se retient, pour un exercice comme pour un morceau.
 
 Laisse pour plus tard : les liaisons se lisent mais ne se dessinent pas, et
 un changement d'armure ou de mesure en cours de morceau garde la gravure du

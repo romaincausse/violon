@@ -46,6 +46,11 @@ class Meter {
   int pulseBpm(int quarterBpm, int ticksPerBeat) =>
       (quarterBpm * ticksPerBeat / beatTicks(ticksPerBeat)).round();
 
+  /// L'inverse de [pulseBpm] : le tempo a la noire d'un tempo en temps
+  /// battus. Noire pointee = 94 redonne noire = 141.
+  int quarterBpm(int pulseBpm, int ticksPerBeat) =>
+      (pulseBpm * beatTicks(ticksPerBeat) / ticksPerBeat).round();
+
   /// Nom de la figure qui porte le temps battu.
   String pulseName(int ticksPerBeat) {
     final int t = beatTicks(ticksPerBeat);

@@ -118,16 +118,29 @@ class RememberedExcerpt {
     required this.pieceId,
     required this.fromMeasure,
     required this.toMeasure,
+    this.tempoBpm,
   });
 
   final String pieceId;
   final int fromMeasure;
   final int toMeasure;
 
+  /// Tempo de travail a la noire, s'il differe du tempo ecrit. On reprend
+  /// le lendemain la ou on s'etait arrete, pas au tempo du papier.
+  final int? tempoBpm;
+
+  RememberedExcerpt withTempo(int? tempo) => RememberedExcerpt(
+        pieceId: pieceId,
+        fromMeasure: fromMeasure,
+        toMeasure: toMeasure,
+        tempoBpm: tempo,
+      );
+
   Map<String, Object?> toJson() => <String, Object?>{
         'id': pieceId,
         'de': fromMeasure,
         'a': toMeasure,
+        if (tempoBpm != null) 'tempo': tempoBpm,
       };
 
   static RememberedExcerpt? fromJson(Object? json) {
@@ -140,7 +153,13 @@ class RememberedExcerpt {
     if (id is! String || de is! int || a is! int || a < de) {
       return null;
     }
-    return RememberedExcerpt(pieceId: id, fromMeasure: de, toMeasure: a);
+    final Object? tempo = json['tempo'];
+    return RememberedExcerpt(
+      pieceId: id,
+      fromMeasure: de,
+      toMeasure: a,
+      tempoBpm: tempo is int && tempo > 0 ? tempo : null,
+    );
   }
 }
 

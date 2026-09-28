@@ -171,6 +171,39 @@ class _HomeShellState extends State<HomeShell> {
         _extrait,
       );
 
+  /// Le tempo ecrit du travail en cours, en temps battus : le tempo vise de
+  /// l'exercice, ou celui du morceau. Un passage saisi n'en a pas d'autre que
+  /// le sien.
+  int? get _tempoEcrit {
+    final Exercise? exercice = _exercice;
+    if (exercice != null) {
+      return exercice.tempoVise;
+    }
+    final RememberedExcerpt? extrait = _extrait;
+    if (extrait != null) {
+      return _morceaux.byId(extrait.pieceId)?.passage.pulseBpm;
+    }
+    return null;
+  }
+
+  /// Le meme passage, a un autre tempo -- et on s'en souvient.
+  void _changerDeTempo(int pulse) {
+    final Passage passage = widget.passage.withPulseBpm(pulse);
+    if (_exercice != null) {
+      _tempo = passage.writtenTempoBpm;
+    }
+    final RememberedExcerpt? extrait = _extrait;
+    if (extrait != null) {
+      final int? ecrit =
+          _morceaux.byId(extrait.pieceId)?.passage.writtenTempoBpm;
+      _extrait = extrait.withTempo(
+        passage.writtenTempoBpm == ecrit ? null : passage.writtenTempoBpm,
+      );
+    }
+    _seRappeler();
+    widget.onPassageChanged(passage);
+  }
+
   void _dire(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
@@ -232,10 +265,16 @@ class _HomeShellState extends State<HomeShell> {
     }
     switch (action) {
       case WorkBars(from: final int de, to: final int a):
-        final Passage? passage = morceau.excerpt(de, a);
-        if (passage == null) {
+        final Passage? extrait = morceau.excerpt(de, a);
+        if (extrait == null) {
           return;
         }
+        // D'autres mesures du meme morceau se travaillent au meme tempo : on
+        // ne revient pas au tempo du papier parce qu'on a deplace le curseur.
+        final int? tempoDeTravail = dernier?.tempoBpm;
+        final Passage passage = tempoDeTravail == null
+            ? extrait
+            : extrait.withTempoBpm(tempoDeTravail);
         // Un passage de morceau n'est pas un exercice : il ne doit rien faire
         // avancer dans le catalogue.
         _exercice = null;
@@ -489,6 +528,8 @@ class _HomeShellState extends State<HomeShell> {
               pitchSourceFactory: widget.pitchSourceFactory,
               onResult: _noterLExercice,
               onChangePassage: () => unawaited(_saisirUnPassage()),
+              onTempoChanged: _changerDeTempo,
+              writtenPulseBpm: _tempoEcrit,
               // Accorder est la premiere chose de chaque seance : elle
               // merite son raccourci, en plus du tiroir.
               onFullScreen: (bool plein) => setState(() => _pleinEcran = plein),

@@ -75,7 +75,16 @@ void main() {
       expect(relu?.pieceId, 'into-the-stars-1234');
       expect(relu?.fromMeasure, 15);
       expect(relu?.toMeasure, 22);
+      expect(relu?.tempoBpm, isNull);
       expect(s.isEmpty, isFalse);
+
+      final RememberedExcerpt lent = relu!.withTempo(90);
+      expect(
+        RememberedSession.decode(RememberedSession(excerpt: lent).encode())
+            .excerpt
+            ?.tempoBpm,
+        90,
+      );
 
       expect(
         RememberedSession.decode(

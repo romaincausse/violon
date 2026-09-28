@@ -62,6 +62,26 @@ class Passage {
     return '${m.pulseName(ticksPerBeat)} = $pulseBpm';
   }
 
+  /// Le meme passage, a un autre tempo exprime en temps battus.
+  ///
+  /// **Ralentir un passage ne change que son tempo** : les notes, les mesures
+  /// et la gravure restent celles du papier. C'est ce que fait un metronome
+  /// qu'on regle plus bas, pas une autre partition.
+  Passage withPulseBpm(int pulse) =>
+      withTempoBpm(meter?.quarterBpm(pulse, ticksPerBeat) ?? pulse);
+
+  /// Le meme passage a un autre tempo, a la noire : pour relire un tempo
+  /// range, sans l'aller-retour par les temps battus qui l'arrondirait.
+  Passage withTempoBpm(int quarterBpm) => Passage(
+        title: title,
+        notes: notes,
+        ticksPerBeat: ticksPerBeat,
+        writtenTempoBpm: quarterBpm,
+        meter: meter,
+        keyFifths: keyFifths,
+        bars: bars,
+      );
+
   int get firstMeasure => notes.first.measure;
   int get lastMeasure => notes.last.measure;
   int get measureCount => lastMeasure - firstMeasure + 1;
