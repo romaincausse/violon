@@ -11,15 +11,12 @@
 //
 // Les regles de comptage sont celles du protocole, fixees avant d'avoir vu
 // un chiffre : voir AlignmentReport.
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:violon/core/audio/wav.dart';
 import 'package:violon/core/follow/alignment_report.dart';
-import 'package:violon/core/follow/bench_score.dart';
 import 'package:violon/core/follow/offline_aligner.dart';
-import 'package:violon/core/follow/performance_features.dart';
-import 'package:violon/core/music/pitch_utils.dart';
+
+import 'src/prise.dart';
 
 /// Les pieges qui font d'une prise une prise "avec reprise" au sens du
 /// critere.
@@ -45,8 +42,7 @@ class Resultat {
 
 void main(List<String> args) {
   final bool detail = args.contains('--detail');
-  final String banc = Platform.environment['VIOLON_BANC'] ??
-      '${Platform.environment['HOME']}/violon-banc';
+  final String banc = dossierDuBanc();
   if (!Directory(banc).existsSync()) {
     stderr.writeln('Pas de banc dans $banc (variable VIOLON_BANC).');
     exitCode = 1;
@@ -86,41 +82,21 @@ List<Resultat> _passer(String dossier, String banc, bool detail) {
     final String base = wav.path.substring(0, wav.path.length - 4);
     final String nom = base.split('/').last;
     final File etiquettes = File('$base.labels.txt');
-    final File meta = File('$base.json');
-    if (!etiquettes.existsSync() || !meta.existsSync()) {
-      stderr.writeln('$nom : etiquettes ou metadonnees absentes, prise sautee');
+    if (!etiquettes.existsSync()) {
+      stderr.writeln('$nom : etiquettes absentes, prise sautee');
       continue;
     }
-    final Map<String, Object?> m =
-        jsonDecode(meta.readAsStringSync()) as Map<String, Object?>;
-    final File fichierPartition =
-        File('$banc/partitions/${m['partition']}.json');
-    if (!fichierPartition.existsSync()) {
-      stderr
-          .writeln('$nom : partition ${m['partition']} absente, prise sautee');
+    final (Prise? prise, String? motif) = Prise.lire(base, banc);
+    if (prise == null) {
+      stderr.writeln('$motif, prise sautee');
       continue;
     }
-    final BenchScore partition = BenchScore.fromJson(
-      jsonDecode(fichierPartition.readAsStringSync()) as Map<String, Object?>,
-    );
-
-    final WavData son = Wav.decode(wav.readAsBytesSync());
-    final double a4 =
-        (m['la_mesure_hz'] as num?)?.toDouble() ?? PitchUtils.defaultA4;
-    final Alignment alignement = OfflineAligner(
-      partition.passage,
-      slurredInto: partition.slurredInto,
-    ).align(
-      PerformanceFeatures.extract(
-        son.samples,
-        sampleRate: son.sampleRate,
-        a4: a4,
-      ),
-    );
+    final Map<String, Object?> m = prise.meta;
+    final Alignment alignement = prise.aligner();
     final AlignmentReport rapport = AlignmentReport.evaluate(
       alignement,
       GroundTruth.parseAudacity(etiquettes.readAsStringSync()),
-      partition.passage,
+      prise.partition.passage,
     );
     resultats.add(Resultat(nom, m, rapport));
 

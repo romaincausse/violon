@@ -1242,7 +1242,7 @@ batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~P0~~ | ~~Violon de synthese : un passage joue avec ses defauts, verite terrain comprise~~ | | ★★★ | fait |
-| P1 | Banc d'essai : vraies prises, annotees a la main | **Must** | ★★ | 2 |
+| P1 | Banc d'essai : vraies prises, annotation proposee par l'aligneur et corrigee a l'oreille | **Must** | ★★ | 2 |
 | ~~P2~~ | ~~Alignement hors ligne (hauteurs + attaques)~~ | **Must** | ★★ | fait |
 | P3 | Verdict chiffre et ADR | **Must** | ★★★ | 1 |
 

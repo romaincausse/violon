@@ -172,7 +172,55 @@ teste, pas lui.
 
 ---
 
-## L'annotation
+## L'annotation corrigee (retenue)
+
+**L'annotation de zero s'est revelee trop longue** des la prise pilote, sur
+une simple gamme. Elle est remplacee par une annotation **corrigee** :
+l'aligneur propose, l'oreille humaine ne reprend que ses erreurs.
+
+```sh
+dart run tool/marqueurs.dart proposer 05-stars-arret-reprise
+#  -> prises/05-stars-arret-reprise.app.txt
+```
+
+1. Dans Audacity, ouvrir le WAV, puis *Fichier > Importer > Marqueurs* :
+   `<prise>.app.txt`. Chaque marqueur se lit `m5 re n23` : mesure, note,
+   identifiant.
+2. Ecouter **une fois**, a vitesse normale, en suivant les marqueurs. Ne
+   toucher qu'aux erreurs, en ecrivant ce qu'on entend, sans identifiant :
+   `m6 mi`, `m6 mi faux`, `x`, `?`. Supprimer un marqueur qui ne correspond a
+   rien, en ajouter un (Ctrl+B) sur une note oubliee, poser les regions
+   `arret`.
+3. Exporter les marqueurs sous `<prise>.corrige.txt`, puis :
+
+```sh
+dart run tool/marqueurs.dart valider 05-stars-arret-reprise
+#  -> prises/05-stars-arret-reprise.labels.txt, lu par tool/banc.dart
+```
+
+L'outil retrouve l'identifiant de chaque note corrigee dans la mesure ecrite
+et liste ceux qu'il a deduits, pour relecture.
+
+**Le prix, ecrit ici pour ne pas l'oublier au verdict** : qui corrige une
+machine lui donne raison quand il hesite. Le chiffre du jalon est donc un
+**plafond** de ce qu'une annotation independante aurait donne, et l'ADR de
+P3 le dira. Les erreurs grossieres -- perdre la mesure, ne pas voir une
+reprise -- ne se laissent pas passer par complaisance : ce sont elles que
+le critere vise.
+
+**Effort reparti selon ce que chaque prise apprend** :
+
+- prises avec reprise (05, 06, 07) : corrigees avec soin, c'est le cas
+  nominal ;
+- les autres, gammes comprises : ecoutees une fois, en ne relevant que les
+  pertes de fil. Sur une gamme, c'est trente secondes d'ecoute.
+
+Le critere ne change pas : dix prises, dont les trois avec reprise.
+
+L'annotation de zero, ci-dessous, reste la reference si un doute sur le
+chiffre demande un jour une verification independante.
+
+## L'annotation de zero (reference)
 
 A la main, dans **Audacity** (piste d'etiquettes), le parent qui a une
 oreille musicale suffit. Chaque note jouee recoit une etiquette ponctuelle
