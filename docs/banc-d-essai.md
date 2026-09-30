@@ -59,16 +59,27 @@ autrement mesurerait un autre micro.
   70 cm).
 - **Source micro** : `UNPROCESSED`, comme l'application. La plupart des
   enregistreurs du telephone passent par `MIC`, avec AGC et reduction de
-  bruit : **a proscrire**, cela fausse justement les attaques. Utiliser un
-  enregistreur qui laisse choisir la source, puis le **verifier** pendant la
-  prise :
+  bruit : **a proscrire**, cela fausse justement les attaques.
+- **Enregistreur** : celui de l'application, *Outils > Banc d'essai*, present
+  dans la **version de debug seulement** (`flutter run` ou `make apk` en
+  debug). Il reprend exactement les reglages du micro de l'application, et
+  nomme chaque fichier comme ses metadonnees. Une seconde prise du meme nom
+  devient `-2`, jamais un ecrasement. Le niveau affiche sert a placer le
+  telephone : une crete au-dessus de -1 dBFS sature.
+
+  Les prises restent dans le dossier prive de l'application jusqu'a :
+
+  ```sh
+  tool/prises.sh     # copie dans $VIOLON_BANC/prises, verifie, efface du telephone
+  ```
+
+  Verifier une premiere fois la source pendant une prise :
 
   ```sh
   adb shell dumpsys media.audio_flinger | grep -i source
   ```
 
-  On doit y lire `AUDIO_SOURCE_UNPROCESSED`. Si l'enregistreur ne le permet
-  pas, noter la source reelle dans les metadonnees plutot que de la supposer.
+  On doit y lire `AUDIO_SOURCE_UNPROCESSED`.
 - **Format** : WAV PCM 16 bits, **mono, 44 100 Hz**, sans compression. C'est
   le format que `RecordAudioCapture` fournit au pipeline (`PcmFramer`, YIN et
   `OnsetDetector` sont regles sur 44 100 Hz). Pas de MP3 ni d'AAC : la
@@ -155,8 +166,8 @@ teste, pas lui.
 - [ ] Violon accorde ; relever le la mesure par l'accordeur de l'application
 - [ ] Telephone sur le pupitre, a la place d'usage ; distance notee
 - [ ] Mode avion, ne pas deranger
-- [ ] Enregistreur en WAV 16 bits mono 44 100 Hz, source `UNPROCESSED`
-      verifiee par `dumpsys` une premiere fois
+- [ ] Version de debug installee ; source `UNPROCESSED` verifiee par
+      `dumpsys` une premiere fois
 - [ ] Une seconde de silence avant de jouer, une apres
 
 ---

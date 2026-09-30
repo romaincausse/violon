@@ -10,12 +10,14 @@ import '../../core/import/musicxml_reader.dart';
 import '../../core/import/piece_importer.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
+import '../../core/audio/bench_recorder.dart';
 import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/session_store.dart';
 import 'accompaniment_screen.dart';
+import 'bench_screen.dart';
 import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
@@ -57,8 +59,13 @@ class HomeShell extends StatefulWidget {
     this.initialExercise,
     this.initialPieces = PieceLibrary.vide,
     this.initialExcerpt,
+    this.benchRecorderFactory,
     super.key,
   });
+
+  /// L'enregistreur du banc d'essai, present en debug seulement : sans lui,
+  /// l'outil n'apparait pas.
+  final BenchRecorderFactory? benchRecorderFactory;
 
   /// Les morceaux importes, et ce qu'il faut pour en importer (lot H6).
   final PieceStore pieceStore;
@@ -117,6 +124,7 @@ class HomeShell extends StatefulWidget {
 
   static const Key bourdonKey = Key('ouvrir-le-bourdon');
   static const Key metronomeKey = Key('ouvrir-le-metronome');
+  static const Key bancKey = Key('ouvrir-le-banc');
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -503,6 +511,18 @@ class _HomeShellState extends State<HomeShell> {
                   ),
                 ),
               ),
+              if (widget.benchRecorderFactory
+                  case final BenchRecorderFactory banc)
+                ListTile(
+                  key: HomeShell.bancKey,
+                  leading: const Icon(Icons.fiber_manual_record_outlined),
+                  title: const Text('Banc d essai'),
+                  subtitle: const Text('Debug : enregistrer les prises'),
+                  onTap: () => _ouvrir(
+                    context,
+                    (BuildContext c) => BenchScreen(recorder: banc()),
+                  ),
+                ),
             ],
           ),
         ),

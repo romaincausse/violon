@@ -100,6 +100,12 @@ des intentions :
    ne joue plus pareil -- et ca poserait en prime une question de donnees
    personnelles d'un mineur que l'ADR-005 avait justement evacuee.
 
+   Une seule exception, qui n'est pas l'application : l'enregistreur du banc
+   d'essai (jalon 5), present dans la **version de debug seulement**, retire
+   de la version publiee a la compilation. Ses prises ne quittent le
+   telephone que par cable, vers le banc hors depot, et y sont effacees
+   (`docs/banc-d-essai.md`).
+
 ---
 
 ## Ce que l'application ne fera pas a sa place
