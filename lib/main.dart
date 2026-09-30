@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'core/device/screen_awake.dart';
@@ -11,11 +12,13 @@ import 'core/import/piece_importer.dart';
 import 'core/music/demo_passage.dart';
 import 'core/music/passage.dart';
 import 'core/music/pitch_utils.dart';
+import 'core/audio/bench_recorder.dart';
 import 'core/audio/take_player.dart';
 import 'core/play/audio_engine.dart';
 import 'core/store/piece_store.dart';
 import 'core/store/session_store.dart';
 import 'platform/audio/default_pitch_source.dart';
+import 'platform/audio/record_bench_recorder.dart';
 import 'platform/audio/soloud_audio_engine.dart';
 import 'platform/audio/soloud_take_player.dart';
 import 'platform/device/wakelock_screen_keeper.dart';
@@ -45,8 +48,14 @@ class ViolonApp extends StatefulWidget {
     this.pieceStoreFactory = defaultPieceStore,
     this.documentPickerFactory = defaultDocumentPicker,
     this.pieceImporter = const PieceImporter(inflate: inflateRaw),
+    this.benchRecorderFactory = kDebugMode ? defaultBenchRecorder : null,
     super.key,
   });
+
+  /// L'enregistreur du banc d'essai. **Absent de la version publiee** : la
+  /// constante `kDebugMode` le retire a la compilation, et l'application
+  /// continue de ne garder aucun son (`docs/professeur.md`).
+  final BenchRecorderFactory? benchRecorderFactory;
 
   /// Fabrique du magasin des morceaux, injectable comme la memoire.
   final PieceStoreFactory pieceStoreFactory;
@@ -216,6 +225,7 @@ class _ViolonAppState extends State<ViolonApp> {
                 pieceImporter: widget.pieceImporter,
                 initialPieces: _repertoire,
                 initialExcerpt: _extrait,
+                benchRecorderFactory: widget.benchRecorderFactory,
                 onPassageChanged: (Passage p) => setState(() => _passage = p),
                 onA4Changed: (double a4) {
                   setState(() => _a4 = a4);
