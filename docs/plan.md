@@ -64,12 +64,17 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 0 | On joue avec quelqu'un |
 
-**73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
-est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
-juste et complet dont on n'a pas envie de se servir a echoue.
+**73 lots, tous livres sauf deux, au 2 octobre 2026.** Il ne reste que la fin
+du jalon 5 -- les etiquettes corrigees du banc (P1), puis le verdict chiffre
+et son ADR (P3) -- qui attendent les ecoutes du parent, pas du code.
 
-Les lots barres sont livres ; la colonne des soirees ne compte que ce qui
-reste.
+Les jalons 6 a 11 ont ete livres **avant** ce verdict, a la demande de
+l'utilisateur, alors que le plan les faisait dependre de lui. Ce n'est pas
+sans consequence, et c'est ecrit la ou ca compte : la notation se calcule sur
+la prise entiere par l'aligneur hors ligne, borne haute du suiveur (S2) ; si
+P3 donne un chiffre sous le critere, c'est l'aligneur qu'il faudra reprendre,
+et tout ce qui juge en heritera. Deux choses restent aussi a eprouver sur le
+S22, casque branche : la latence (J2) et l'accompagnement qui suit (J5).
 
 **Cinq lots viennent d'ailleurs.** O6, D10, D11, E5 et D12 sont nes de
 l'examen d'une application concurrente (Trala), dont l'utilisateur a rapporte
