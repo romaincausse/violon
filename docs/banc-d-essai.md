@@ -331,6 +331,11 @@ L'outil lit les metadonnees de chaque prise. Deux champs y sont indispensables :
   contient `arret-reprise` ou `saut-arriere`. Ecrire ces deux mots tels
   quels.
 
+Le tableau rapporte aussi le **suiveur en direct** (colonne `direct`) et son
+**pire rattrapage** apres une reprise ou un saut (lot S3). Ils ne comptent
+pas pour le critere -- la note se calcule sur la prise entiere -- mais c'est
+le direct que l'ecran montre.
+
 `la_mesure_hz` sert d'accord de reference : un la joue sur un violon accorde a
 441 est un la juste. Sans lui, l'outil suppose 440.
 

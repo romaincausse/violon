@@ -15,6 +15,7 @@ import 'dart:io';
 
 import 'package:violon/core/follow/alignment_report.dart';
 import 'package:violon/core/follow/offline_aligner.dart';
+import 'package:violon/core/follow/reanchoring.dart';
 
 import 'src/prise.dart';
 
@@ -23,11 +24,36 @@ import 'src/prise.dart';
 const Set<String> piegesDeReprise = <String>{'arret-reprise', 'saut-arriere'};
 
 class Resultat {
-  Resultat(this.nom, this.meta, this.rapport);
+  Resultat(this.nom, this.meta, this.rapport, this.direct, this.rattrapages);
 
   final String nom;
   final Map<String, Object?> meta;
   final AlignmentReport rapport;
+
+  /// Le suiveur en direct, rapporte a cote : il ne compte pas pour le critere
+  /// (la note se calcule sur la prise entiere), mais c'est lui que l'ecran
+  /// montre.
+  final AlignmentReport direct;
+
+  /// Pour chaque rupture de la prise, le delai du direct pour se retrouver.
+  final List<Discontinuity> rattrapages;
+
+  /// Le pire rattrapage, en secondes, ou `null` s'il ne s'est pas retrouve.
+  String get pireRattrapage {
+    if (rattrapages.length < 2) {
+      return '-';
+    }
+    // La premiere rupture est le debut de la prise : elle ne dit rien.
+    int pire = 0;
+    for (final Discontinuity d in rattrapages.skip(1)) {
+      final int? r = d.recoveryMs;
+      if (r == null) {
+        return 'perdu';
+      }
+      pire = r > pire ? r : pire;
+    }
+    return '${(pire / 1000).toStringAsFixed(1)} s';
+  }
 
   bool get critere => meta['critere'] == true;
 
@@ -93,12 +119,23 @@ List<Resultat> _passer(String dossier, String banc, bool detail) {
     }
     final Map<String, Object?> m = prise.meta;
     final Alignment alignement = prise.aligner();
+    final Alignment direct = prise.suivre();
+    final GroundTruth verite =
+        GroundTruth.parseAudacity(etiquettes.readAsStringSync());
     final AlignmentReport rapport = AlignmentReport.evaluate(
       alignement,
-      GroundTruth.parseAudacity(etiquettes.readAsStringSync()),
+      verite,
       prise.partition.passage,
     );
-    resultats.add(Resultat(nom, m, rapport));
+    resultats.add(
+      Resultat(
+        nom,
+        m,
+        rapport,
+        AlignmentReport.evaluate(direct, verite, prise.partition.passage),
+        Reanchoring.measure(direct, verite, prise.partition.passage),
+      ),
+    );
 
     if (detail) {
       stdout.writeln('\n$nom');
@@ -116,7 +153,8 @@ List<Resultat> _passer(String dossier, String banc, bool detail) {
 
 void _tableau(List<Resultat> resultats) {
   stdout.writeln(
-    '  ${'prise'.padRight(32)} notes  mesure   note   x pris  pieges',
+    '  ${'prise'.padRight(32)} notes  mesure   note   x pris  '
+    'direct  rattrapage  pieges',
   );
   for (final Resultat r in resultats) {
     final AlignmentReport a = r.rapport;
@@ -126,6 +164,8 @@ void _tableau(List<Resultat> resultats) {
       '${_pc(a.measureRate).padLeft(6)} '
       '${_pc(a.noteRate).padLeft(6)}   '
       '${'${a.extrasTakenForNotes}/${a.extras}'.padLeft(6)}  '
+      '${_pc(r.direct.measureRate).padLeft(6)}  '
+      '${r.pireRattrapage.padLeft(10)}  '
       '${r.pieges.join(', ')}${r.critere ? '' : '  (hors critere)'}',
     );
   }
