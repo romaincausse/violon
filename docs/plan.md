@@ -60,7 +60,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 5 | Le progres devient visible |
+| 9 | La memoire | 8 | 3 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
@@ -1731,7 +1731,7 @@ et la notation du rythme, et attend donc sa place.
 | H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
 | ~~M2~~ | ~~Avant / apres audible~~ | | ★★★ | fait |
 | ~~H6~~ | ~~Import d'un morceau entier~~ | | ★★ | fait |
-| I3 | Justesse par degre dans la tonalite | | ★★ | 2 |
+| ~~I3~~ | ~~Justesse par degre dans la tonalite~~ | | ★★ | fait |
 
 **H3 - Erreurs systematiques.** Le differenciateur. Les fautes d'un violoniste
 ne sont pas aleatoires, elles sont **structurees par la main** : un demi-ton
@@ -1764,6 +1764,21 @@ tonalite -- que ni `Passage` ni `ScoreNote` ne portent. Ce lot est range ici
 parce que **le MusicXML la transporte** : l'import la fournit gratuitement.
 Il peut aussi remonter plus tot si l'ecran de saisie se met a demander
 l'armure.
+
+**Fait.** Trois marges (`ToleranceBand`), selon ce qui varie vraiment d'un
+systeme d'intonation enseigne a l'autre :
+
+| Degre | Cent jusqu'a | Juste jusqu'a |
+|---|---|---|
+| Tonique, quarte, quinte | 10 cents | 25 cents |
+| Deuxieme degre | 15 cents | 30 cents |
+| Tierces, sixtes, septiemes, chromatismes | 22 cents | 35 cents |
+
+La tonalite vient de l'armure -- celle du morceau importe, et desormais celle
+des gammes du catalogue, qui l'affichent aussi sur la portee -- et le mode de
+la sensible, comme pour l'accompagnement. **Sans armure, la marge large pour
+toutes** : une tonalite devinee de travers resserrerait la marge sur les
+mauvaises notes.
 
 **H6 - Import.** Suivre suppose la partition en machine. La saisie a la main
 tient pour un passage, pas pour un morceau. L'OMR (reconnaissance optique)

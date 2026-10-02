@@ -127,6 +127,34 @@ final class ScaleExercise extends Exercise {
   @override
   int? get tonicPitchClass => tonicMidi % 12;
 
+  /// L'armure de la gamme : celle de sa tonalite, ou de sa relative majeure
+  /// pour une gamme mineure.
+  ///
+  /// **Elle sert deux fois.** La portee l'affiche, comme sur le papier ; et la
+  /// justesse se juge par degre (lot I3) -- la tonique et la quinte d'une
+  /// gamme se jouent plus serrees que sa tierce.
+  int get keyFifths {
+    final bool majeure =
+        pattern == ScalePattern.majeur || pattern == ScalePattern.arpegeMajeur;
+    final int tonique = majeure ? tonicMidi % 12 : (tonicMidi + 3) % 12;
+    final int f = tonique * 7 % 12;
+    return f > 6 ? f - 12 : f;
+  }
+
+  @override
+  Passage toPassage({int? tempoBpm}) {
+    final Passage p = super.toPassage(tempoBpm: tempoBpm);
+    return Passage(
+      title: p.title,
+      notes: p.notes,
+      ticksPerBeat: p.ticksPerBeat,
+      writtenTempoBpm: p.writtenTempoBpm,
+      meter: p.meter,
+      keyFifths: keyFifths,
+      bars: p.bars,
+    );
+  }
+
   @override
   String get detail => octaves == 1
       ? '${pattern.label} - une octave'

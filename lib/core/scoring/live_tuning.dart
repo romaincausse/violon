@@ -1,6 +1,8 @@
 import '../audio/pitch_estimate.dart';
 import '../music/pitch_utils.dart';
+import '../music/passage.dart';
 import '../music/score_note.dart';
+import '../play/harmonizer.dart';
 
 /// Ce que l'application a a dire d'une note, pendant qu'elle est jouee.
 ///
@@ -35,6 +37,7 @@ class LiveTuning {
     this.minSamples = 2,
     this.attackMs = 80,
     this.a4 = PitchUtils.defaultA4,
+    this.tonality,
   })  : assert(toleranceCents > 0, 'une tolerance est strictement positive'),
         assert(minSamples > 0, 'il faut au moins une mesure'),
         assert(attackMs >= 0, 'une duree d attaque n est pas negative');
@@ -73,7 +76,52 @@ class LiveTuning {
   /// A6) n'a pas mesure la vraie valeur.
   final double a4;
 
+  /// La tonalite du passage, quand on la connait : la tonique (classe de
+  /// hauteur) et le mode (lot I3). `null` : la marge large pour toutes.
+  final ({int tonic, bool minor})? tonality;
+
   final Map<String, List<double>> _ecarts = <String, List<double>>{};
+
+  /// Pour chaque note entendue, la marge de son degre.
+  final Map<String, ToleranceBand> _marges = <String, ToleranceBand>{};
+
+  /// La tonalite d'un passage **qui porte son armure** -- un morceau importe,
+  /// un exercice du catalogue -- ou `null`.
+  ///
+  /// Sans armure on pourrait la deviner sur les notes ; on ne le fait pas :
+  /// une tonalite devinee de travers resserrerait la marge sur les mauvaises
+  /// notes, et l'enfant serait repris sur une tierce qu'il joue bien.
+  static ({int tonic, bool minor})? tonalityOf(Passage passage) {
+    if (passage.keyFifths == null) {
+      return null;
+    }
+    final KeyGuess k = Harmonizer.keyOf(passage);
+    return (tonic: k.tonic, minor: k.minor);
+  }
+
+  /// La marge de [note] dans la tonalite (lot I3).
+  ///
+  /// **Une quinte et une tierce n'ont pas la meme marge.** D'un systeme
+  /// d'intonation enseigne a l'autre, la quinte ne bouge que de deux cents ;
+  /// la tierce majeure, de vingt-et-un. Juger la tonique, la quarte et la
+  /// quinte avec la marge d'une tierce laissait passer des notes que tout
+  /// professeur aurait reprises.
+  ToleranceBand bandFor(ScoreNote note) {
+    final ({int tonic, bool minor})? t = tonality;
+    if (t == null) {
+      return ToleranceBand.imperfect;
+    }
+    final int degre = (note.midi - t.tonic) % 12;
+    // Tonique, quarte et quinte, dans les deux modes.
+    if (degre == 0 || degre == 5 || degre == 7) {
+      return ToleranceBand.perfect;
+    }
+    // Le deuxieme degre : un ton, majeur ou mineur selon le systeme.
+    if (degre == 2) {
+      return ToleranceBand.second;
+    }
+    return ToleranceBand.imperfect;
+  }
 
   /// Enregistre ce qui a ete entendu pendant que [note] etait attendue.
   ///
@@ -91,6 +139,7 @@ class LiveTuning {
       return;
     }
     final double attendue = PitchUtils.midiToFrequency(note.midi, a4: a4);
+    _marges[note.id] = bandFor(note);
     _ecarts
         .putIfAbsent(note.id, () => <double>[])
         .add(PitchUtils.centsBetween(estimate.frequencyHz, attendue));
@@ -114,7 +163,11 @@ class LiveTuning {
     if (cents == null) {
       return TuningVerdict.unknown;
     }
-    if (cents.abs() <= toleranceCents) {
+    final ToleranceBand? marge = _marges[noteId];
+    final double tolere = marge == null || marge == ToleranceBand.imperfect
+        ? toleranceCents
+        : marge.verdictCents;
+    if (cents.abs() <= tolere) {
       return TuningVerdict.inTune;
     }
     return cents < 0 ? TuningVerdict.low : TuningVerdict.high;
@@ -136,7 +189,10 @@ class LiveTuning {
     if (cents == null) {
       return null;
     }
-    return noteScoreForCents(cents);
+    return noteScoreForCents(
+      cents,
+      perfect: (_marges[noteId] ?? ToleranceBand.imperfect).perfectCents,
+    );
   }
 
   /// Ecart au-dela duquel la note commence a perdre des points.
@@ -162,12 +218,10 @@ class LiveTuning {
   /// points a un enfant qui fait exactement ce que son professeur lui
   /// demande. Vingt-deux cents couvre l'eventail des choix legitimes.
   ///
-  /// **Le prix est assume** : une quinte ou une octave, qui ne varient que de
-  /// deux cents d'un systeme a l'autre, sont desormais jugees aussi
-  /// largement. Corriger ce point demande de connaitre le degre de la note
-  /// dans la tonalite, donc la tonalite -- que ni `Passage` ni `ScoreNote` ne
-  /// portent aujourd'hui. Elle arrivera avec l'import MusicXML, qui la
-  /// transporte.
+  /// **C'est la marge des degres imparfaits.** La tonique, la quarte et la
+  /// quinte, qui ne varient que de deux cents d'un systeme a l'autre, se
+  /// jugent plus serrees des que la tonalite est connue ([ToleranceBand],
+  /// lot I3).
   static const double perfectCents = 22;
 
   /// Ecart au-dela duquel le verdict bascule a "bas" ou "haut".
@@ -181,16 +235,17 @@ class LiveTuning {
   /// note.
   static const double worstCents = 100;
 
-  /// Convertit un ecart en cents en note sur cent.
-  static int noteScoreForCents(double cents) {
+  /// Convertit un ecart en cents en note sur cent ; [perfect] est la marge
+  /// pleine du degre (lot I3).
+  static int noteScoreForCents(double cents, {double perfect = perfectCents}) {
     final double ecart = cents.abs();
-    if (ecart <= perfectCents) {
+    if (ecart <= perfect) {
       return 100;
     }
     if (ecart >= worstCents) {
       return 0;
     }
-    final double part = (ecart - perfectCents) / (worstCents - perfectCents);
+    final double part = (ecart - perfect) / (worstCents - perfect);
     return (100 * (1 - part)).round();
   }
 
@@ -241,5 +296,27 @@ class LiveTuning {
   }
 
   /// Oublie tout : a appeler a chaque nouveau passage sur le morceau.
-  void reset() => _ecarts.clear();
+  void reset() {
+    _ecarts.clear();
+    _marges.clear();
+  }
+}
+
+/// La marge d'une note selon son degre (lot I3) : jusqu'ou elle vaut cent,
+/// et jusqu'ou elle est dite juste.
+enum ToleranceBand {
+  /// Tonique, quarte, quinte : deux cents d'un systeme a l'autre.
+  perfect(10, 25),
+
+  /// Le deuxieme degre : ton majeur ou mineur, une vingtaine de cents.
+  second(15, 30),
+
+  /// Tierces, sixtes, septiemes, notes chromatiques : la marge large
+  /// (voir [LiveTuning.perfectCents]).
+  imperfect(LiveTuning.perfectCents, LiveTuning.defaultToleranceCents);
+
+  const ToleranceBand(this.perfectCents, this.verdictCents);
+
+  final double perfectCents;
+  final double verdictCents;
 }
