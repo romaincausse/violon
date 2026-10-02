@@ -627,3 +627,52 @@ jalon 11 -- on ne peut pas ecouter pendant qu'on joue.
 - Les credits de VSCO 2 CE, demandes par ses auteurs, sont dans
   `assets/sons/LICENCE.txt`.
 
+
+---
+
+## ADR-016 : L'accompagnement qui suit, au casque filaire seulement
+
+**Contexte.** L'ADR-008 interdit d'ecouter pendant que l'application joue :
+le haut-parleur est a dix centimetres du micro, et l'accompagnement entrerait
+dans ce qu'on analyse -- le suiveur suivrait le piano, pas le violon. Or un
+accompagnement qui *suit* l'eleve (J5), le seul qui vaille musicalement, doit
+precisement ecouter. Le plan laissait trois issues ouvertes : casque,
+annulation d'echo, ou renoncement.
+
+**Decision.** **Le casque filaire.** L'accompagnement qui suit n'est propose
+que si un casque filaire (ou USB) est branche, et que la latence a ete
+mesuree (J2). Le systeme est interroge a chaque depart : on ne se fie pas a ce
+qu'on a vu a l'ouverture de l'ecran.
+
+- **Le casque Bluetooth est refuse**, et l'ecran dit pourquoi : le micro ne
+  l'entend pas non plus, mais son retard -- souvent deux cents millisecondes,
+  variable d'un casque a l'autre -- ne se mesure pas avec le micro, et un
+  accompagnement decale de deux cents millisecondes est pire que pas
+  d'accompagnement.
+- **L'annulation d'echo est ecartee** : elle est faite pour la voix, et elle
+  attaque justement ce que le projet protege -- c'est pour l'eviter que le
+  micro est en `UNPROCESSED` (CLAUDE.md).
+- **Sans casque, rien ne change** : l'accompagnement a tempo fixe reste la,
+  micro ferme, comme l'ADR-015 l'a livre.
+
+**Comment il suit.** A chaque attaque que le suiveur reconnait avec
+assurance (S5), l'accompagnement se recale : il sait ou en est l'eleve (la
+note), quand (l'attaque, rapportee a l'horloge du moteur, moins la latence),
+et a quel tempo il joue (D3). Il pose les notes qui tombent **jusqu'a un temps
+plus loin, pas davantage** : une note posee dans le moteur ne se reprend plus,
+et planifier loin, c'est jouer longtemps a cote si l'eleve s'arrete ou
+revient en arriere. Une reprise recale tout sur la note reprise ; un arret
+laisse s'eteindre ce qui etait pose.
+
+**L'ADR-008 tient, precisee.** Elle interdit d'ecouter **ce qu'on joue
+soi-meme**. Au casque, le micro n'entend que le violon : l'interdiction n'a
+plus d'objet, et elle reste entiere pour le haut-parleur.
+
+**Consequences.**
+
+- Une frontiere de plus, `HeadphoneProbe`, servie par quelques lignes de
+  Kotlin dans `MainActivity` (`AudioManager.getDevices`), sans paquet.
+- La note n'est pas calculee dans ce mode : on y joue ensemble, on n'y passe
+  pas un examen. La notation reste dans l'ecran de seance, micro seul.
+- Reste a l'eprouver sur le S22, casque branche : la calibration et le
+  recalage sont verifies sur un micro simule.

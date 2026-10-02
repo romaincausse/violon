@@ -101,8 +101,9 @@ Quatre regles structurantes :
    horloge (ADR-015).
    `SessionStore`, `PieceStore`, `HistoryStore` et `HomeworkStore` suivent la
    meme regle pour le stockage local,
-   `ScreenKeeper` pour l'ecran, `DocumentPicker` et `DocumentSaver` pour lire
-   ou ranger un fichier choisi par l'utilisateur :
+   `ScreenKeeper` pour l'ecran, `HeadphoneProbe` pour ce qui est branche en
+   sortie, `DocumentPicker` et `DocumentSaver` pour lire ou ranger un fichier
+   choisi par l'utilisateur :
    `lib/core/` decrit ce qu'on se rappelle, quand l'ecran doit rester allume et
    quels octets il attend, `lib/platform/` sait ou le ranger, quel drapeau
    poser et comment ouvrir le selecteur du systeme (ADR-014).
@@ -141,7 +142,8 @@ Quatre regles structurantes :
 - **Le metronome rentre dans le micro** (10 cm d'ecart sur un telephone), et
   l'accompagnement encore plus. En mode notation l'application n'emet **aucun
   son** : le metronome est visuel. Accompagnement et notation sont deux modes
-  exclusifs (ADR-008).
+  exclusifs (ADR-008). Seule exception : l'accompagnement qui suit, au casque
+  filaire seulement (ADR-016).
 - **Le curseur suit ce qui est joue**, pas l'horloge (ADR-009). C'est le lot
   le plus risque du projet, et il est desormais le premier : un jalon de
   preuve le valide sur de vraies prises avant qu'on batisse dessus.

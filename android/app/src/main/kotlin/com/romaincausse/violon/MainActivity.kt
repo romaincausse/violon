@@ -1,7 +1,11 @@
 package com.romaincausse.violon
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
+import android.os.Build
 import android.net.Uri
 import android.provider.OpenableColumns
 import io.flutter.embedding.android.FlutterActivity
@@ -24,6 +28,7 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CANAL)
             .setMethodCallHandler { appel, resultat ->
                 when (appel.method) {
+                    "casque" -> resultat.success(casque())
                     "choisir" -> choisir(resultat)
                     "enregistrer" -> enregistrer(
                         appel.argument<String>("nom") ?: "violon.txt",
@@ -33,6 +38,30 @@ class MainActivity : FlutterActivity() {
                     else -> resultat.notImplemented()
                 }
             }
+    }
+
+    /**
+     * Ce qui est branche en sortie : "filaire", "bluetooth" ou "aucun".
+     *
+     * L'accompagnement qui suit (J5, ADR-016) n'est permis qu'au casque
+     * filaire : le micro doit entendre le violon sans entendre
+     * l'accompagnement, et le retard d'un casque Bluetooth ne se mesure pas.
+     */
+    private fun casque(): String {
+        val audio = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            @Suppress("DEPRECATION")
+            return if (audio.isWiredHeadsetOn) "filaire" else "aucun"
+        }
+        val sorties = audio.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        val filaires = setOf(
+            AudioDeviceInfo.TYPE_WIRED_HEADSET,
+            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+            AudioDeviceInfo.TYPE_USB_HEADSET,
+        )
+        if (sorties.any { it.type in filaires }) return "filaire"
+        if (sorties.any { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }) return "bluetooth"
+        return "aucun"
     }
 
     private fun choisir(resultat: MethodChannel.Result) {

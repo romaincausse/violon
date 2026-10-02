@@ -62,7 +62,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
-| 11 | L'accompagnement | 4 | 5 | On joue avec quelqu'un |
+| 11 | L'accompagnement | 4 | 0 | On joue avec quelqu'un |
 
 **73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
@@ -1949,7 +1949,7 @@ l'application a l'autre.
 |----|-----|------|-----|------|
 | ~~J4~~ | ~~Accompagnement deduit du passage~~ | | ★★★ | fait |
 | ~~J2~~ | ~~Calibration de latence~~ | | ★★ | fait |
-| J5 | Accompagnement qui suit | | ★ | 5 |
+| ~~J5~~ | ~~Accompagnement qui suit~~ | | ★ | fait |
 | ~~D6~~ | ~~Retour haptique hors ecoute~~ | | ★★ | fait |
 
 Le moteur audio (J1) et le metronome sonore (J3) ont ete avances au jalon 4,
@@ -2008,7 +2008,18 @@ n'a pas de vibration : le micro y ecoute deja l'essai suivant.
 **La contradiction a resoudre avant J5.** L'ADR-008 interdit d'ecouter pendant
 que l'application joue. Mais un accompagnement qui *suit* -- le seul qui
 vaille musicalement -- doit precisement ecouter. Casque, annulation d'echo, ou
-renoncement : rien n'est choisi, d'ou le ★.
+renoncement : rien n'etait choisi, d'ou le ★.
+
+**Tranchee par l'ADR-016 : le casque filaire.** Et J5 est fait. Dans l'ecran
+d'accompagnement, *"Elle me suit"* n'est propose qu'au casque filaire, latence
+mesuree ; sinon l'interrupteur est grise et la raison dite (Bluetooth au
+retard non mesurable, pas de casque, latence a mesurer). Au casque, le micro
+s'ouvre, le suiveur reconnait chaque attaque, et `FollowingAccompanist` pose
+l'accompagnement **un temps a l'avance**, cale sur l'attaque et le tempo
+tenu : une reprise le recale, un arret le laisse s'eteindre.
+
+**Reste a l'eprouver sur le S22, casque branche** -- comme la latence (J2) :
+les deux sont verifies sur un micro simule.
 
 ---
 

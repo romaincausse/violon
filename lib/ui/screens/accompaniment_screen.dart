@@ -3,15 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/audio/microphone_pitch_source.dart';
+import '../../core/audio/pitch_smoother.dart';
+import '../../core/audio/pitch_source.dart';
+import '../../core/follow/performance_features.dart';
+import '../../core/follow/take_follower.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/accompaniment_plan.dart';
 import '../../core/play/audio_engine.dart';
+import '../../core/play/following_accompanist.dart';
 import '../../core/play/harmonizer.dart';
+import '../../core/play/headphones.dart';
 import '../../core/play/instrument.dart';
 import '../widgets/keep_screen_awake.dart';
 import '../widgets/score_view.dart';
+import 'session_screen.dart' show PitchSourceFactory;
 
 /// Jouer avec quelqu'un : le passage, et un accompagnement qu'on choisit.
 ///
@@ -29,8 +37,19 @@ class AccompanimentScreen extends StatefulWidget {
     required this.engine,
     this.scoreAccompaniment = const <AccompanimentNote>[],
     this.a4 = PitchUtils.defaultA4,
+    this.pitchSourceFactory,
+    this.headphones,
+    this.latencyMs,
     super.key,
   });
+
+  /// Pour l'accompagnement qui suit (J5) : le micro, ce qui est branche en
+  /// sortie, et la latence mesuree (J2). Sans eux, il joue a tempo fixe.
+  final PitchSourceFactory? pitchSourceFactory;
+  final HeadphoneProbe? headphones;
+  final int? latencyMs;
+
+  static const Key suitKey = Key('accompagnement-qui-suit');
 
   final Passage passage;
   final AudioEngine engine;
@@ -63,6 +82,42 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
 
   InstrumentLibrary _bibliotheque = InstrumentLibrary.vide;
 
+  /// Ce qui est branche en sortie : l'accompagnement qui suit n'est permis
+  /// qu'au casque filaire (ADR-016).
+  Headphones _sortie = Headphones.none;
+
+  /// Il veut que l'accompagnement le suive.
+  bool _suit = false;
+
+  PitchSource? _micro;
+  StreamSubscription<SmoothedPitch>? _hauteurs;
+  StreamSubscription<FeatureFrame>? _trames;
+  TakeFollower? _suivi;
+  FollowingAccompanist? _accompagnateur;
+  int? _pont;
+  int? _noteSuivie;
+
+  bool get _peutSuivre =>
+      _sortie == Headphones.wired &&
+      widget.pitchSourceFactory != null &&
+      widget.latencyMs != null;
+
+  Future<void> _verifierLaSortie() async {
+    final HeadphoneProbe? p = widget.headphones;
+    if (p == null) {
+      return;
+    }
+    final Headphones h = await p.check();
+    if (mounted) {
+      setState(() {
+        _sortie = h;
+        if (!_peutSuivre) {
+          _suit = false;
+        }
+      });
+    }
+  }
+
   /// En train de jouer, decompte compris.
   bool _joue = false;
 
@@ -81,6 +136,7 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
   void initState() {
     super.initState();
     unawaited(_chargerLesInstruments());
+    unawaited(_verifierLaSortie());
   }
 
   Future<void> _chargerLesInstruments() async {
@@ -99,6 +155,7 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
   @override
   void dispose() {
     _ticker.dispose();
+    unawaited(_fermerLeMicro());
     // Le son ne survit pas a l'ecran : on revient ensuite jouer ou le micro
     // ecoute, et un accompagnement oublie y serait note.
     unawaited(widget.engine.stopAll());
@@ -114,6 +171,12 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
   Future<void> _basculer() async {
     if (_joue) {
       await _arreter();
+      return;
+    }
+    // Le casque a pu etre branche, ou debranche, depuis l'ouverture.
+    await _verifierLaSortie();
+    if (_suit && _peutSuivre) {
+      await _suivre();
       return;
     }
     setState(() => _joue = true);
@@ -147,7 +210,119 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
 
   final Stopwatch _chrono = Stopwatch();
 
+  /// L'accompagnement qui suit (J5) : le micro ecoute, le suiveur reconnait
+  /// chaque attaque, et l'accompagnement se recale dessus.
+  Future<void> _suivre() async {
+    final Instrument? instrument = _bibliotheque.byId(_instrument);
+    final PitchSourceFactory? fabrique = widget.pitchSourceFactory;
+    if (instrument == null || fabrique == null) {
+      return;
+    }
+    setState(() => _joue = true);
+    await widget.engine.prepareInstrument(instrument.id);
+    _instrumentEnCours = instrument;
+    _suivi = TakeFollower(widget.passage, a4: widget.a4);
+    _accompagnateur = FollowingAccompanist(
+      passage: widget.passage,
+      notes: _notes,
+      latencyMs: widget.latencyMs ?? 0,
+    );
+    _pont = null;
+    _noteSuivie = null;
+    try {
+      final PitchSource micro = await fabrique();
+      if (!mounted || !_joue) {
+        await micro.dispose();
+        return;
+      }
+      _micro = micro;
+      _hauteurs = micro.smoothedPitches.listen((SmoothedPitch h) {
+        _suivi?.addPitch(h);
+      });
+      _trames = micro.features.listen(_onTrame);
+      await micro.start();
+    } on MicPermissionDenied {
+      await _arreter();
+    }
+  }
+
+  /// Une trame du suiveur : a chaque nouvelle note sure, on pose la suite.
+  void _onTrame(FeatureFrame trame) {
+    final TakeFollower? suivi = _suivi;
+    final FollowingAccompanist? acc = _accompagnateur;
+    if (suivi == null || acc == null) {
+      return;
+    }
+    // Le pont entre les horloges, a la premiere trame : sa fin, en temps du
+    // micro, contre l'horloge du moteur a son arrivee.
+    if (_pont == null) {
+      final int fin = trame.timeMs + 46;
+      unawaited(widget.engine.now().then((Duration d) {
+        _pont ??= d.inMilliseconds - fin;
+      }));
+    }
+    suivi.addFrame(trame);
+    final int? pont = _pont;
+    final int? note = suivi.position?.noteIndex;
+    if (suivi.position?.playing != true) {
+      if (_noteSuivie != null) {
+        acc.stopped();
+        _noteSuivie = null;
+      }
+    } else if (pont != null && note != _noteSuivie && !suivi.unsure) {
+      _noteSuivie = note;
+      unawaited(_poserLaSuite(
+          acc, note!, suivi.position!.timeMs, pont, suivi.tempo.quarterBpm));
+    }
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _poserLaSuite(
+    FollowingAccompanist acc,
+    int note,
+    int attaqueMs,
+    int pont,
+    double? noire,
+  ) async {
+    final Instrument? instrument = _instrumentEnCours;
+    if (instrument == null) {
+      return;
+    }
+    final Duration maintenant = await widget.engine.now();
+    for (final TimedNote n in acc.noteStarted(
+      noteIndex: note,
+      attackMicMs: attaqueMs,
+      micToEngineMs: pont,
+      nowEngineMs: maintenant.inMilliseconds,
+      quarterBpm: noire,
+    )) {
+      await widget.engine.scheduleNote(
+        instrument: instrument.id,
+        at: n.at,
+        frequencyHz:
+            PitchUtils.midiToFrequency(instrument.fold(n.midi), a4: widget.a4),
+        duration: n.duration,
+        volume: _volume * n.velocity,
+      );
+    }
+  }
+
+  Future<void> _fermerLeMicro() async {
+    final PitchSource? m = _micro;
+    _micro = null;
+    unawaited(_hauteurs?.cancel());
+    unawaited(_trames?.cancel());
+    _hauteurs = null;
+    _trames = null;
+    _suivi = null;
+    _accompagnateur = null;
+    await m?.dispose();
+  }
+
   Future<void> _arreter() async {
+    unawaited(_fermerLeMicro());
     _ticker.stop();
     _chrono.stop();
     _planificateur = null;
@@ -220,7 +395,12 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final int? tick = _joue ? _plan?.tickAt(_ecoule) : null;
+    final int? suivie = _suivi?.position?.noteIndex;
+    final int? tick = !_joue
+        ? null
+        : _suivi != null
+            ? (suivie == null ? null : widget.passage.notes[suivie].onsetTicks)
+            : _plan?.tickAt(_ecoule);
     return KeepScreenAwake(
       actif: _joue,
       child: Scaffold(
@@ -289,15 +469,38 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
                           ),
                       ],
                     ),
-                    SwitchListTile(
-                      key: AccompanimentScreen.boucleKey,
-                      contentPadding: EdgeInsets.zero,
-                      value: _boucle,
-                      onChanged: (bool v) =>
-                          unawaited(_changer(() => _boucle = v)),
-                      title: const Text('En boucle'),
-                      subtitle: const Text('Le passage recommence sans arret'),
-                    ),
+                    if (widget.pitchSourceFactory != null)
+                      SwitchListTile(
+                        key: AccompanimentScreen.suitKey,
+                        contentPadding: EdgeInsets.zero,
+                        value: _suit && _peutSuivre,
+                        onChanged: _peutSuivre
+                            ? (bool v) => unawaited(_changer(() => _suit = v))
+                            : null,
+                        title: const Text('Elle me suit'),
+                        subtitle: Text(
+                          _peutSuivre
+                              ? 'Elle ecoute et joue a ton tempo'
+                              : _sortie == Headphones.bluetooth
+                                  ? 'Casque Bluetooth : son retard ne se '
+                                      'mesure pas. Branche un casque filaire.'
+                                  : _sortie == Headphones.none
+                                      ? 'Branche un casque filaire : elle doit '
+                                          't entendre sans s entendre.'
+                                      : 'Mesure d abord la latence (Outils).',
+                        ),
+                      ),
+                    if (!(_suit && _peutSuivre))
+                      SwitchListTile(
+                        key: AccompanimentScreen.boucleKey,
+                        contentPadding: EdgeInsets.zero,
+                        value: _boucle,
+                        onChanged: (bool v) =>
+                            unawaited(_changer(() => _boucle = v)),
+                        title: const Text('En boucle'),
+                        subtitle:
+                            const Text('Le passage recommence sans arret'),
+                      ),
                     Row(
                       children: <Widget>[
                         const Icon(Icons.volume_down, size: 20),
