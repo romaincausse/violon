@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 4 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 3 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1363,7 +1363,7 @@ sur le telephone.
 | ~~S1~~ | ~~Flux unique hauteurs + attaques, sans trou~~ | **Must** | ★★ | fait |
 | ~~S2~~ | ~~Suiveur en ligne~~ | **Must** | ★★★ | fait |
 | ~~S3~~ | ~~Re-ancrage : arret, reprise, saut~~ | **Must** | ★★★ | fait |
-| S4 | Position suivie a l'ecran | **Must** | ★★★ | 1 |
+| ~~S4~~ | ~~Position suivie a l'ecran~~ | **Must** | ★★★ | fait |
 | S5 | Confiance du suiveur visible | | ★★★ | 1 |
 | D3 | Pouls du tempo detecte | | ★★ | 1 |
 | S6 | Mode metronome conserve | | ★ | 1 |
@@ -1468,6 +1468,29 @@ a 15-18, notes et rythmes compris -- la ou l'aligneur sans lui avait raison.
 Un reglage qui degrade le cas qu'il devait guerir ne se livre pas. Detail
 dans `docs/journal.md`.
 
+### S4 - Position suivie a l'ecran
+
+**Fait. L'ecran de seance suit l'eleve par defaut.** On appuie sur *Jouer le
+passage* : pas de decompte, pas de metronome, une ligne -- *"Je t'ecoute.
+Commence quand tu veux."* Le curseur se pose sur la note **qu'il joue**, y
+reste tant qu'il la tient, attend derriere elle quand il s'arrete, et revient
+avec lui quand il reprend.
+
+- `TakeFollower` porte toute la mecanique, sans un widget : il recoit les
+  deux flux du micro, rattache chaque hauteur a la note jouee -- **une
+  hauteur attend que le suiveur ait tranche son instant**, sans quoi elle
+  irait parfois a la note precedente -- et dit quand la prise est finie.
+- **La prise se termine seule** quand la derniere note a ete jouee et
+  l'archet pose une seconde et demie. Un arret au milieu est un arret de
+  travail, pas une fin : rien n'est rendu. Arreter a la main apres la
+  derniere note compte comme une fin.
+- **La note se calcule sur la prise entiere** : a l'arret, `rescore` reprend
+  tout avec l'aligneur hors ligne, et ce sont ses couleurs que l'eleve voit.
+- Le defaut de l'ancien ecran disparait : **un enfant en retard d'une croche
+  n'est plus mesure contre la note suivante.**
+- Le curseur sur l'horloge, avec decompte et metronome, reste disponible
+  (`SessionMode.metronome`) ; c'est S6 qui le rend accessible a l'eleve.
+
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.
 
@@ -1476,8 +1499,8 @@ metronome, mais sur **le tempo qu'il est en train de tenir**. L'application
 respire avec lui. C'est le retour qui rend le suivi credible : il voit qu'elle
 le suit, donc il la croit.
 
-Ce jalon repare au passage un defaut livre : aujourd'hui, un enfant en retard
-d'une croche est mesure contre la note **suivante**.
+Ce jalon repare au passage un defaut livre : un enfant en retard d'une
+croche etait mesure contre la note **suivante** (repare par S4).
 
 ---
 

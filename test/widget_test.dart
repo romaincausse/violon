@@ -79,13 +79,10 @@ void main() {
     await tester.pump();
     expect(find.text('Arreter'), findsOneWidget);
 
+    // L'application suit l'eleve (ADR-009) : aucun metronome ne lui impose
+    // un tempo, elle attend qu'il joue.
     await tester.pump(const Duration(milliseconds: 300));
-    expect(
-      tester
-          .widget<FractionallySizedBox>(find.byKey(MetronomeBar.pulseKey))
-          .widthFactor,
-      greaterThan(0),
-    );
+    expect(find.byType(MetronomeBar), findsNothing);
 
     await tester.tap(find.text('Arreter'));
     await tester.pump();
