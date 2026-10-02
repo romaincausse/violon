@@ -137,6 +137,7 @@ class SessionScreen extends StatefulWidget {
     this.onTakeRecorded,
     this.clock = DateTime.now,
     this.takePlayerFactory,
+    this.lesson = false,
     super.key,
   });
 
@@ -169,6 +170,12 @@ class SessionScreen extends StatefulWidget {
   /// Pour reentendre la premiere et la derniere prise de la seance (M2).
   /// `null` : rien n'est garde.
   final TakePlayerFactory? takePlayerFactory;
+
+  /// Le mode lecon (T4) : le bilan donne aussi le detail chiffre, pour le
+  /// professeur.
+  final bool lesson;
+
+  static const Key detailKey = Key('detail-de-la-lecon');
 
   /// Les deux boutons de l'avant / apres.
   static const Key avantKey = Key('ecouter-la-premiere-prise');
@@ -944,6 +951,7 @@ class _SessionScreenState extends State<SessionScreen>
         suivi: true,
         selection: WorkLoop.weakBars(rapport),
         pulse: pulse,
+        detail: widget.lesson ? _detail(rapport) : const <String>[],
       );
     }
     final String? pire = _tuning.weakestNoteId;
@@ -952,6 +960,22 @@ class _SessionScreenState extends State<SessionScreen>
         : widget.passage.notes.where((ScoreNote n) => n.id == pire).firstOrNull;
     return _Bilan(score: score, aTravailler: aTravailler);
   }
+
+  /// Le detail pour le professeur : les mesures reprises ou arretees, puis
+  /// chaque note sortie de sa marge, avec son ecart.
+  List<String> _detail(TakeReport r) => <String>[
+        for (final MeasureReport m in r.measures)
+          if (m.restarts > 1 || m.stops > 0 || m.hesitations > 0)
+            'Mesure ${m.measure} : ${<String>[
+              if (m.restarts > 1) 'reprise ${m.restarts} fois',
+              if (m.stops > 0) '${m.stops} arret${m.stops > 1 ? 's' : ''}',
+              if (m.hesitations > 0)
+                '${m.hesitations} hesitation${m.hesitations > 1 ? 's' : ''}',
+            ].join(', ')}',
+        for (final (ScoreNote n, double c) in r.notesOff(_tuning))
+          'Mesure ${n.measure}, ${PitchUtils.noteName(n.midi)} : '
+              '${c < 0 ? 'bas' : 'haut'} de ${c.abs().round()} cents',
+      ];
 
   /// La raison d'une tache, dite simplement et sans reproche.
   static String? _raison(MeasureReport m) => switch (m.mainWeakness) {
@@ -1751,7 +1775,11 @@ class _Bilan {
     this.suivi = false,
     this.selection,
     this.pulse,
+    this.detail = const <String>[],
   });
+
+  /// Le detail chiffre du mode lecon (T4), une ligne par fait.
+  final List<String> detail;
 
   /// Les mesures que le bilan propose de boucler (R1), et le tempo tenu.
   final BarSelection? selection;
@@ -1935,6 +1963,16 @@ class _Resultat extends StatelessWidget {
             style: theme.textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
+          if (bilan.detail.isNotEmpty)
+            Padding(
+              key: SessionScreen.detailKey,
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                bilan.detail.join('\n'),
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ),
         ],
       );
     }

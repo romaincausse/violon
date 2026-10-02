@@ -50,6 +50,7 @@ void main() {
     Passage? autre,
     ValueChanged<TakeRecord>? garder,
     TakePlayerFactory? liseur,
+    bool lecon = false,
   }) async {
     t = 0;
     await tester.pumpWidget(
@@ -63,6 +64,7 @@ void main() {
           onTakeRecorded: garder,
           clock: () => DateTime(2026, 10, 2, 18),
           takePlayerFactory: liseur,
+          lesson: lecon,
           pitchSourceFactory: () async =>
               micro = FakePitchSource(const <PitchEstimate>[]),
         ),
@@ -78,7 +80,12 @@ void main() {
 
   /// [trames] trames d'une note (ou d'un silence), avec la hauteur que YIN en
   /// aurait tiree.
-  Future<void> jouer(WidgetTester tester, int? midi, int trames) async {
+  Future<void> jouer(
+    WidgetTester tester,
+    int? midi,
+    int trames, {
+    double cents = 0,
+  }) async {
     for (int i = 0; i < trames; i++) {
       // La prise a pu se terminer seule : le micro est alors ferme.
       if (find.text('Arreter').evaluate().isEmpty) {
@@ -87,7 +94,7 @@ void main() {
       if (midi != null) {
         micro.emit(
           PitchEstimate(
-            frequencyHz: PitchUtils.midiToFrequency(midi),
+            frequencyHz: PitchUtils.midiToFrequency(midi + cents / 100),
             confidence: 1,
             timestampMs: t,
           ),
@@ -305,5 +312,34 @@ void main() {
     expect(liseur.joues.first, isNot(same(liseur.joues.last)));
     liseur.terminer();
     await tester.pump();
+  });
+
+  testWidgets('en mode lecon, le bilan donne le detail chiffre', (
+    WidgetTester tester,
+  ) async {
+    await poser(tester, lecon: true);
+    await demarrer(tester);
+    await jouer(tester, null, 5);
+    for (final int m in <int>[62, 64, 66, 67, 69]) {
+      await jouer(tester, m, 26, cents: m == 66 ? 45 : 0);
+    }
+    await jouer(tester, null, 90);
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(find.byKey(SessionScreen.detailKey), findsOneWidget);
+    expect(find.textContaining('Fa#4 : haut de 45 cents'), findsOneWidget);
+  });
+
+  testWidgets('a la maison, pas de detail : une seule tache', (
+    WidgetTester tester,
+  ) async {
+    await poser(tester);
+    await demarrer(tester);
+    await jouer(tester, null, 5);
+    for (final int m in <int>[62, 64, 66, 67, 69]) {
+      await jouer(tester, m, 26, cents: m == 66 ? 45 : 0);
+    }
+    await jouer(tester, null, 90);
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(find.byKey(SessionScreen.detailKey), findsNothing);
   });
 }

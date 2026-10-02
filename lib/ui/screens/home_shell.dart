@@ -155,6 +155,7 @@ class HomeShell extends StatefulWidget {
 
   static const Key bourdonKey = Key('ouvrir-le-bourdon');
   static const Key metronomeKey = Key('ouvrir-le-metronome');
+  static const Key leconKey = Key('mode-lecon');
   static const Key bancKey = Key('ouvrir-le-banc');
 
   @override
@@ -224,6 +225,9 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   late HomeworkList _devoirs = widget.initialHomework;
+
+  /// Le mode lecon (T4) : le temps d'un cours, le bilan detaille.
+  bool _lecon = false;
 
   void _rangerLesDevoirs(HomeworkList l) {
     setState(() => _devoirs = l);
@@ -640,6 +644,22 @@ class _HomeShellState extends State<HomeShell> {
                   (BuildContext c) => MetronomeScreen(engine: _son),
                 ),
               ),
+              // Le temps d'un cours : le bilan donne aussi le detail
+              // chiffre, pour le professeur (T4). A la maison, une tache.
+              StatefulBuilder(
+                builder: (BuildContext c, StateSetter majTiroir) =>
+                    SwitchListTile(
+                  key: HomeShell.leconKey,
+                  secondary: const Icon(Icons.school_outlined),
+                  title: const Text('Mode lecon'),
+                  subtitle: const Text('Le detail chiffre, pour le professeur'),
+                  value: _lecon,
+                  onChanged: (bool v) {
+                    setState(() => _lecon = v);
+                    majTiroir(() {});
+                  },
+                ),
+              ),
               ListTile(
                 leading: const Icon(Icons.mic),
                 title: const Text('Est-ce qu elle m entend ?'),
@@ -715,6 +735,7 @@ class _HomeShellState extends State<HomeShell> {
               mode: _menee,
               historyKey: _cleDuTravail,
               takePlayerFactory: widget.takePlayerFactory,
+              lesson: _lecon,
               onTakeRecorded: _garder,
               clock: widget.clock,
               onModeChanged: (SessionMode m) => setState(() => _menee = m),

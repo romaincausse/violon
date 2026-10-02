@@ -233,6 +233,21 @@ class TakeReport {
     return TakeReport._(passage, rhythm, mesures);
   }
 
+  /// Les notes sorties de leur marge, dans l'ordre du passage : le detail
+  /// pour le professeur (lot T4). Une note par identifiant, avec son ecart
+  /// median.
+  ///
+  /// **A la maison, on ne le montre pas** : le bilan y designe une tache, pas
+  /// la liste des fautes. En cours, avec le professeur, le detail redevient
+  /// utile -- et il est adresse a personne.
+  List<(ScoreNote, double)> notesOff(LiveTuning tuning) =>
+      <(ScoreNote, double)>[
+        for (final ScoreNote n in passage.notes)
+          if (tuning.verdictFor(n.id) == TuningVerdict.low ||
+              tuning.verdictFor(n.id) == TuningVerdict.high)
+            (n, tuning.medianCentsFor(n.id)!),
+      ];
+
   MeasureReport? byMeasure(int measure) =>
       measures.where((MeasureReport m) => m.measure == measure).firstOrNull;
 

@@ -61,7 +61,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
-| 10 | Le professeur | 4 | 2 | La semaine cesse d'etre invisible |
+| 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
 **73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
@@ -1885,7 +1885,7 @@ Detail et garde-fous : `docs/professeur.md`.
 | ~~T2~~ | ~~Rapport de travail~~ | | ★★★ | fait |
 | ~~T1~~ | ~~Devoirs de la semaine~~ | | ★★ | fait |
 | ~~T3~~ | ~~Export fichier~~ | | ★★ | fait |
-| T4 | Mode lecon | | ★ | 2 |
+| ~~T4~~ | ~~Mode lecon~~ | | ★ | fait |
 
 **La ligne a ne pas franchir.** Le jour ou l'enfant comprend que l'application
 rapporte a l'adulte ce qu'il n'a pas fait, il arrete de jouer devant elle.
@@ -1924,6 +1924,22 @@ et allees au bout ; il se coche quand le tempo vise est tenu. Un nouveau
 devoir sur le meme passage remplace l'ancien : il n'y a pas deux objectifs.
 Ca remplace la ligne du cahier que personne ne relit -- et la marge de
 negociation entre ce qui a ete demande et ce qui a ete compris.
+
+### T4 - Le mode lecon
+
+**Fait, a partir de l'usage 3 de `docs/professeur.md`** -- objectiver un
+diagnostic pendant le cours, l'application en tiers dans la piece. Le plan ne
+le detaillait pas ; voici le choix fait.
+
+**A la maison, le bilan designe une tache, jamais la liste des fautes.** En
+cours, avec le professeur, le detail redevient utile. Le *Mode lecon*, dans
+les Outils, ajoute au bilan d'une prise suivie la liste chiffree : les
+mesures reprises, arretees ou hesitees, puis chaque note sortie de sa marge --
+*"Mesure 10, Do#5 : bas de 22 cents"*. Des faits, adresses a personne. Il se
+coupe d'un geste a la fin du cours, et ne se retient pas d'une ouverture de
+l'application a l'autre.
+
+**Le jalon 10 est clos.**
 
 ---
 
