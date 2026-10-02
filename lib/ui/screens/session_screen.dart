@@ -19,7 +19,9 @@ import '../../core/scoring/note_ladder.dart';
 import '../../core/scoring/measure_scores.dart';
 import '../../core/scoring/played_passage.dart';
 import '../../core/scoring/tuning_trace.dart';
+import '../../core/scoring/rhythm_judge.dart';
 import '../../core/scoring/string_drift_monitor.dart';
+import '../../core/scoring/take_report.dart';
 import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
 import '../widgets/measure_halo.dart';
@@ -812,12 +814,45 @@ class _SessionScreenState extends State<SessionScreen>
     if (score == null) {
       return null;
     }
+    final TakeReport? rapport = _suit ? _suivi?.report : null;
+    if (rapport != null) {
+      // Le bilan d'une prise suivie (N6) : des donnees qui montent -- le
+      // tempo tenu, deux notes -- et une seule tache, avec sa raison.
+      final RhythmJudge juge = rapport.rhythm;
+      final MeasureReport? tache = rapport.nextTask;
+      final int? pulse = juge.pulseBpm;
+      final String unite =
+          widget.passage.meter?.pulseName(widget.passage.ticksPerBeat) ??
+              'noire';
+      return _Bilan(
+        score: score,
+        aTravailler: null,
+        rythme: juge.overallScore,
+        tempo: pulse == null ? null : '$pulse a la $unite',
+        mesure: tache?.measure,
+        raison: tache == null ? null : _raison(tache),
+        suivi: true,
+      );
+    }
     final String? pire = _tuning.weakestNoteId;
     final ScoreNote? aTravailler = pire == null
         ? null
         : widget.passage.notes.where((ScoreNote n) => n.id == pire).firstOrNull;
     return _Bilan(score: score, aTravailler: aTravailler);
   }
+
+  /// La raison d'une tache, dite simplement et sans reproche.
+  static String? _raison(MeasureReport m) => switch (m.mainWeakness) {
+        Weakness.stops => 'tu t y arretes',
+        Weakness.restarts => 'tu y reviens souvent',
+        Weakness.hesitations => 'tu hesites avant une note',
+        Weakness.avoided => 'une note y passe trop vite',
+        Weakness.slowing =>
+          'tu y ralentis de ${(100 * (1 - m.tempoRatio!)).round()} %',
+        Weakness.rhythm => 'le rythme',
+        Weakness.tuning => 'la justesse',
+        null => null,
+      };
 
   void _changerDeMode() {
     setState(() {
@@ -1508,10 +1543,31 @@ class _Decompte extends StatelessWidget {
 
 /// Ce qu'on a mesure sur le dernier passage.
 class _Bilan {
-  const _Bilan({required this.score, required this.aTravailler});
+  const _Bilan({
+    required this.score,
+    required this.aTravailler,
+    this.rythme,
+    this.tempo,
+    this.mesure,
+    this.raison,
+    this.suivi = false,
+  });
 
   final int score;
   final ScoreNote? aTravailler;
+
+  /// Rythme sur cent, au tempo tenu (N3).
+  final int? rythme;
+
+  /// Le tempo tenu, deja formule : "74 a la noire" (N2).
+  final String? tempo;
+
+  /// La mesure a retravailler, et pourquoi (N5).
+  final int? mesure;
+  final String? raison;
+
+  /// Le bilan vient d'une prise suivie : il dit aussi quand tout tient.
+  final bool suivi;
 }
 
 /// Une ligne discrete sous la portee : le bilan quand le passage est fini, la
@@ -1645,6 +1701,39 @@ class _Resultat extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ScoreNote? note = bilan.aTravailler;
+    if (bilan.suivi) {
+      final int? rythme = bilan.rythme;
+      final int? mesure = bilan.mesure;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            rythme == null
+                ? 'Justesse ${bilan.score}'
+                : 'Justesse ${bilan.score} - Rythme $rythme',
+            key: const Key('bilan-score'),
+            style: theme.textTheme.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          if (bilan.tempo case final String tempo)
+            Text(
+              'Tempo tenu : $tempo',
+              key: const Key('bilan-tempo'),
+              style: theme.textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          Text(
+            mesure == null
+                ? 'Tout tient.'
+                : 'A retravailler : mesure $mesure'
+                    '${bilan.raison == null ? '' : ' - ${bilan.raison}'}',
+            key: const Key('bilan-tache'),
+            style: theme.textTheme.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[

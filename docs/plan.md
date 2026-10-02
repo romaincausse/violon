@@ -58,7 +58,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
-| 7 | La note | 10 | 1 | Justesse et rythme, par mesure |
+| 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
@@ -1564,7 +1564,7 @@ croche etait mesure contre la note **suivante** (repare par S4).
 | ~~N2~~ | ~~Tempo reellement tenu~~ | **Must** | ★★ | fait |
 | ~~N3~~ | ~~Score de rythme, a ce tempo~~ | **Must** | ★★★ | fait |
 | ~~N5~~ | ~~Agregation par mesure~~ | **Must** | ★★★ | fait |
-| N6 | Bilan de passage | **Must** | ★★★ | 1 |
+| ~~N6~~ | ~~Bilan de passage~~ | **Must** | ★★★ | fait |
 | ~~N4~~ | ~~Detection des hesitations~~ | | ★★★ | fait |
 | ~~B1~~ | ~~Compteur de reprises par mesure~~ | | ★★★ | fait |
 | ~~B2~~ | ~~Carte des arrets~~ | | ★★ | fait |
@@ -1633,6 +1633,23 @@ tache : la mesure la plus difficile, et la raison principale qu'on peut
 donner. Les arrets et les reprises pesent plus lourd que la justesse : une
 mesure juste qu'on rejoue quatorze fois est une mesure qui fait peur. En
 dessous d'un seuil, il n'y a pas de tache : tout tient, et il faut le dire.
+
+### N6 - Bilan de passage
+
+**Fait.** Une prise suivie se termine sur trois lignes, sous la portee :
+
+> **Justesse 92 - Rythme 85**
+> Tempo tenu : 74 a la noire
+> A retravailler : mesure 7 - tu y ralentis de 20 %
+
+Des donnees qui montent -- deux notes et un tempo -- et **une seule** tache,
+avec sa raison dite sans reproche : *tu t'y arretes*, *tu y reviens souvent*,
+*tu hesites avant une note*, *une note y passe trop vite*, *tu y ralentis*,
+*le rythme*, *la justesse*. Quand rien ne pese assez : **"Tout tient."** Le
+mode metronome garde son ancien bilan.
+
+**Le jalon 7 est clos.** Tout ce qui juge part de la prise entiere, alignee
+apres coup ; le direct ne sert qu'a l'ecran.
 
 ---
 
