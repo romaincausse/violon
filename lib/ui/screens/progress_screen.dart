@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/scoring/finger_diagnosis.dart';
 import '../../core/store/progress.dart';
 import '../../core/store/take_history.dart';
 
@@ -20,6 +21,7 @@ class ProgressScreen extends StatelessWidget {
   final DateTime Function() clock;
 
   static const Key journalKey = Key('journal-du-jour');
+  static const Key mainKey = Key('diagnostic-de-la-main');
   static Key courbeKey(String key) => Key('courbe-$key');
 
   @override
@@ -44,6 +46,11 @@ class ProgressScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 children: <Widget>[
                   _Journal(jour: jour, history: history),
+                  if (FingerDiagnosis.of(history).main
+                      case final FingerFinding f) ...<Widget>[
+                    const SizedBox(height: 16),
+                    _Main(trouve: f),
+                  ],
                   const SizedBox(height: 16),
                   for (final String k in travaux)
                     _Courbe(serie: ProgressSeries.of(history, k)),
@@ -205,4 +212,46 @@ class _Trace extends CustomPainter {
   @override
   bool shouldRepaint(_Trace old) =>
       old.valeurs != valeurs || old.couleur != couleur;
+}
+
+/// Ce que la main fait d'un doigt, sur plusieurs cordes (H3).
+///
+/// **Un seul doigt a la fois**, le plus net : *voila ta prochaine tache*, pas
+/// la liste de tout ce qui derive.
+class _Main extends StatelessWidget {
+  const _Main({required this.trouve});
+
+  final FingerFinding trouve;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<String> cordes = <String>[
+      for (final ViolinString c in ViolinString.values)
+        if (trouve.strings.contains(c)) c.name,
+    ];
+    final String ou = cordes.length == 1
+        ? 'sur la corde de ${cordes.single}'
+        : 'sur les cordes de ${cordes.sublist(0, cordes.length - 1).join(', ')}'
+            ' et ${cordes.last}';
+    return Card(
+      key: ProgressScreen.mainKey,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Ta main gauche', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Ton ${trouve.place.label} tombe ${trouve.flat ? 'bas' : 'haut'}, '
+              '$ou. ${trouve.flat ? 'Avance-le' : 'Recule-le'} un peu vers '
+              '${trouve.flat ? 'le chevalet' : 'la volute'}.',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
