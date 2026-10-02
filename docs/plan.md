@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 2 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 1 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1366,7 +1366,7 @@ sur le telephone.
 | ~~S4~~ | ~~Position suivie a l'ecran~~ | **Must** | ★★★ | fait |
 | ~~S5~~ | ~~Confiance du suiveur visible~~ | | ★★★ | fait |
 | D3 | Pouls du tempo detecte | | ★★ | 1 |
-| S6 | Mode metronome conserve | | ★ | 1 |
+| ~~S6~~ | ~~Mode metronome conserve~~ | | ★ | fait |
 
 **S1 est le point dur.** L'analyse de hauteur jette des trames sous pression,
 le detecteur d'attaques exige un flux sans trou, et le suiveur consomme les
@@ -1515,6 +1515,15 @@ la mauvaise. C'est l'aligneur qui corrige, en fin de prise.
 
 Un test d'ecran a revele au passage que deux des quatre bandeaux (pupitre et
 paysage) ne recevaient pas l'information : corrige.
+
+### S6 - Mode metronome conserve
+
+**Fait.** Sous le titre, un lien : *Jouer au metronome* -- decompte, curseur
+cale sur le tempo, metronome visuel, l'ancien ecran tel quel. Dans l'autre
+sens, *Jouer a mon tempo*. **Le suivi reste le defaut** (ADR-009) ; le
+metronome sert quand le but est justement de tenir une mesure imposee, comme
+remonter un passage cran par cran. La coquille garde le choix d'un onglet a
+l'autre ; il ne change pas pendant une prise.
 
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.

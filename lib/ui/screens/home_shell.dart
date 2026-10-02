@@ -171,6 +171,10 @@ class _HomeShellState extends State<HomeShell> {
   /// contrairement a la seance, ils ne s'ecrivent qu'a l'import.
   late PieceLibrary _morceaux = widget.initialPieces;
 
+  /// Qui mene la prise : l'eleve (suivi) ou le metronome (lot S6). Garde ici
+  /// pour survivre aux changements d'onglet.
+  SessionMode _menee = SessionMode.follow;
+
   /// Le passage de morceau en cours, exclusif de [_exercice].
   late RememberedExcerpt? _extrait = widget.initialExcerpt;
 
@@ -572,6 +576,8 @@ class _HomeShellState extends State<HomeShell> {
               onTempoChanged: _changerDeTempo,
               writtenPulseBpm: _tempoEcrit,
               onAccompany: () => unawaited(_accompagner()),
+              mode: _menee,
+              onModeChanged: (SessionMode m) => setState(() => _menee = m),
               // Accorder est la premiere chose de chaque seance : elle
               // merite son raccourci, en plus du tiroir.
               onFullScreen: (bool plein) => setState(() => _pleinEcran = plein),

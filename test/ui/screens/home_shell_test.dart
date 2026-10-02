@@ -21,6 +21,7 @@ import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/metronome_screen.dart';
 import 'package:violon/ui/screens/mic_check_screen.dart';
 import 'package:violon/ui/screens/session_screen.dart';
+import 'package:violon/ui/widgets/metronome_bar.dart';
 import 'package:violon/ui/screens/training_screen.dart';
 import 'package:violon/ui/screens/tuner_screen.dart';
 
@@ -95,6 +96,28 @@ void main() {
       await tester.tap(find.byKey(SessionScreen.sortiePleinEcranKey));
       await tester.pump();
       expect(find.byKey(HomeShell.navKey), findsOneWidget);
+    });
+
+    testWidgets('le metronome se choisit, et le choix survit aux onglets', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      // Par defaut, l'application suit l'eleve : pas de metronome.
+      expect(find.byType(MetronomeBar), findsNothing);
+      await tester.tap(find.byKey(SessionScreen.modeKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(MetronomeBar), findsOneWidget);
+      expect(find.text('Jouer a mon tempo'), findsOneWidget);
+
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jouer').last);
+      await tester.pumpAndSettle();
+      expect(find.byType(MetronomeBar), findsOneWidget);
+
+      await tester.tap(find.byKey(SessionScreen.modeKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(MetronomeBar), findsNothing);
     });
 
     testWidgets('le repertoire montre le passage en cours', (
