@@ -103,7 +103,8 @@ Quatre regles structurantes :
    meme regle pour le stockage local,
    `ScreenKeeper` pour l'ecran, `HeadphoneProbe` pour ce qui est branche en
    sortie, `DocumentPicker` et `DocumentSaver` pour lire ou ranger un fichier
-   choisi par l'utilisateur :
+   choisi par l'utilisateur, `TakeSharer` pour envoyer une prise de concert
+   par le partage du systeme (ADR-018) :
    `lib/core/` decrit ce qu'on se rappelle, quand l'ecran doit rester allume et
    quels octets il attend, `lib/platform/` sait ou le ranger, quel drapeau
    poser et comment ouvrir le selecteur du systeme (ADR-014).

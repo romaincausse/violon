@@ -135,8 +135,12 @@ class FakePitchSource implements PitchSource {
     _timer = null;
   }
 
+  /// Vrai une fois libere : un ecran qui doit fermer le micro le prouve.
+  bool disposed = false;
+
   @override
   Future<void> dispose() async {
+    disposed = true;
     await stop();
     await _controller.close();
     await _octets.close();

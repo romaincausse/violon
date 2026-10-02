@@ -16,6 +16,7 @@ import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/play/headphones.dart';
+import '../../core/store/take_sharer.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/document_saver.dart';
 import '../../core/store/homework.dart';
@@ -37,6 +38,7 @@ import 'passage_editor_screen.dart';
 import 'piece_screen.dart';
 import 'progress_screen.dart';
 import 'session_screen.dart';
+import 'concert_screen.dart';
 import 'tuner_screen.dart';
 
 /// La coquille de navigation.
@@ -78,8 +80,14 @@ class HomeShell extends StatefulWidget {
     this.latencyMs,
     this.onLatencyChanged,
     this.headphones,
+    this.takeSharer,
     super.key,
   });
+
+  /// Pour envoyer une prise de concert (V7, ADR-018). `null` : pas de bouton.
+  final TakeSharer? takeSharer;
+
+  static const Key concertKey = Key('ouvrir-le-concert');
 
   /// Ce qui est branche en sortie, pour l'accompagnement qui suit (J5).
   final HeadphoneProbe? headphones;
@@ -638,6 +646,24 @@ class _HomeShellState extends State<HomeShell> {
                     pitchSourceFactory: widget.pitchSourceFactory,
                     takePlayerFactory: widget.takePlayerFactory,
                     a4: widget.a4,
+                  ),
+                ),
+              ),
+              // Jouer pour quelqu'un (ADR-018) : la seule exception a "rien
+              // n'est conserve", et c'est l'enfant qui la declenche.
+              ListTile(
+                key: HomeShell.concertKey,
+                leading: const Icon(Icons.theater_comedy_outlined),
+                title: const Text('Concert'),
+                subtitle: const Text('Enregistrer, pour l envoyer a quelqu un'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => ConcertScreen(
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    takePlayerFactory: widget.takePlayerFactory,
+                    sharer: widget.takeSharer,
+                    saver: widget.documentSaver,
+                    title: widget.passage.title,
                   ),
                 ),
               ),

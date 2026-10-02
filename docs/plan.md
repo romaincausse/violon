@@ -63,7 +63,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
-| 12 | L'envie | 8 | 12 | On a envie d'y revenir |
+| 12 | L'envie | 8 | 10 | On a envie d'y revenir |
 
 **84 lots au 2 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
 corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
@@ -2081,7 +2081,7 @@ a l'ecran.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| V7 | Le mode concert | | ★★★ | 2 |
+| ~~V7~~ | ~~Le mode concert~~ | | ★★★ | fait |
 | V1 | La seance du jour | **Must** | ★★★ | 3 |
 | V2 | Les premieres fois | | ★★★ | 2 |
 | V3 | Les jours joues | | ★★★ | 1 |
@@ -2098,6 +2098,13 @@ range dans un fichier qu'il choisit. L'application ne la garde pas : elle
 vit en memoire le temps de l'ecran, et le fichier de partage ne survit pas
 au lancement suivant. Rien n'est note, rien ne va au professeur. En tete du
 jalon parce que la decision est prise et qu'il ne depend de rien.
+
+**Fait** (`ConcertScreen`, dans les Outils). *Je joue*, *C'est fini*, puis
+*Me reecouter*, *L'envoyer a quelqu'un* (le partage du systeme, par un
+`FileProvider` sur le cache prive, efface au concert et au lancement
+suivants), *La garder dans un fichier* (le selecteur du systeme, en
+`audio/wav`), *Recommencer*. Cinq minutes au plus. Le fichier se nomme
+`concert-<morceau>-<date>.wav`. Une frontiere de plus, `TakeSharer`.
 
 **V1 - La seance du jour.** Trois etapes, trois cases, et ce qui reste
 toujours visible. L'echauffement, une gamme dans la tonalite du morceau,
