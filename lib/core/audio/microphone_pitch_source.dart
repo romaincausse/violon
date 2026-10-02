@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
 
+import '../follow/feature_analyzer.dart';
+import '../follow/performance_features.dart';
 import 'audio_capture.dart';
 import 'pcm_framer.dart';
 import 'pitch_analyzer.dart';
@@ -33,9 +35,11 @@ class MicrophonePitchSource implements PitchSource {
     int frameSize = 2048,
     PitchAnalyzer? analyzer,
     PitchSmoother? smoother,
+    FeatureAnalyzer? featureAnalyzer,
   })  : _framer = PcmFramer(frameSize: frameSize, sampleRate: sampleRate),
         _analyzer = analyzer ?? InlinePitchAnalyzer(sampleRate: sampleRate),
-        _smoother = smoother ?? PitchSmoother();
+        _smoother = smoother ?? PitchSmoother(),
+        _trameur = featureAnalyzer ?? InlineFeatureAnalyzer();
 
   /// Trames au plus en attente d'analyse.
   ///
@@ -44,6 +48,15 @@ class MicrophonePitchSource implements PitchSource {
   /// juste mais decale d'une seconde. Quatre trames font deux dixiemes de
   /// seconde, ce qui laisse passer un a-coup sans rien perdre.
   static const int maxPendingFrames = 4;
+
+  /// Paquets au plus en attente du suiveur avant qu'on saute leurs hauteurs.
+  ///
+  /// **Le suiveur ne perd jamais un paquet** : le detecteur d'attaques compare
+  /// chaque spectre au precedent, et un trou y ferait voir une attaque qui
+  /// n'existe pas. Sous pression, on garde donc l'energie et les attaques, et
+  /// on saute seulement YIN -- le plus cher, et le seul dont l'absence se
+  /// dit (`FeatureFrame.analysed`). Huit paquets font 370 ms de retard.
+  static const int maxPendingFeatureChunks = 8;
 
   /// Ordre d'essai des sources. La premiere qui demarre gagne.
   static const List<MicSource> sourcePreference = <MicSource>[
@@ -58,6 +71,19 @@ class MicrophonePitchSource implements PitchSource {
   final PitchAnalyzer _analyzer;
   final PitchSmoother _smoother;
   final Queue<PcmFrame> _attente = Queue<PcmFrame>();
+  final FeatureAnalyzer _trameur;
+  final Queue<Float32List> _attenteTrames = Queue<Float32List>();
+  bool _tramesEnCours = false;
+  int _hauteursSautees = 0;
+  final StreamController<FeatureFrame> _trames =
+      StreamController<FeatureFrame>.broadcast();
+
+  /// Trames du suiveur rendues sans hauteur, faute de temps, depuis le
+  /// dernier [start]. Doit rester a zero, comme [droppedFrames].
+  int get pitchSkippedFeatureChunks => _hauteursSautees;
+
+  @override
+  Stream<FeatureFrame> get features => _trames.stream;
   bool _analyseEnCours = false;
   int _abandonnees = 0;
   final StreamController<SmoothedPitch> _controller =
@@ -127,6 +153,9 @@ class MicrophonePitchSource implements PitchSource {
     _smoother.reset();
     _attente.clear();
     _abandonnees = 0;
+    _attenteTrames.clear();
+    _hauteursSautees = 0;
+    await _trameur.reset();
 
     final Stream<Uint8List> octets = await _ouvrir();
     _subscription = octets.listen(_onBytes);
@@ -162,6 +191,12 @@ class MicrophonePitchSource implements PitchSource {
       _octets.add(bytes);
     }
     for (final PcmFrame frame in _framer.addBytes(bytes)) {
+      // Les trames du framer se suivent sans recouvrement : mises bout a bout,
+      // elles redonnent le flux entier, ce que le suiveur exige.
+      if (_trames.hasListener) {
+        _attenteTrames.add(frame.samples);
+        unawaited(_pomperTrames());
+      }
       _attente.add(frame);
       while (_attente.length > maxPendingFrames) {
         _attente.removeFirst();
@@ -204,6 +239,33 @@ class MicrophonePitchSource implements PitchSource {
     }
   }
 
+  /// Le suiveur, un paquet a la fois et dans l'ordre. Rien n'est jete.
+  Future<void> _pomperTrames() async {
+    if (_tramesEnCours) {
+      return;
+    }
+    _tramesEnCours = true;
+    try {
+      while (_attenteTrames.isNotEmpty) {
+        final bool enRetard = _attenteTrames.length > maxPendingFeatureChunks;
+        if (enRetard) {
+          _hauteursSautees++;
+        }
+        final List<FeatureFrame> trames = await _trameur.add(
+          _attenteTrames.removeFirst(),
+          analysePitch: !enRetard,
+        );
+        for (final FeatureFrame t in trames) {
+          if (!_trames.isClosed) {
+            _trames.add(t);
+          }
+        }
+      }
+    } finally {
+      _tramesEnCours = false;
+    }
+  }
+
   @override
   Future<void> stop() async {
     // Annuler sans attendre. Un abonnement cesse de livrer des l'appel ; la
@@ -225,8 +287,10 @@ class MicrophonePitchSource implements PitchSource {
   Future<void> dispose() async {
     await stop();
     await _analyzer.dispose();
+    await _trameur.dispose();
     await capture.dispose();
     await _controller.close();
     await _octets.close();
+    await _trames.close();
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import '../follow/performance_features.dart';
 import 'pitch_estimate.dart';
 import 'pitch_smoother.dart';
 import 'pitch_source.dart';
@@ -39,6 +40,16 @@ class FakePitchSource implements PitchSource {
 
   final StreamController<Uint8List> _octets =
       StreamController<Uint8List>.broadcast();
+
+  final StreamController<FeatureFrame> _trames =
+      StreamController<FeatureFrame>.broadcast();
+
+  @override
+  Stream<FeatureFrame> get features => _trames.stream;
+
+  /// Emet une trame du suiveur, maintenant. Les trames se pilotent a part,
+  /// comme les octets : un script de hauteurs ne dit rien des attaques.
+  void emitFeature(FeatureFrame frame) => _trames.add(frame);
 
   Timer? _timer;
   int _index = 0;
@@ -129,5 +140,6 @@ class FakePitchSource implements PitchSource {
     await stop();
     await _controller.close();
     await _octets.close();
+    await _trames.close();
   }
 }

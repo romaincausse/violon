@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/follow/performance_features.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_smoother.dart';
@@ -30,6 +31,9 @@ class _SourceEspionnee implements PitchSource {
 
   @override
   Stream<PitchEstimate> get pitches => _vraie.pitches;
+
+  @override
+  Stream<FeatureFrame> get features => _vraie.features;
 
   @override
   Stream<SmoothedPitch> get smoothedPitches => _vraie.smoothedPitches;

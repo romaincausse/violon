@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 12 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 10 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1360,7 +1360,7 @@ sur le telephone.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| S1 | Flux unique hauteurs + attaques, sans trou | **Must** | ★★ | 2 |
+| ~~S1~~ | ~~Flux unique hauteurs + attaques, sans trou~~ | **Must** | ★★ | fait |
 | S2 | Suiveur en ligne | **Must** | ★★★ | 3 |
 | S3 | Re-ancrage : arret, reprise, saut | **Must** | ★★★ | 3 |
 | S4 | Position suivie a l'ecran | **Must** | ★★★ | 1 |
@@ -1371,6 +1371,29 @@ sur le telephone.
 **S1 est le point dur.** L'analyse de hauteur jette des trames sous pression,
 le detecteur d'attaques exige un flux sans trou, et le suiveur consomme les
 deux. L'arbitrage n'est plus reportable.
+
+### S1 - Flux unique hauteurs + attaques, sans trou
+
+**Fait.** L'arbitrage tranche ainsi : **le suiveur ne perd jamais un
+echantillon, et sous pression il ne lache que la hauteur.**
+
+- `FeatureExtractor` calcule au fil de l'eau ce que `PerformanceFeatures`
+  calculait sur une prise entiere -- et `PerformanceFeatures` n'est plus
+  qu'un extracteur nourri d'un coup. Un test le verifie : par paquets de 1,
+  7, 441 ou 44 100 echantillons, **les trames sont identiques au chiffre
+  pres**. Sur les prises du banc, les marqueurs proposes n'ont pas bouge. Le
+  suiveur en direct verra donc exactement ce que l'aligneur a vu au jalon 5.
+- Une trame attend que son attaque soit tranchee, ce qui arrive avant
+  qu'elle soit complete : **aucune latence ajoutee**.
+- `PitchSource.features` porte ce flux. Le meme micro sert l'accordeur et le
+  suiveur ; le second n'est calcule que s'il est ecoute.
+- Il tourne dans **son propre isolate** (`IsolateFeatureAnalyzer`), a cote de
+  celui de YIN, et voit chaque paquet dans l'ordre. Au-dela de huit paquets en
+  attente (370 ms), la trame sort quand meme, avec son energie et son
+  attaque, **marquee non analysee** : le suiveur sait qu'il ne sait pas, ce
+  qui n'est pas un silence. Un compteur dit combien de fois c'est arrive.
+- Les hauteurs sortent rapportees a 440 Hz, et `FeatureFrame.retuned` les
+  ramene a l'accord mesure : l'isolate n'a pas a connaitre le diapason.
 
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.

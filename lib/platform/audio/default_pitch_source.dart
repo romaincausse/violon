@@ -1,6 +1,7 @@
 import '../../core/audio/microphone_pitch_source.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/audio/yin_isolate_analyzer.dart';
+import '../../core/follow/feature_analyzer.dart';
 import 'record_audio_capture.dart';
 
 /// Assemble la chaine audio reelle : micro, trames, YIN dans son isolate.
@@ -11,4 +12,7 @@ import 'record_audio_capture.dart';
 Future<PitchSource> defaultPitchSource() async => MicrophonePitchSource(
       RecordAudioCapture(),
       analyzer: await YinIsolateAnalyzer.spawn(),
+      // Le suiveur dans son propre isolate : il voit chaque echantillon, et
+      // ne doit ni retarder les hauteurs de l'accordeur ni l'ecran.
+      featureAnalyzer: await IsolateFeatureAnalyzer.spawn(),
     );
