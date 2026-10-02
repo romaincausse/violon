@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/exercises/daily_session.dart';
 import '../../core/exercises/exercise.dart';
 import '../../core/exercises/work_loop.dart';
 import '../../core/exercises/exercise_catalog.dart';
@@ -16,6 +17,7 @@ import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/play/headphones.dart';
+import '../../core/store/evening_line.dart';
 import '../../core/store/take_sharer.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/document_saver.dart';
@@ -88,6 +90,17 @@ class HomeShell extends StatefulWidget {
   final TakeSharer? takeSharer;
 
   static const Key concertKey = Key('ouvrir-le-concert');
+
+  /// La seance du jour (V1) : la lancer, et la mener.
+  static const Key seanceKey = Key('ma-seance');
+  static const Key seanceCommencerKey = Key('seance-commencer');
+  static const Key seanceTravailPremierKey = Key('seance-travail-d-abord');
+  static Key seanceChoixKey(int i) => Key('seance-choix-$i');
+  static const Key seanceActionKey = Key('seance-action');
+  static const Key seanceEtapeFaiteKey = Key('seance-etape-faite');
+  static const Key seanceArreterKey = Key('seance-arreter');
+  static const Key seanceBanniereKey = Key('seance-banniere');
+  static const Key ceSoirKey = Key('ce-soir');
 
   /// Ce qui est branche en sortie, pour l'accompagnement qui suit (J5).
   final HeadphoneProbe? headphones;
@@ -251,6 +264,327 @@ class _HomeShellState extends State<HomeShell> {
   /// Le mode lecon (T4) : le temps d'un cours, le bilan detaille.
   bool _lecon = false;
 
+  /// La seance du jour en cours (V1), s'il y en a une.
+  DailySession? _seance;
+
+  /// L'echauffement s'arrete seul au bout de trois minutes.
+  Timer? _finDeLEchauffement;
+
+  /// Pour redessiner le temps qui reste, sans le faire a chaque seconde.
+  Timer? _ticDeLaSeance;
+
+  /// Ce qu'on travaillait avant la seance : la gamme d'echauffement prend la
+  /// place du passage, et il faut pouvoir y revenir.
+  ({
+    Passage passage,
+    Exercise? exercice,
+    int? tempo,
+    RememberedExcerpt? extrait
+  })? _avantLaSeance;
+
+  Future<void> _commencerLaSeance() async {
+    final DailySessionPlan plan = DailySessionPlanner.plan(
+      passage: widget.passage,
+      workKey: _cleDuTravail,
+      history: _historique,
+      homework: _devoirs,
+    );
+    final (WorkChoice, bool)? choix =
+        await showModalBottomSheet<(WorkChoice, bool)>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext c) => _FeuilleDeSeance(plan: plan),
+    );
+    if (choix == null || !mounted) {
+      return;
+    }
+    _avantLaSeance = (
+      passage: widget.passage,
+      exercice: _exercice,
+      tempo: _tempo,
+      extrait: _extrait,
+    );
+    _seance = DailySession(
+      plan: plan,
+      startedAt: widget.clock(),
+      chosen: choix.$1,
+      workFirst: choix.$2,
+    );
+    _ticDeLaSeance = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    setState(() => _destination = 0);
+    _entrerDansLEtape();
+  }
+
+  /// Met en place l'etape en cours : la gamme prend la place du passage pour
+  /// l'echauffement, le passage revient pour le travail et la musique. Les
+  /// ecrans, eux, s'ouvrent d'un geste de l'enfant.
+  void _entrerDansLEtape() {
+    final DailySession? seance = _seance;
+    if (seance == null) {
+      return;
+    }
+    switch (seance.current) {
+      case SessionStep.warmup:
+        final ScaleExercise gamme = seance.plan.warmup;
+        _exercice = gamme;
+        _tempo = _progres.tempoPropose(gamme);
+        _extrait = null;
+        _seRappeler();
+        widget.onPassageChanged(gamme.toPassage(tempoBpm: _tempo));
+        _finDeLEchauffement?.cancel();
+        _finDeLEchauffement = Timer(DailySession.warmupBudget, () {
+          if (mounted && _seance?.current == SessionStep.warmup) {
+            _etapeFaite(SessionStep.warmup);
+          }
+        });
+      case SessionStep.work:
+      case SessionStep.music:
+        _revenirAuPassage();
+      case null:
+        break;
+    }
+    setState(() {});
+  }
+
+  void _revenirAuPassage() {
+    final ({
+      Passage passage,
+      Exercise? exercice,
+      int? tempo,
+      RememberedExcerpt? extrait
+    })? avant = _avantLaSeance;
+    if (avant == null ||
+        _exercice == avant.exercice && _extrait == avant.extrait) {
+      return;
+    }
+    _exercice = avant.exercice;
+    _tempo = avant.tempo;
+    _extrait = avant.extrait;
+    _seRappeler();
+    widget.onPassageChanged(avant.passage);
+  }
+
+  void _etapeFaite(SessionStep etape) {
+    final DailySession? seance = _seance;
+    if (seance == null) {
+      return;
+    }
+    if (etape == SessionStep.warmup) {
+      _finDeLEchauffement?.cancel();
+      _finDeLEchauffement = null;
+    }
+    seance.complete(etape);
+    if (seance.finished) {
+      unawaited(_finirLaSeance());
+      return;
+    }
+    _entrerDansLEtape();
+  }
+
+  /// Le geste de l'etape en cours : la boucle sur les mesures choisies, ou le
+  /// morceau avec l'accompagnement. Au retour, l'etape est faite.
+  Future<void> _agirPourLEtape() async {
+    final DailySession? seance = _seance;
+    if (seance == null) {
+      return;
+    }
+    switch (seance.current) {
+      case SessionStep.warmup:
+        _etapeFaite(SessionStep.warmup);
+      case SessionStep.work:
+        final WorkChoice c = seance.chosen;
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (BuildContext ctx) => LoopScreen(
+              passage: widget.passage,
+              selection: BarSelection(c.from, c.to),
+              startPulseBpm: widget.passage.pulseBpm,
+              pitchSourceFactory: widget.pitchSourceFactory,
+              a4: widget.a4,
+            ),
+          ),
+        );
+        if (mounted) {
+          _etapeFaite(SessionStep.work);
+        }
+      case SessionStep.music:
+        await _accompagner();
+        if (mounted) {
+          _etapeFaite(SessionStep.music);
+        }
+      case null:
+        break;
+    }
+  }
+
+  /// Fin de seance : le passage d'avant revient, et une phrase a montrer
+  /// (V5) -- la duree, ce qui a tenu, un fait s'il y en a un.
+  Future<void> _finirLaSeance({bool interrompue = false}) async {
+    _finDeLEchauffement?.cancel();
+    _finDeLEchauffement = null;
+    _ticDeLaSeance?.cancel();
+    _ticDeLaSeance = null;
+    _revenirAuPassage();
+    setState(() {
+      _seance = null;
+      _avantLaSeance = null;
+    });
+    if (interrompue) {
+      return;
+    }
+    final String phrase = EveningLine.of(_historique, widget.clock()) ??
+        'C est tout pour ce soir.';
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext c) => AlertDialog(
+        title: const Text('Ce soir'),
+        content: Text(phrase, key: HomeShell.ceSoirKey),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(c).pop(),
+            child: const Text('A demain'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Le bandeau de la seance, au-dessus du travail : les trois etapes, celle
+  /// en cours, et le geste qui va avec. Sans seance, l'invitation.
+  Widget _banniereDeSeance(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final DailySession? seance = _seance;
+    if (seance == null) {
+      return Material(
+        key: HomeShell.seanceBanniereKey,
+        color: theme.colorScheme.surfaceContainerHigh,
+        child: SafeArea(
+          bottom: false,
+          child: ListTile(
+            dense: true,
+            leading: const Icon(Icons.route_outlined),
+            title: const Text('Ma seance du jour'),
+            subtitle: const Text('Echauffement, travail, musique'),
+            trailing: FilledButton.tonal(
+              key: HomeShell.seanceKey,
+              onPressed: () => unawaited(_commencerLaSeance()),
+              child: const Text('Commencer'),
+            ),
+          ),
+        ),
+      );
+    }
+    final SessionStep? etape = seance.current;
+    final WorkChoice c = seance.chosen;
+    final String detail = switch (etape) {
+      SessionStep.warmup => () {
+          final Duration ecoulee = widget.clock().difference(seance.startedAt);
+          final int reste = (DailySession.warmupBudget - ecoulee).inMinutes + 1;
+          return '${seance.plan.warmup.titre}, encore '
+              '${reste.clamp(1, DailySession.warmupBudget.inMinutes)} min au plus';
+        }(),
+      SessionStep.work => c.from == c.to
+          ? 'Mesure ${c.from}, ${DailySession.workAttempts} essais puis une reussite'
+          : 'Mesures ${c.from} a ${c.to}, ${DailySession.workAttempts} essais puis une reussite',
+      SessionStep.music => 'Le morceau en entier, avec l accompagnement',
+      null => '',
+    };
+    final String action = switch (etape) {
+      SessionStep.warmup => 'Etape faite',
+      SessionStep.work => 'Travailler',
+      SessionStep.music => 'Jouer avec',
+      null => '',
+    };
+    return Material(
+      key: HomeShell.seanceBanniereKey,
+      color: theme.colorScheme.primaryContainer,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // A la ligne si l'ecran est etroit : trois etapes et une
+                  // croix ne tiennent pas toujours sur 400 pixels.
+                  Expanded(
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 2,
+                      children: <Widget>[
+                        for (final SessionStep s in seance.order)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Icon(
+                                seance.done.contains(s)
+                                    ? Icons.check_circle
+                                    : s == etape
+                                        ? Icons.radio_button_checked
+                                        : Icons.radio_button_unchecked,
+                                size: 18,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                stepLabel(s),
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight:
+                                      s == etape ? FontWeight.bold : null,
+                                  color: theme.colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    key: HomeShell.seanceArreterKey,
+                    tooltip: 'Arreter la seance',
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () =>
+                        unawaited(_finirLaSeance(interrompue: true)),
+                  ),
+                ],
+              ),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '${seance.stepNumber}/3 - $detail',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                  if (etape != SessionStep.warmup)
+                    TextButton(
+                      key: HomeShell.seanceEtapeFaiteKey,
+                      onPressed: () => _etapeFaite(etape!),
+                      child: const Text('Passer'),
+                    ),
+                  FilledButton(
+                    key: HomeShell.seanceActionKey,
+                    onPressed: () => unawaited(_agirPourLEtape()),
+                    child: Text(action),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _rangerLesDevoirs(HomeworkList l) {
     setState(() => _devoirs = l);
     final HomeworkStore? store = widget.homeworkStore;
@@ -333,6 +667,11 @@ class _HomeShellState extends State<HomeShell> {
       // Une prise perdue n'empeche pas de jouer : l'ecriture echoue en
       // silence, comme celle de la seance.
       unawaited(store.save(_historique).catchError((Object _) {}));
+    }
+    // Une gamme allee au bout, et l'echauffement est fait : on ne reste pas
+    // trois minutes sur une gamme reussie.
+    if (_seance?.current == SessionStep.warmup && fiche.reachedEnd) {
+      _etapeFaite(SessionStep.warmup);
     }
   }
 
@@ -548,6 +887,8 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    _finDeLEchauffement?.cancel();
+    _ticDeLaSeance?.cancel();
     unawaited(_son.dispose());
     super.dispose();
   }
@@ -786,49 +1127,58 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _destination == 0
-          ? SessionScreen(
-              passage: widget.passage,
-              a4: widget.a4,
-              pitchSourceFactory: widget.pitchSourceFactory,
-              onResult: _noterLExercice,
-              onChangePassage: () => unawaited(_saisirUnPassage()),
-              onTempoChanged: _changerDeTempo,
-              writtenPulseBpm: _tempoEcrit,
-              onAccompany: () => unawaited(_accompagner()),
-              mode: _menee,
-              historyKey: _cleDuTravail,
-              takePlayerFactory: widget.takePlayerFactory,
-              lesson: _lecon,
-              onTakeRecorded: _garder,
-              clock: widget.clock,
-              onModeChanged: (SessionMode m) => setState(() => _menee = m),
-              onLoop: (BarSelection s, int pulse) => unawaited(
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext c) => LoopScreen(
-                      passage: widget.passage,
-                      selection: s,
-                      startPulseBpm: pulse,
-                      pitchSourceFactory: widget.pitchSourceFactory,
-                      a4: widget.a4,
+          ? Column(
+              children: <Widget>[
+                if (!_pleinEcran) _banniereDeSeance(context),
+                Expanded(
+                  child: SessionScreen(
+                    passage: widget.passage,
+                    a4: widget.a4,
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    onResult: _noterLExercice,
+                    onChangePassage: () => unawaited(_saisirUnPassage()),
+                    onTempoChanged: _changerDeTempo,
+                    writtenPulseBpm: _tempoEcrit,
+                    onAccompany: () => unawaited(_accompagner()),
+                    mode: _menee,
+                    historyKey: _cleDuTravail,
+                    takePlayerFactory: widget.takePlayerFactory,
+                    lesson: _lecon,
+                    onTakeRecorded: _garder,
+                    clock: widget.clock,
+                    onModeChanged: (SessionMode m) =>
+                        setState(() => _menee = m),
+                    onLoop: (BarSelection s, int pulse) => unawaited(
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (BuildContext c) => LoopScreen(
+                            passage: widget.passage,
+                            selection: s,
+                            startPulseBpm: pulse,
+                            pitchSourceFactory: widget.pitchSourceFactory,
+                            a4: widget.a4,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Accorder est la premiere chose de chaque seance : elle
+                    // merite son raccourci, en plus du tiroir.
+                    onFullScreen: (bool plein) =>
+                        setState(() => _pleinEcran = plein),
+                    onTune: () => unawaited(
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (BuildContext c) => TunerScreen(
+                            pitchSourceFactory: widget.pitchSourceFactory,
+                            a4: widget.a4,
+                            onA4Changed: widget.onA4Changed,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              // Accorder est la premiere chose de chaque seance : elle
-              // merite son raccourci, en plus du tiroir.
-              onFullScreen: (bool plein) => setState(() => _pleinEcran = plein),
-              onTune: () => unawaited(
-                Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext c) => TunerScreen(
-                      pitchSourceFactory: widget.pitchSourceFactory,
-                      a4: widget.a4,
-                      onA4Changed: widget.onA4Changed,
-                    ),
-                  ),
-                ),
-              ),
+              ],
             )
           : _destination == 2
               ? ProgressScreen(
@@ -1175,6 +1525,85 @@ class _FeuilleDuDevoirState extends State<_FeuilleDuDevoir> {
             child: const Text('Poser le devoir'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Ce que la seance propose, et ce que l'enfant en fait : l'ordre des deux
+/// premieres etapes, et les mesures a travailler quand il y en a deux.
+class _FeuilleDeSeance extends StatefulWidget {
+  const _FeuilleDeSeance({required this.plan});
+
+  final DailySessionPlan plan;
+
+  @override
+  State<_FeuilleDeSeance> createState() => _FeuilleDeSeanceState();
+}
+
+class _FeuilleDeSeanceState extends State<_FeuilleDeSeance> {
+  int _choix = 0;
+  bool _travailDAbord = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<WorkChoice> choix = widget.plan.choices;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text('Ma seance du jour', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Trois etapes, et on finit en musique. '
+              'Echauffement : ${widget.plan.warmup.titre}, trois minutes au '
+              'plus.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            Text('Le travail', style: theme.textTheme.titleSmall),
+            RadioGroup<int>(
+              groupValue: _choix,
+              onChanged: (int? v) => setState(() => _choix = v ?? 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (int i = 0; i < choix.length; i++)
+                    RadioListTile<int>(
+                      key: HomeShell.seanceChoixKey(i),
+                      dense: true,
+                      value: i,
+                      title: Text(
+                        choix[i].from == choix[i].to
+                            ? 'Mesure ${choix[i].from}'
+                            : 'Mesures ${choix[i].from} a ${choix[i].to}',
+                      ),
+                      subtitle: Text(choix[i].why),
+                    ),
+                ],
+              ),
+            ),
+            SwitchListTile(
+              key: HomeShell.seanceTravailPremierKey,
+              dense: true,
+              value: _travailDAbord,
+              onChanged: (bool v) => setState(() => _travailDAbord = v),
+              title: const Text('Commencer par le travail'),
+              subtitle: const Text('La gamme viendra apres'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton(
+              key: HomeShell.seanceCommencerKey,
+              onPressed: () =>
+                  Navigator.of(context).pop((choix[_choix], _travailDAbord)),
+              child: const Text('C est parti'),
+            ),
+          ],
+        ),
       ),
     );
   }

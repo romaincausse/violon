@@ -21,6 +21,7 @@ import 'package:violon/ui/screens/drone_screen.dart';
 import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
 import 'package:violon/ui/screens/concert_screen.dart';
+import 'package:violon/ui/screens/accompaniment_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
 import 'package:violon/ui/screens/progress_screen.dart';
@@ -561,6 +562,88 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Concert'), findsWidgets);
       expect(find.byKey(ConcertScreen.jouerKey), findsOneWidget);
+    });
+
+    testWidgets(
+        'la seance du jour : la gamme, la boucle, la musique, puis '
+        'ce soir en une phrase', (WidgetTester tester) async {
+      await poser(tester);
+      expect(find.byKey(HomeShell.seanceKey), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceKey));
+      await tester.pumpAndSettle();
+      // La feuille : une seule proposition de travail, le passage entier.
+      expect(find.byKey(HomeShell.seanceChoixKey(0)), findsOneWidget);
+      expect(find.byKey(HomeShell.seanceChoixKey(1)), findsNothing);
+      await tester.tap(find.byKey(HomeShell.seanceCommencerKey));
+      await tester.pumpAndSettle();
+
+      // Etape 1 : l'echauffement, et la gamme a pris la place du passage.
+      expect(find.text('Echauffement'), findsOneWidget);
+      expect(find.textContaining('1/3'), findsOneWidget);
+      expect(find.text('Gamme de sol majeur'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceActionKey));
+      await tester.pumpAndSettle();
+
+      // Etape 2 : le travail, le passage est revenu, et "Travailler" ouvre
+      // la boucle sur les mesures choisies.
+      expect(find.textContaining('2/3'), findsOneWidget);
+      expect(find.text('Demo - mesures 12 a 13'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceActionKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoopScreen), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      // Etape 3 : la musique, avec l'accompagnement.
+      expect(find.textContaining('3/3'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceActionKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(AccompanimentScreen), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      // Fini : une phrase pour ce soir, et l'invitation revient.
+      expect(find.byKey(HomeShell.ceSoirKey), findsOneWidget);
+      expect(find.text('C est tout pour ce soir.'), findsOneWidget);
+      await tester.tap(find.text('A demain'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(HomeShell.seanceKey), findsOneWidget);
+    });
+
+    testWidgets(
+        'commencer par le travail, et arreter en route rend le '
+        'passage', (WidgetTester tester) async {
+      await poser(tester);
+      await tester.tap(find.byKey(HomeShell.seanceKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeShell.seanceTravailPremierKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeShell.seanceCommencerKey));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('1/3 - Mesures'), findsOneWidget);
+      // "Passer" saute le travail : la gamme arrive.
+      await tester.tap(find.byKey(HomeShell.seanceEtapeFaiteKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Gamme de sol majeur'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceArreterKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Demo - mesures 12 a 13'), findsOneWidget);
+      expect(find.byKey(HomeShell.ceSoirKey), findsNothing);
+    });
+
+    testWidgets('l echauffement s arrete seul au bout de trois minutes',
+        (WidgetTester tester) async {
+      await poser(tester);
+      await tester.tap(find.byKey(HomeShell.seanceKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeShell.seanceCommencerKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Echauffement'), findsOneWidget);
+      await tester.pump(const Duration(minutes: 3, seconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('2/3'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceArreterKey));
+      await tester.pumpAndSettle();
     });
   });
 }
