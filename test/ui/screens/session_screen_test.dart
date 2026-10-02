@@ -55,6 +55,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SessionScreen(
+          // Ces tests decrivent le curseur cale sur l'horloge : le mode
+          // metronome, garde a cote du suivi (S6).
+          mode: SessionMode.metronome,
           passage: passage ?? demo,
           onChangePassage: () {},
           onTune: () {},
@@ -175,6 +178,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SessionScreen(
+            // Ces tests decrivent le curseur cale sur l'horloge : le mode
+            // metronome, garde a cote du suivi (S6).
+            mode: SessionMode.metronome,
             passage: demo,
             onChangePassage: () {},
             onTune: () {},
@@ -197,6 +203,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SessionScreen(
+            // Ces tests decrivent le curseur cale sur l'horloge : le mode
+            // metronome, garde a cote du suivi (S6).
+            mode: SessionMode.metronome,
             passage: demo,
             onChangePassage: () {},
             onTune: () {},
@@ -257,6 +266,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SessionScreen(
+            // Ces tests decrivent le curseur cale sur l'horloge : le mode
+            // metronome, garde a cote du suivi (S6).
+            mode: SessionMode.metronome,
             passage: passage ?? demo,
             onChangePassage: () {},
             onTune: () {},
@@ -396,6 +408,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SessionScreen(
+            // Ces tests decrivent le curseur cale sur l'horloge : le mode
+            // metronome, garde a cote du suivi (S6).
+            mode: SessionMode.metronome,
             passage: demo,
             onChangePassage: () {},
             onTune: () {},
@@ -632,6 +647,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SessionScreen(
+            // Ces tests decrivent le curseur cale sur l'horloge : le mode
+            // metronome, garde a cote du suivi (S6).
+            mode: SessionMode.metronome,
             passage: demo,
             onChangePassage: () {},
             onTune: () {},
@@ -1270,6 +1288,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SessionScreen(
+            // Ces tests decrivent le curseur cale sur l'horloge : le mode
+            // metronome, garde a cote du suivi (S6).
+            mode: SessionMode.metronome,
             passage: b.build(),
             onChangePassage: () {},
             onTune: () {},

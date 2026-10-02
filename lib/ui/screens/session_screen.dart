@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import '../../core/audio/microphone_pitch_source.dart';
 import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
+import '../../core/follow/performance_features.dart';
 import '../../core/follow/score_cursor.dart';
+import '../../core/follow/take_follower.dart';
 import '../../core/music/passage.dart';
 import '../../core/play/count_in.dart';
 import '../../core/music/pitch_utils.dart';
@@ -53,6 +55,17 @@ enum DisplayProfile {
   /// Ni partition, ni metronome, ni legende : ou il en est, comment ca va, et
   /// le bouton. Pour jouer sans rien avoir a chercher.
   pupitre,
+}
+
+/// Qui mene la prise.
+enum SessionMode {
+  /// **L'application suit l'eleve** (ADR-009) : il commence quand il veut,
+  /// a son tempo, s'arrete, reprend. La position vient de ce qui est entendu.
+  follow,
+
+  /// L'eleve suit un curseur cale sur le metronome, apres un decompte. Garde
+  /// pour travailler en mesure quand c'est le but (lot S6).
+  metronome,
 }
 
 /// Construit la source de hauteurs. Injectable pour les tests et pour le
@@ -111,10 +124,14 @@ class SessionScreen extends StatefulWidget {
     this.onTempoChanged,
     this.writtenPulseBpm,
     this.onAccompany,
+    this.mode = SessionMode.follow,
     super.key,
   });
 
   final Passage passage;
+
+  /// Qui mene la prise : le suiveur par defaut, le metronome sur demande.
+  final SessionMode mode;
 
   /// Ouvre la saisie d'un autre passage.
   final VoidCallback onChangePassage;
@@ -180,6 +197,9 @@ class SessionScreen extends StatefulWidget {
   /// Le tempo affiche, qui ouvre son reglage.
   static const Key tempoKey = Key('regler-le-tempo');
 
+  /// L'invitation a commencer, en mode suivi.
+  static const Key attenteKey = Key('attente-du-premier-son');
+
   /// La ligne qui annonce que la portee montre ce qui a ete joue.
   static const Key partitionJoueeKey = Key('partition-jouee');
 
@@ -209,7 +229,59 @@ class _SessionScreenState extends State<SessionScreen>
         beats: widget.passage.pulsesPerMeasure ?? 4,
       );
 
-  bool get _enDecompte => _running && !_decompte.isFinishedAt(_depuisLeDepart);
+  bool get _suit => widget.mode == SessionMode.follow;
+
+  /// Le micro ecoute, et rien du passage n'a encore ete entendu.
+  bool get _attendLePremierSon =>
+      _suit &&
+      _running &&
+      _mic == _MicState.ecoute &&
+      !(_suivi?.started ?? false);
+
+  /// Pas de decompte quand l'application suit : l'eleve commence quand il
+  /// veut, c'est elle qui attend.
+  bool get _enDecompte =>
+      !_suit && _running && !_decompte.isFinishedAt(_depuisLeDepart);
+
+  /// La prise suivie, en mode suivi, pendant et apres la prise.
+  TakeFollower? _suivi;
+  StreamSubscription<FeatureFrame>? _abonnementTrames;
+
+  /// La note que l'eleve joue en ce moment, d'ou qu'on le sache : le suiveur
+  /// ou l'horloge.
+  ScoreNote? get _noteCourante {
+    if (!_running) {
+      return null;
+    }
+    return _suit ? _suivi?.currentNote : _cursor.noteAt(_elapsed);
+  }
+
+  /// La mesure en cours. En suivi, elle reste celle ou il s'est arrete :
+  /// l'arret est un moment du travail, pas une sortie de la partition.
+  int? get _mesureCourante {
+    if (!_running) {
+      return null;
+    }
+    return _suit ? _suivi?.currentMeasure : _cursor.noteAt(_elapsed)?.measure;
+  }
+
+  /// Ou poser le curseur sur la portee.
+  int? get _tickCourant {
+    if (!_running) {
+      return null;
+    }
+    if (!_suit) {
+      return _cursor.tickAt(_elapsed);
+    }
+    final TakeFollower? suivi = _suivi;
+    final int? i = suivi?.position?.noteIndex;
+    if (suivi == null || i == null) {
+      return null;
+    }
+    final ScoreNote note = widget.passage.notes[i];
+    // Arrete apres une note : le curseur l'attend juste derriere elle.
+    return suivi.position!.resting ? note.offsetTicks : note.onsetTicks;
+  }
 
   /// Temps ecoule **dans le passage**. Zero tant que le decompte tourne.
   ///
@@ -294,7 +366,7 @@ class _SessionScreenState extends State<SessionScreen>
   /// clignoterait en permanence et deviendrait du bruit ; a la mesure, elle
   /// marque une etape que l'enfant reconnait sur son papier.
   void _surveillerLaFinDeMesure() {
-    final int? courante = _cursor.noteAt(_elapsed)?.measure;
+    final int? courante = _mesureCourante;
     if (courante == null || courante == _mesureVue) {
       return;
     }
@@ -331,8 +403,17 @@ class _SessionScreenState extends State<SessionScreen>
       _trace.reset();
       _derive = null;
       _mesureVue = null;
+      if (_suit) {
+        final TakeFollower suivi = TakeFollower(widget.passage, a4: widget.a4);
+        _suivi = suivi;
+        _tuning = suivi.tuning;
+      }
     });
-    _ticker.start();
+    // En suivi, rien n'avance sur l'horloge : l'ecran bouge quand le suiveur
+    // bouge.
+    if (!_suit) {
+      _ticker.start();
+    }
     unawaited(_ouvrirLeMicro());
   }
 
@@ -351,6 +432,9 @@ class _SessionScreenState extends State<SessionScreen>
       }
       _source = source;
       _abonnement = source.smoothedPitches.listen(_onPitch);
+      if (_suit) {
+        _abonnementTrames = source.features.listen(_onTrame);
+      }
       await source.start();
       if (mounted) {
         setState(() => _mic = _MicState.ecoute);
@@ -380,6 +464,17 @@ class _SessionScreenState extends State<SessionScreen>
     // L'accord se surveille meme entre deux notes attendues : une corde a
     // vide tiree pour verifier compte autant qu'une du passage.
     final StringDrift? derive = _accord.observe(pitch);
+    final TakeFollower? suivi = _suivi;
+    if (_suit && suivi != null) {
+      final List<HeardPitch> rattachees = suivi.addPitch(pitch);
+      setState(() {
+        if (derive != null) {
+          _derive = derive;
+        }
+        _tracer(rattachees);
+      });
+      return;
+    }
     final ScoreNote? note = _cursor.noteAt(_elapsed);
     setState(() {
       if (derive != null) {
@@ -408,6 +503,38 @@ class _SessionScreenState extends State<SessionScreen>
     });
   }
 
+  /// Une trame du suiveur : la position avance, et les hauteurs qui
+  /// l'attendaient sont rattachees a la note jouee.
+  void _onTrame(FeatureFrame trame) {
+    final TakeFollower? suivi = _suivi;
+    if (!_running || suivi == null) {
+      return;
+    }
+    final List<HeardPitch> rattachees = suivi.addFrame(trame);
+    setState(() => _tracer(rattachees));
+    _surveillerLaFinDeMesure();
+    // Joue jusqu'a la derniere note, puis l'archet pose : la prise est
+    // finie, sans bouton a presser.
+    if (suivi.finished) {
+      _stop(termine: true);
+    }
+  }
+
+  /// Le ruban suit l'ecart a la note **jouee**, telle que le suiveur la
+  /// connait.
+  void _tracer(List<HeardPitch> rattachees) {
+    for (final HeardPitch h in rattachees) {
+      _trace.add(
+        h.pitch.estimate.timestampMs,
+        PitchUtils.centsBetween(
+          h.pitch.frequencyHz,
+          PitchUtils.midiToFrequency(h.note.midi, a4: widget.a4),
+        ),
+        midi: PitchUtils.frequencyToMidi(h.pitch.frequencyHz, a4: widget.a4),
+      );
+    }
+  }
+
   /// Depuis combien de temps la note en cours a commence, en millisecondes.
   ///
   /// Sert a ecarter l'attaque : pendant qu'un archet se pose, la hauteur
@@ -423,6 +550,14 @@ class _SessionScreenState extends State<SessionScreen>
   void _stop({bool termine = false}) {
     _ticker.stop();
     unawaited(_fermerLeMicro());
+    final TakeFollower? suivi = _suivi;
+    if (_suit && suivi != null) {
+      // Joue jusqu'au bout puis arrete a la main : c'est aussi une fin.
+      termine = termine || suivi.reachedEnd;
+      // La note qui compte se calcule sur la prise entiere, qui voit la suite
+      // et corrige ce que le direct a rattache de travers (ADR-010).
+      _tuning = suivi.rescore();
+    }
     final int? score = termine ? _tuning.overallScore : null;
     setState(() {
       _running = false;
@@ -442,8 +577,13 @@ class _SessionScreenState extends State<SessionScreen>
   Future<void> _fermerLeMicro() async {
     final PitchSource? source = _source;
     final StreamSubscription<SmoothedPitch>? abonnement = _abonnement;
+    final StreamSubscription<FeatureFrame>? trames = _abonnementTrames;
     _source = null;
     _abonnement = null;
+    _abonnementTrames = null;
+    if (trames != null) {
+      unawaited(trames.cancel());
+    }
     // Annuler sans attendre. Un abonnement cesse de livrer des l'appel ; la
     // promesse rendue, elle, n'est tenue qu'une fois le flux ferme. L'attendre
     // avant de fermer la source bloquait donc les deux : le micro restait
@@ -600,10 +740,9 @@ class _SessionScreenState extends State<SessionScreen>
 
   /// Les cases de mesures, et celle qui est en cours de lecture.
   Widget _mesures({double hauteur = MeasureStrip.hauteur}) {
-    final ScoreNote? courante = _running ? _cursor.noteAt(_elapsed) : null;
     return MeasureStrip(
       measures: scoreByMeasure(widget.passage, _tuning),
-      currentMeasure: courante?.measure,
+      currentMeasure: _mesureCourante,
       height: hauteur,
     );
   }
@@ -832,7 +971,12 @@ class _SessionScreenState extends State<SessionScreen>
           const SizedBox(height: 20),
           _mesures(hauteur: 72),
           const Spacer(),
-          _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+          _Bandeau(
+            etat: _mic,
+            bilan: _bilan(),
+            derive: _derive,
+            attend: _attendLePremierSon,
+          ),
           const SizedBox(height: 20),
           _bouton(),
         ],
@@ -844,7 +988,9 @@ class _SessionScreenState extends State<SessionScreen>
         _entete(),
         const SizedBox(height: 24),
         const SizedBox(height: 20),
-        _metronome(),
+        // En suivi, pas de metronome : il imposerait un tempo a celui qu'on
+        // laisse jouer au sien (ADR-009).
+        if (!_suit) _metronome(),
         // En decouverte, la partition a l'ecran serait une seconde partition
         // a suivre, en plus petit que celle du pupitre. Elle encombre.
         if (_profil == DisplayProfile.parCoeur)
@@ -858,7 +1004,12 @@ class _SessionScreenState extends State<SessionScreen>
         const SizedBox(height: 6),
         _mesures(),
         const SizedBox(height: 8),
-        _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+        _Bandeau(
+          etat: _mic,
+          bilan: _bilan(),
+          derive: _derive,
+          attend: _attendLePremierSon,
+        ),
         const SizedBox(height: 16),
         _bouton(),
       ],
@@ -880,7 +1031,12 @@ class _SessionScreenState extends State<SessionScreen>
           const SizedBox(height: 12),
           _mesures(hauteur: 48),
           const Spacer(),
-          _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+          _Bandeau(
+            etat: _mic,
+            bilan: _bilan(),
+            derive: _derive,
+            attend: _attendLePremierSon,
+          ),
           const SizedBox(height: 12),
           _bouton(),
         ],
@@ -916,8 +1072,10 @@ class _SessionScreenState extends State<SessionScreen>
                     children: <Widget>[
                       _entete(vertical: true),
                       const SizedBox(height: 12),
-                      _metronome(compact: true),
-                      const SizedBox(height: 12),
+                      if (!_suit) ...<Widget>[
+                        _metronome(compact: true),
+                        const SizedBox(height: 12),
+                      ],
                       // Plus bas qu'en portrait : en paysage la hauteur est la
                       // ressource rare, et un ruban de 24 points se lit
                       // encore.
@@ -925,7 +1083,12 @@ class _SessionScreenState extends State<SessionScreen>
                       const SizedBox(height: 6),
                       _mesures(),
                       const SizedBox(height: 10),
-                      _Bandeau(etat: _mic, bilan: _bilan(), derive: _derive),
+                      _Bandeau(
+                        etat: _mic,
+                        bilan: _bilan(),
+                        derive: _derive,
+                        attend: _attendLePremierSon,
+                      ),
                     ],
                   ),
                 ),
@@ -1130,7 +1293,7 @@ class _SessionScreenState extends State<SessionScreen>
         trace: _trace,
         // Hors prise, aucune note n'est attendue : l'echelle montre alors ou l'on
         // est, sans dire que c'est bien ou mal.
-        expected: _running ? _cursor.noteAt(_elapsed)?.midi : null,
+        expected: _noteCourante?.midi,
       );
 
   Widget _partition(Orientation orientation) {
@@ -1146,7 +1309,7 @@ class _SessionScreenState extends State<SessionScreen>
       onPointerCancel: _doigtLeve,
       child: ScoreView(
         passage: joue?.passage ?? widget.passage,
-        cursorTick: _running ? _cursor.tickAt(_elapsed) : null,
+        cursorTick: _tickCourant,
         colorOf: joue == null
             ? _couleurDe
             : (ScoreNote note) => _couleurJouee(joue, note),
@@ -1243,9 +1406,18 @@ class _Bilan {
 /// Sa hauteur est libre, mais jamais nulle : reserver la place evite que la
 /// partition sursaute quand l'etat change.
 class _Bandeau extends StatelessWidget {
-  const _Bandeau({required this.etat, required this.bilan, this.derive});
+  const _Bandeau({
+    required this.etat,
+    required this.bilan,
+    this.derive,
+    this.attend = false,
+  });
 
   final _MicState etat;
+
+  /// Le suiveur ecoute et n'a encore rien reconnu : on le dit, pour que
+  /// l'enfant sache qu'il peut commencer quand il veut.
+  final bool attend;
   final _Bilan? bilan;
 
   /// Une corde a bouge depuis le debut de la seance.
@@ -1277,7 +1449,14 @@ class _Bandeau extends StatelessWidget {
               ? _AlerteAccord(derive: d)
               : switch (etat) {
                   _MicState.arrete => const SizedBox.shrink(),
-                  _MicState.ecoute => const _Legende(),
+                  _MicState.ecoute => attend
+                      ? Text(
+                          'Je t ecoute. Commence quand tu veux.',
+                          key: SessionScreen.attenteKey,
+                          style: style,
+                          textAlign: TextAlign.center,
+                        )
+                      : const _Legende(),
                   _MicState.refuse => Text(
                       'Micro refuse : le passage defile sans notation.',
                       style: style,
