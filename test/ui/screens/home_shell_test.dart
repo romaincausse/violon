@@ -195,6 +195,20 @@ void main() {
       expect(find.textContaining('Vise'), findsOneWidget);
     });
 
+    testWidgets('le mode lecon s allume dans les outils', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await ouvrirLesOutils(tester);
+      await tester.ensureVisible(find.byKey(HomeShell.leconKey));
+      await tester.tap(find.byKey(HomeShell.leconKey));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<SwitchListTile>(find.byKey(HomeShell.leconKey)).value,
+        isTrue,
+      );
+    });
+
     testWidgets('le repertoire montre le passage en cours', (
       WidgetTester tester,
     ) async {
