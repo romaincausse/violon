@@ -63,7 +63,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
-| 12 | L'envie | 8 | 10 | On a envie d'y revenir |
+| 12 | L'envie | 8 | 5 | On a envie d'y revenir |
 
 **84 lots au 2 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
 corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
@@ -2082,12 +2082,12 @@ a l'ecran.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~V7~~ | ~~Le mode concert~~ | | ★★★ | fait |
-| V1 | La seance du jour | **Must** | ★★★ | 3 |
+| ~~V1~~ | ~~La seance du jour~~ | **Must** | ★★★ | fait |
 | V2 | Les premieres fois | | ★★★ | 2 |
 | V3 | Les jours joues | | ★★★ | 1 |
 | V0 | Le chemin de l'enfant | | ★★ | 1 |
 | V4 | La carte retournee | | ★★ | 1 |
-| V5 | Ce soir, en une phrase | | ★★ | 1 |
+| ~~V5~~ | ~~Ce soir, en une phrase~~ | | ★★ | fait |
 | ~~V6~~ | ~~L'accompagnement du fichier~~ | | ★★ | couvert par J4 |
 
 **V7 - Le mode concert.** Jouer pour quelqu'un est le motivateur le plus
@@ -2116,6 +2116,21 @@ c'est le point du lot. Il choisit l'ordre des deux premieres etapes, et
 laquelle des deux mesures proposees il prend. Le *must* du jalon : sans
 seance, l'application reste une boite a outils.
 
+**Fait** (`DailySession`, `DailySessionPlanner`, et le bandeau de la
+coquille). *Ma seance du jour - Commencer* ouvre une feuille : la gamme
+d'echauffement (celle de la tonalite du morceau, ou la plus proche sur le
+cycle des quintes, au palier le plus bas), une ou deux propositions de
+travail (le devoir de la semaine, puis la mesure qui a coince a la derniere
+prise avec sa voisine si elle est fragile, sinon le passage entier), et
+*Commencer par le travail*. Puis le bandeau, au-dessus de la seance : les
+trois etapes, celle en cours, et le geste qui va avec. L'echauffement prend
+la place du passage et se finit sur une gamme allee au bout ou au bout de
+trois minutes ; *Travailler* ouvre la boucle sur les mesures choisies ;
+*Jouer avec* ouvre l'accompagnement du morceau entier. Au retour de chaque
+ecran, l'etape est faite. *Passer* saute une etape, la croix arrete tout et
+rend le passage. **Ce qui manque** : la boucle ne compte pas encore ses six
+essais, le bandeau les annonce seulement.
+
 **V2 - Les premieres fois.** Le bilan dit d'abord ce qui est nouveau,
 calcule sur l'historique : "la mesure 7 tient pour la premiere fois", "tempo
 +8 depuis lundi". Les nombres absolus passent en second, plus petits. Une
@@ -2140,6 +2155,12 @@ montre : la duree, ce qui a tenu, et un fait s'il y en a un -- "ta plus
 longue seance de la semaine". Elle s'adresse a lui, il la montre a qui il
 veut. La ligne du jalon 10 tient : l'application ne rapporte pas a l'adulte,
 l'enfant montre.
+
+**Fait** (`EveningLine`), a la fin de la seance : *"Ce soir : 22 minutes
+d'archet. Into the Stars tenu a 76 : jamais aussi vite. Ta plus longue
+seance de la semaine."* La duree du jour ; le meilleur tempo tenu jusqu'au
+bout, et s'il depasse tout ce qui precede, on le dit ; la plus longue seance
+des sept derniers jours, s'il y en a eu d'autres. Rien joue, rien dit.
 
 **V6 - Couvert.** L'ADR-015 garde deja les parties du MusicXML que l'import
 jetait : quand le fichier porte un piano, c'est lui que l'accompagnement
