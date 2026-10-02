@@ -4,6 +4,7 @@ import '../music/pitch_utils.dart';
 import '../music/score_note.dart';
 import '../scoring/live_tuning.dart';
 import '../scoring/rhythm_judge.dart';
+import '../scoring/take_report.dart';
 import 'offline_aligner.dart';
 import 'online_follower.dart';
 import 'performance_features.dart';
@@ -211,6 +212,12 @@ class TakeFollower {
 
   /// Le juge de rythme de la prise entiere, une fois [rescore] passe.
   RhythmJudge? rhythm;
+
+  /// Le diagnostic mesure par mesure, une fois [rescore] passe (N5).
+  TakeReport? get report {
+    final RhythmJudge? r = rhythm;
+    return r == null ? null : TakeReport.of(passage, r, tuning);
+  }
 
   /// Reprend toute la prise avec l'aligneur hors ligne, et rend la justesse
   /// qui compte (ADR-010).
