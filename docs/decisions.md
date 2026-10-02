@@ -756,3 +756,43 @@ qui tient.
   micro reste a 44,1 kHz, ou YIN est calibre.
 - Reste a entendre sur le S22 : c'est l'oreille de l'utilisateur qui a trouve
   le defaut, c'est elle qui dira si la correction suffit.
+
+## ADR-018 : Le mode concert, l'exception a "rien n'est conserve"
+
+**Contexte.** `docs/professeur.md` pose qu'aucun enregistrement audio n'est
+conserve : un enfant qui sait qu'on pourra reecouter ses ratages ne joue plus
+pareil, et l'enregistrement d'un mineur pose une question de donnees que
+l'ADR-005 avait evacuee. En face, l'analyse des applications existantes et
+le bon sens disent la meme chose : **jouer pour quelqu'un** est le
+motivateur le plus fort qui existe. Un enfant qui envoie sa prise a ses
+grands-parents travaille sa semaine pour ca.
+
+**Decision, prise par l'utilisateur le 2 octobre 2026.** Un mode concert.
+
+- **C'est l'enfant qui le declenche**, dans un ecran a part, qui dit ce
+  qu'il fait : "Tu joues, on enregistre, et c'est toi qui decides qui
+  l'entend." Rien n'est note ; le micro n'y sert qu'a enregistrer.
+- **Il reecoute**, puis **il envoie** par le partage du systeme, a qui il
+  veut, ou **il range** la prise dans un fichier qu'il choisit
+  (`ACTION_CREATE_DOCUMENT`, comme le rapport). Ou il recommence.
+- **L'application ne garde rien.** La prise vit en memoire le temps de
+  l'ecran et meurt avec lui. Le partage passe par un fichier dans le cache
+  prive de l'application, parce qu'Android ne sait pas partager autrement ;
+  il est efface au lancement suivant et au concert suivant. Aucun historique,
+  aucun acces du professeur, aucun export automatique.
+- **Le rapport de la semaine ne le mentionne pas.** Un concert n'est pas du
+  travail mesure, c'est de la musique donnee.
+
+**Ce qui reste interdit.** Enregistrer une prise de travail, une boucle, un
+bilan. Garder une prise d'un lancement a l'autre. Envoyer quoi que ce soit
+sans un geste de l'enfant. La regle 3 de `docs/professeur.md` tient pour
+tout le reste, et dit maintenant l'exception.
+
+**Consequences.**
+
+- Une frontiere de plus, `TakeSharer`, servie par le meme Kotlin que
+  l'import (`ACTION_SEND` et un `FileProvider`), sans paquet. Le
+  `DocumentSaver` apprend le type du fichier qu'il range.
+- Un WAV de trois minutes pese seize megaoctets : c'est lourd pour une
+  messagerie, et c'est le format que l'application sait ecrire sans rien
+  ajouter. Un encodage viendra si l'usage le reclame.

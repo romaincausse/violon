@@ -284,12 +284,16 @@ avait raison.
 Notees ici plutot que tranchees dans l'urgence, parce que chacune oppose deux
 choses vraies.
 
-**S'entendre soi-meme contre ne rien conserver.** L'analyse des applications
-existantes, plus haut, dit que le replay provoque souvent plus de progres
-qu'un score. `docs/professeur.md` dit qu'aucun enregistrement audio n'est
-conserve, et pour de bonnes raisons. Sortie possible : un "avant / apres"
-strictement local et ephemere, efface en quittant, jamais exportable et
-jamais accessible au professeur. Non tranche.
+**~~S'entendre soi-meme contre ne rien conserver.~~ Tranchee en deux
+temps.** L'analyse des applications existantes, plus haut, dit que le replay
+provoque souvent plus de progres qu'un score. `docs/professeur.md` dit
+qu'aucun enregistrement audio n'est conserve, et pour de bonnes raisons. Le
+lot M2 a pris la sortie prevue : un "avant / apres" en memoire seulement,
+efface en quittant. Puis l'utilisateur a tranche l'autre moitie, le 2 octobre
+2026 : **jouer pour quelqu'un** est le motivateur le plus fort qui existe, et
+un mode concert ou l'enfant choisit d'enregistrer une prise pour l'envoyer,
+sans que l'application la garde, vaut l'exception (ADR-018). La regle tient
+pour tout le reste : l'application mesure et jette.
 
 **Doigtes et coups d'archet.** Le profil de l'utilisateur, plus haut, les
 reclame. L'ADR-007 limite volontairement le graveur a une ligne monodique et
@@ -311,3 +315,47 @@ cents note donc plus finement que ne different deux reponses correctes.
 Reste ouvert : une quinte ne varie que de deux cents d'un systeme a l'autre et
 merite une marge plus serree qu'une tierce. Cela demande le degre dans la
 tonalite -- lot I3, que l'import MusicXML rendra gratuit.
+
+## Le son, et l'oreille qui manquait
+
+L'accompagnement a ete juge horrible a la premiere ecoute sur le S22, apres
+un lot (J4, ADR-015) qui mesurait chaque echantillon au centieme de hertz et
+verifiait ses boucles au dixieme de decibel. Tout etait mesure, rien n'avait
+ete entendu par celui qui l'ecrivait : il n'a pas d'oreilles sur le
+telephone, et la chaine en aval de l'outil (le moteur, son interpolation
+lineaire, le haut-parleur) n'etait pas dans ses mesures.
+
+Trois causes, une par mot de l'utilisateur, corrigees au lot J6 (ADR-017).
+Puis une regle nouvelle, et un outil pour la tenir : **ce qui sonne doit
+pouvoir etre rendu hors appareil, comme le telephone le joue, et mesure**.
+C'est `tool/ecoute.py` (J7) : il imite le moteur -- l'echantillon le plus
+proche, la vitesse, l'interpolation lineaire de SoLoud, la boucle, le
+relache, les accords egrenes -- ecrit trois scenes par instrument en WAV, et
+mesure ce qu'une oreille reprocherait.
+
+Ce qu'il a dit, le soir meme, sur les sons du lot J6 :
+
+| Instrument | Aigu > 10 kHz | Houle de la tenue | Vibrato |
+|---|---|---|---|
+| Violon | -33 dB | 5,4 dB | 51 cents a 4,8 Hz |
+| Violoncelle | -53 dB | 2,8 dB | 34 cents a 5,6 Hz |
+| Flute | -47 dB | 2,5 dB | 16 cents |
+| Orgue | -60 dB | 1,4 dB | 7 cents |
+| Clarinette | -45 dB | 0,3 dB | 2 cents |
+
+L'utilisateur, lui, a dit : le violon et le violoncelle ne vont pas. Les
+chiffres disent pourquoi. **Un vibrato de cinquante cents** sur chaque note
+d'un accord a trois voix, a des phases differentes, c'est un accord qui
+tangue ; un accompagnement se joue sans vibrato, ou avec un pupitre dont les
+vibratos se moyennent. VSCO 2 CE n'a pas de violon solo sans vibrato
+(`Solo Violin/Arco Vib` est le seul soutenu), mais il a un pupitre
+(`Violin Section/susVib`) et des altos. Le violon solo est aussi le plus
+riche en aigu de tous, douze decibels au-dessus de la clarinette : du
+souffle d'archet, que l'interpolation n'arrange pas. Et sa boucle houle de
+cinq decibels la ou la clarinette tient a un tiers.
+
+Decision de l'utilisateur : **plus tard** (lot J8). Ce qu'on essaiera, dans
+l'ordre : le pupitre de violons et d'altos de VSCO a la place du solo ; un
+plafond de vibrato dans l'outil, qui refuse un echantillon au-dela de vingt
+cents pour l'accompagnement ; et sinon une autre source libre. Le banc dira
+avant l'oreille si ca vaut d'etre installe.
