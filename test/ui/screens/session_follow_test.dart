@@ -143,6 +143,11 @@ void main() {
     expect(resultat!.score, 100);
     expect(resultat!.coverage, 1);
     expect(find.text('Jouer le passage'), findsOneWidget);
+    // Le bilan (N6) : deux notes, le tempo qu'il a tenu -- pas celui du
+    // papier -- et rien a retravailler.
+    expect(find.text('Justesse 100 - Rythme 100'), findsOneWidget);
+    expect(find.textContaining('Tempo tenu : 174'), findsOneWidget);
+    expect(find.text('Tout tient.'), findsOneWidget);
     // Apres la prise, chaque note porte la couleur du juste.
     final ScoreView vue = tester.widget<ScoreView>(find.byType(ScoreView));
     expect(
