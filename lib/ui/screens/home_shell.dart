@@ -16,6 +16,7 @@ import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
+import '../../core/store/document_saver.dart';
 import '../../core/store/measure_heat.dart';
 import '../../core/store/session_store.dart';
 import '../../core/store/take_history.dart';
@@ -68,8 +69,12 @@ class HomeShell extends StatefulWidget {
     this.historyStore,
     this.initialHistory = TakeHistory.vide,
     this.clock = DateTime.now,
+    this.documentSaver,
     super.key,
   });
+
+  /// Pour enregistrer le rapport de la semaine (T3).
+  final DocumentSaver? documentSaver;
 
   /// L'historique des prises (jalon 9). `null` : rien ne se retient.
   final HistoryStore? historyStore;
@@ -655,7 +660,11 @@ class _HomeShellState extends State<HomeShell> {
               ),
             )
           : _destination == 2
-              ? ProgressScreen(history: _historique, clock: widget.clock)
+              ? ProgressScreen(
+                  history: _historique,
+                  clock: widget.clock,
+                  saver: widget.documentSaver,
+                )
               : _Repertoire(
                   passage: widget.passage,
                   a4: widget.a4,

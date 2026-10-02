@@ -101,7 +101,8 @@ Quatre regles structurantes :
    horloge (ADR-015).
    `SessionStore`, `PieceStore` et `HistoryStore` suivent la meme regle pour le
    stockage local,
-   `ScreenKeeper` pour l'ecran et `DocumentPicker` pour le choix d'un fichier :
+   `ScreenKeeper` pour l'ecran, `DocumentPicker` et `DocumentSaver` pour lire
+   ou ranger un fichier choisi par l'utilisateur :
    `lib/core/` decrit ce qu'on se rappelle, quand l'ecran doit rester allume et
    quels octets il attend, `lib/platform/` sait ou le ranger, quel drapeau
    poser et comment ouvrir le selecteur du systeme (ADR-014).
