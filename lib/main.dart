@@ -217,6 +217,7 @@ class _ViolonAppState extends State<ViolonApp> {
     int? tempoBpm,
     Object? excerpt = _inchange,
     List<ExerciseBest>? bests,
+    int? latencyMs,
   }) {
     _range = RememberedSession(
       a4: a4 ?? _range.a4,
@@ -228,6 +229,7 @@ class _ViolonAppState extends State<ViolonApp> {
           ? _range.excerpt
           : excerpt as RememberedExcerpt?,
       bests: bests ?? _range.bests,
+      latencyMs: latencyMs ?? _range.latencyMs,
     );
     unawaited(_memoire.save(_range));
   }
@@ -268,6 +270,9 @@ class _ViolonAppState extends State<ViolonApp> {
                 initialExcerpt: _extrait,
                 benchRecorderFactory: widget.benchRecorderFactory,
                 onPassageChanged: (Passage p) => setState(() => _passage = p),
+                latencyMs: _range.latencyMs,
+                onLatencyChanged: (int l) =>
+                    setState(() => _ranger(latencyMs: l)),
                 onA4Changed: (double a4) {
                   setState(() => _a4 = a4);
                   _ranger(a4: a4);

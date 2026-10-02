@@ -24,6 +24,7 @@ import '../../core/store/take_history.dart';
 import 'accompaniment_screen.dart';
 import 'loop_screen.dart';
 import 'bench_screen.dart';
+import 'calibration_screen.dart';
 import 'drone_screen.dart';
 import 'exercises_screen.dart';
 import 'free_play_screen.dart';
@@ -73,8 +74,16 @@ class HomeShell extends StatefulWidget {
     this.documentSaver,
     this.homeworkStore,
     this.initialHomework = HomeworkList.vide,
+    this.latencyMs,
+    this.onLatencyChanged,
     super.key,
   });
+
+  /// La latence mesuree (J2), et de quoi la retenir.
+  final int? latencyMs;
+  final ValueChanged<int>? onLatencyChanged;
+
+  static const Key latenceKey = Key('calibrer-la-latence');
 
   /// Les devoirs du professeur (lot T1). `null` : rien ne se retient.
   final HomeworkStore? homeworkStore;
@@ -652,6 +661,25 @@ class _HomeShellState extends State<HomeShell> {
                   context,
                   (BuildContext c) => MicCheckScreen(
                     pitchSourceFactory: widget.pitchSourceFactory,
+                  ),
+                ),
+              ),
+              ListTile(
+                key: HomeShell.latenceKey,
+                leading: const Icon(Icons.timer_outlined),
+                title: const Text('Latence'),
+                subtitle: Text(
+                  widget.latencyMs == null
+                      ? 'A mesurer une fois, pour l accompagnement qui suit'
+                      : 'Mesuree : ${widget.latencyMs} ms',
+                ),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => CalibrationScreen(
+                    engine: _son,
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    current: widget.latencyMs,
+                    onMeasured: (int l) => widget.onLatencyChanged?.call(l),
                   ),
                 ),
               ),

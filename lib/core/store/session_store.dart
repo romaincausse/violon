@@ -16,7 +16,11 @@ class RememberedSession {
     this.tempoBpm,
     this.excerpt,
     this.bests = const <ExerciseBest>[],
+    this.latencyMs,
   });
+
+  /// Latence aller-retour mesuree par la calibration (J2), ou `null`.
+  final int? latencyMs;
 
   /// Diapason mesure sur les cordes a vide, ou `null` si jamais mesure.
   final double? a4;
@@ -43,6 +47,7 @@ class RememberedSession {
         if (exerciseId != null) 'exercice': exerciseId,
         if (tempoBpm != null) 'tempo': tempoBpm,
         if (excerpt != null) 'morceau': excerpt!.toJson(),
+        if (latencyMs != null) 'latence': latencyMs,
         'records': <Map<String, Object?>>[
           for (final ExerciseBest best in bests) best.toJson(),
         ],
@@ -82,6 +87,11 @@ class RememberedSession {
             ? json['tempo'] as int
             : null,
         excerpt: RememberedExcerpt.fromJson(json['morceau']),
+        latencyMs: json['latence'] is int &&
+                (json['latence'] as int) >= 0 &&
+                (json['latence'] as int) < 1000
+            ? json['latence'] as int
+            : null,
         bests: records is List<Object?>
             ? <ExerciseBest>[
                 for (final Object? item in records)
