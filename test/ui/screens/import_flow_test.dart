@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/take_history.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
@@ -41,6 +42,7 @@ Future<void> poser(WidgetTester tester) async {
       audioEngineFactory: FakeAudioEngine.new,
       sessionStoreFactory: () => memoire,
       pieceStoreFactory: () => morceaux,
+      historyStoreFactory: FakeHistoryStore.new,
       documentPickerFactory: () => selecteur,
       pieceImporter: const PieceImporter(inflate: _pasDArchive),
     ),

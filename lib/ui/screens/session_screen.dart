@@ -23,6 +23,7 @@ import '../../core/scoring/tuning_trace.dart';
 import '../../core/scoring/rhythm_judge.dart';
 import '../../core/scoring/string_drift_monitor.dart';
 import '../../core/scoring/take_report.dart';
+import '../../core/store/take_history.dart';
 import '../../core/scoring/tuner.dart';
 import '../../platform/audio/default_pitch_source.dart';
 import '../widgets/measure_halo.dart';
@@ -130,6 +131,9 @@ class SessionScreen extends StatefulWidget {
     this.mode = SessionMode.follow,
     this.onModeChanged,
     this.onLoop,
+    this.historyKey,
+    this.onTakeRecorded,
+    this.clock = DateTime.now,
     super.key,
   });
 
@@ -148,6 +152,16 @@ class SessionScreen extends StatefulWidget {
   /// Ouvre la boucle de travail sur une selection, avec le tempo de depart
   /// (jalon 8). `null` : pas de boucle.
   final void Function(BarSelection selection, int startPulseBpm)? onLoop;
+
+  /// Ce qu'on travaille, de facon stable d'un jour a l'autre, pour
+  /// l'historique (jalon 9). `null` : rien n'est retenu.
+  final String? historyKey;
+
+  /// Une prise suivie vient de se terminer : voici ce qu'on en garde.
+  final ValueChanged<TakeRecord>? onTakeRecorded;
+
+  /// L'horloge de l'historique, injectable pour les tests.
+  final DateTime Function() clock;
 
   /// Le bouton de la boucle, et celui que propose le bilan.
   static const Key boucleKey = Key('ouvrir-la-boucle');
@@ -616,6 +630,17 @@ class _SessionScreenState extends State<SessionScreen>
       // La note qui compte se calcule sur la prise entiere, qui voit la suite
       // et corrige ce que le direct a rattache de travers (ADR-010).
       _tuning = suivi.rescore();
+      final String? cle = widget.historyKey;
+      final ValueChanged<TakeRecord>? garder = widget.onTakeRecorded;
+      if (cle != null && garder != null) {
+        final TakeRecord? fiche = suivi.record(
+          atMs: widget.clock().millisecondsSinceEpoch,
+          key: cle,
+        );
+        if (fiche != null) {
+          garder(fiche);
+        }
+      }
     }
     final int? score = termine ? _tuning.overallScore : null;
     setState(() {

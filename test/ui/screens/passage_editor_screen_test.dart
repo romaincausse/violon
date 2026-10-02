@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/take_history.dart';
 import 'package:violon/core/import/piece_importer.dart';
 import 'package:violon/core/store/piece_store.dart';
 import 'package:violon/core/play/fake_audio_engine.dart';
@@ -193,6 +194,7 @@ void main() {
         audioEngineFactory: FakeAudioEngine.new,
         sessionStoreFactory: FakeSessionStore.new,
         pieceStoreFactory: FakePieceStore.new,
+        historyStoreFactory: FakeHistoryStore.new,
         documentPickerFactory: FakeDocumentPicker.new,
       ),
     );
