@@ -17,6 +17,7 @@ import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/document_saver.dart';
+import '../../core/store/homework.dart';
 import '../../core/store/measure_heat.dart';
 import '../../core/store/session_store.dart';
 import '../../core/store/take_history.dart';
@@ -70,8 +71,17 @@ class HomeShell extends StatefulWidget {
     this.initialHistory = TakeHistory.vide,
     this.clock = DateTime.now,
     this.documentSaver,
+    this.homeworkStore,
+    this.initialHomework = HomeworkList.vide,
     super.key,
   });
+
+  /// Les devoirs du professeur (lot T1). `null` : rien ne se retient.
+  final HomeworkStore? homeworkStore;
+  final HomeworkList initialHomework;
+
+  static const Key donnerKey = Key('donner-en-devoir');
+  static Key devoirKey(String workKey) => Key('devoir-$workKey');
 
   /// Pour enregistrer le rapport de la semaine (T3).
   final DocumentSaver? documentSaver;
@@ -211,6 +221,83 @@ class _HomeShellState extends State<HomeShell> {
       return 'piece:${x.pieceId}:${x.fromMeasure}-${x.toMeasure}';
     }
     return 'passage:${widget.passage.title}';
+  }
+
+  late HomeworkList _devoirs = widget.initialHomework;
+
+  void _rangerLesDevoirs(HomeworkList l) {
+    setState(() => _devoirs = l);
+    final HomeworkStore? store = widget.homeworkStore;
+    if (store != null) {
+      unawaited(store.save(l).catchError((Object _) {}));
+    }
+  }
+
+  /// Le professeur pose le passage en cours en devoir : le tempo vise, et un
+  /// mot s'il en a un.
+  Future<void> _donnerEnDevoir() async {
+    final _Devoir? choix = await showModalBottomSheet<_Devoir>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext c) => _FeuilleDuDevoir(
+        passage: widget.passage,
+        tempoEcrit: _tempoEcrit ?? widget.passage.pulseBpm,
+      ),
+    );
+    if (choix == null || !mounted) {
+      return;
+    }
+    final RememberedExcerpt? x = _extrait;
+    _rangerLesDevoirs(
+      _devoirs.withHomework(
+        Homework(
+          workKey: _cleDuTravail,
+          title: widget.passage.title,
+          targetPulseBpm: choix.tempo,
+          createdAtMs: widget.clock().millisecondsSinceEpoch,
+          exerciseId: _exercice?.id,
+          pieceId: x?.pieceId,
+          fromMeasure: x?.fromMeasure,
+          toMeasure: x?.toMeasure,
+          note: choix.mot,
+        ),
+      ),
+    );
+  }
+
+  /// Rouvre le passage d'un devoir, la ou on le travaille : l'exercice, ou
+  /// les mesures du morceau.
+  void _ouvrirLeDevoir(Homework d) {
+    final String? exo = d.exerciseId;
+    if (exo != null) {
+      final Exercise? e = ExerciseCatalog.byId(exo);
+      if (e == null) {
+        return;
+      }
+      _exercice = e;
+      _tempo = _progres.tempoPropose(e);
+      _extrait = null;
+      _seRappeler();
+      widget.onPassageChanged(e.toPassage(tempoBpm: _tempo));
+      setState(() => _destination = 0);
+      return;
+    }
+    final String? mo = d.pieceId;
+    final int? de = d.fromMeasure;
+    final int? a = d.toMeasure;
+    final ImportedPiece? m = mo == null ? null : _morceaux.byId(mo);
+    final Passage? extrait =
+        m == null || de == null || a == null ? null : m.excerpt(de, a);
+    if (extrait == null) {
+      return;
+    }
+    _exercice = null;
+    _tempo = null;
+    _extrait = RememberedExcerpt(pieceId: mo!, fromMeasure: de!, toMeasure: a!);
+    _seRappeler();
+    widget.onPassageChanged(extrait);
+    setState(() => _destination = 0);
   }
 
   void _garder(TakeRecord fiche) {
@@ -676,6 +763,12 @@ class _HomeShellState extends State<HomeShell> {
                   onImporter: () => unawaited(_importer()),
                   onMorceau: (ImportedPiece m) =>
                       unawaited(_ouvrirLeMorceau(m)),
+                  devoirs: _devoirs,
+                  historique: _historique,
+                  onDevoir: _ouvrirLeDevoir,
+                  onRetirerDevoir: (Homework d) =>
+                      _rangerLesDevoirs(_devoirs.without(d.workKey)),
+                  onDonner: () => unawaited(_donnerEnDevoir()),
                 ),
       bottomNavigationBar: _pleinEcran
           ? null
@@ -734,7 +827,18 @@ class _Repertoire extends StatelessWidget {
     required this.morceaux,
     required this.onImporter,
     required this.onMorceau,
+    required this.devoirs,
+    required this.historique,
+    required this.onDevoir,
+    required this.onRetirerDevoir,
+    required this.onDonner,
   });
+
+  final HomeworkList devoirs;
+  final TakeHistory historique;
+  final ValueChanged<Homework> onDevoir;
+  final ValueChanged<Homework> onRetirerDevoir;
+  final VoidCallback onDonner;
 
   final Passage passage;
   final double a4;
@@ -759,6 +863,42 @@ class _Repertoire extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: <Widget>[
+            // Les devoirs d'abord : c'est ce que le professeur a demande, et
+            // l'enfant n'a rien a chercher (T1).
+            if (devoirs.items.isNotEmpty) ...<Widget>[
+              Text('Les devoirs de la semaine',
+                  style: theme.textTheme.titleSmall),
+              const SizedBox(height: 4),
+              for (final Homework d in devoirs.items)
+                Card(
+                  child: ListTile(
+                    key: HomeShell.devoirKey(d.workKey),
+                    leading: Icon(
+                      d.doneIn(historique)
+                          ? Icons.check_circle
+                          : Icons.assignment_outlined,
+                      color: d.doneIn(historique)
+                          ? theme.colorScheme.primary
+                          : null,
+                    ),
+                    title: Text(d.title),
+                    subtitle: Text(<String>[
+                      if (d.bestSince(historique) case final int b)
+                        'Vise ${d.targetPulseBpm} - tu en es a $b'
+                      else
+                        'Vise ${d.targetPulseBpm}',
+                      if (d.note case final String n) n,
+                    ].join('\n')),
+                    onTap: () => onDevoir(d),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Retirer ce devoir',
+                      onPressed: () => onRetirerDevoir(d),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+            ],
             Card(
               // "Voila ta prochaine tache" est ce que l'application a a dire
               // ce soir : c'est la seule carte sombre de l'ecran, et il n'y
@@ -810,7 +950,18 @@ class _Repertoire extends StatelessWidget {
                 trailing: const Icon(Icons.check_circle_outline),
               ),
             ),
-            const SizedBox(height: 16),
+            // Pour le professeur, en fin de cours, sur le telephone de
+            // l'enfant : le passage en cours devient le devoir.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: HomeShell.donnerKey,
+                onPressed: onDonner,
+                icon: const Icon(Icons.assignment_add),
+                label: const Text('Donner ce passage en devoir'),
+              ),
+            ),
+            const SizedBox(height: 8),
             Text('Les morceaux', style: theme.textTheme.titleSmall),
             const SizedBox(height: 4),
             if (morceaux.pieces.isEmpty)
@@ -859,6 +1010,87 @@ class _Repertoire extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Ce que le professeur a choisi pour un devoir.
+class _Devoir {
+  const _Devoir(this.tempo, this.mot);
+
+  final int tempo;
+  final String? mot;
+}
+
+/// Poser un devoir : le tempo vise, et un mot.
+class _FeuilleDuDevoir extends StatefulWidget {
+  const _FeuilleDuDevoir({required this.passage, required this.tempoEcrit});
+
+  final Passage passage;
+  final int tempoEcrit;
+
+  static const Key poserKey = Key('poser-le-devoir');
+
+  @override
+  State<_FeuilleDuDevoir> createState() => _FeuilleDuDevoirState();
+}
+
+class _FeuilleDuDevoirState extends State<_FeuilleDuDevoir> {
+  late int _tempo = widget.passage.pulseBpm;
+  final TextEditingController _mot = TextEditingController();
+
+  @override
+  void dispose() {
+    _mot.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final int max = (widget.tempoEcrit * 1.3).round();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        16 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(widget.passage.title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          Text('Tempo vise : $_tempo (ecrit ${widget.tempoEcrit})'),
+          Slider(
+            value: _tempo.toDouble().clamp(30, max.toDouble()),
+            min: 30,
+            max: max.toDouble(),
+            divisions: max - 30,
+            label: '$_tempo',
+            onChanged: (double v) => setState(() => _tempo = v.round()),
+          ),
+          TextField(
+            controller: _mot,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              labelText: 'Un mot pour la semaine (facultatif)',
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            key: _FeuilleDuDevoir.poserKey,
+            onPressed: () => Navigator.of(context).pop(
+              _Devoir(
+                _tempo,
+                _mot.text.trim().isEmpty ? null : _mot.text.trim(),
+              ),
+            ),
+            child: const Text('Poser le devoir'),
+          ),
+        ],
       ),
     );
   }

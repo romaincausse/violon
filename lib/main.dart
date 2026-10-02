@@ -17,6 +17,7 @@ import 'core/audio/take_player.dart';
 import 'core/play/audio_engine.dart';
 import 'core/store/piece_store.dart';
 import 'core/store/document_saver.dart';
+import 'core/store/homework.dart';
 import 'core/store/session_store.dart';
 import 'core/store/take_history.dart';
 import 'platform/audio/default_pitch_source.dart';
@@ -26,6 +27,7 @@ import 'platform/audio/soloud_take_player.dart';
 import 'platform/device/wakelock_screen_keeper.dart';
 import 'platform/import/android_document_picker.dart';
 import 'platform/store/prefs_history_store.dart';
+import 'platform/store/prefs_homework_store.dart';
 import 'platform/store/prefs_piece_store.dart';
 import 'platform/store/prefs_session_store.dart';
 import 'ui/screens/home_shell.dart';
@@ -41,6 +43,7 @@ typedef SessionStoreFactory = SessionStore Function();
 typedef PieceStoreFactory = PieceStore Function();
 typedef HistoryStoreFactory = HistoryStore Function();
 typedef DocumentSaverFactory = DocumentSaver Function();
+typedef HomeworkStoreFactory = HomeworkStore Function();
 typedef DocumentPickerFactory = DocumentPicker Function();
 
 class ViolonApp extends StatefulWidget {
@@ -53,6 +56,7 @@ class ViolonApp extends StatefulWidget {
     this.pieceStoreFactory = defaultPieceStore,
     this.historyStoreFactory = defaultHistoryStore,
     this.documentSaverFactory = defaultDocumentSaver,
+    this.homeworkStoreFactory = defaultHomeworkStore,
     this.documentPickerFactory = defaultDocumentPicker,
     this.pieceImporter = const PieceImporter(inflate: inflateRaw),
     this.benchRecorderFactory = kDebugMode ? defaultBenchRecorder : null,
@@ -69,6 +73,9 @@ class ViolonApp extends StatefulWidget {
 
   /// Fabrique de l'enregistrement de fichier, pour le rapport (T3).
   final DocumentSaverFactory documentSaverFactory;
+
+  /// Fabrique du magasin des devoirs (T1).
+  final HomeworkStoreFactory homeworkStoreFactory;
 
   /// Fabrique du magasin des morceaux, injectable comme la memoire.
   final PieceStoreFactory pieceStoreFactory;
@@ -111,6 +118,8 @@ class _ViolonAppState extends State<ViolonApp> {
   late final PieceStore _morceaux = widget.pieceStoreFactory();
   late final HistoryStore _historiqueStore = widget.historyStoreFactory();
   late final DocumentSaver _enregistreur = widget.documentSaverFactory();
+  late final HomeworkStore _devoirsStore = widget.homeworkStoreFactory();
+  HomeworkList _devoirs = HomeworkList.vide;
   TakeHistory _historique = TakeHistory.vide;
   late final DocumentPicker _selecteur = widget.documentPickerFactory();
   PieceLibrary _repertoire = PieceLibrary.vide;
@@ -148,8 +157,17 @@ class _ViolonAppState extends State<ViolonApp> {
   Future<void> _relire() async {
     // Les deux lectures en meme temps : l'application attend la plus lente,
     // pas leur somme.
-    final (RememberedSession lue, PieceLibrary morceaux, TakeHistory h) =
-        await (_memoire.load(), _morceaux.load(), _historiqueStore.load()).wait;
+    final (
+      RememberedSession lue,
+      PieceLibrary morceaux,
+      TakeHistory h,
+      HomeworkList devoirs,
+    ) = await (
+      _memoire.load(),
+      _morceaux.load(),
+      _historiqueStore.load(),
+      _devoirsStore.load(),
+    ).wait;
     if (!mounted) {
       return;
     }
@@ -170,6 +188,7 @@ class _ViolonAppState extends State<ViolonApp> {
     setState(() {
       _repertoire = morceaux;
       _historique = h;
+      _devoirs = devoirs;
       // Un morceau retire depuis ne se rouvre pas : on l'oublie.
       _extrait = passageDuMorceau == null ? null : extrait;
       _range = lue;
@@ -243,6 +262,8 @@ class _ViolonAppState extends State<ViolonApp> {
                 initialPieces: _repertoire,
                 historyStore: _historiqueStore,
                 documentSaver: _enregistreur,
+                homeworkStore: _devoirsStore,
+                initialHomework: _devoirs,
                 initialHistory: _historique,
                 initialExcerpt: _extrait,
                 benchRecorderFactory: widget.benchRecorderFactory,
