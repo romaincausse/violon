@@ -37,12 +37,13 @@ void main() {
   Future<void> poser(
     WidgetTester tester, {
     ValueChanged<SessionResult>? onResult,
+    Passage? autre,
   }) async {
     t = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: SessionScreen(
-          passage: passage(),
+          passage: autre ?? passage(),
           onChangePassage: () {},
           onTune: () {},
           onResult: onResult,
@@ -175,5 +176,37 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
     await tester.pump();
     expect(source, isNotNull);
+  });
+
+  testWidgets('quand il ne sait plus ou en est l eleve, il le dit', (
+    WidgetTester tester,
+  ) async {
+    // Douze la identiques : rien ne dit ou l'eleve en est (S5).
+    final PassageBuilder b = PassageBuilder();
+    for (int i = 0; i < 12; i++) {
+      b.add(69, NoteValue.quarter);
+    }
+    b.add(62, NoteValue.quarter);
+    await poser(
+      tester,
+      autre: Passage(
+        title: 'la la la',
+        notes: b.notes,
+        ticksPerBeat: b.ticksPerBeat,
+      ),
+    );
+    await demarrer(tester);
+    bool aDit = false;
+    bool aPali = false;
+    for (int k = 0; k < 6; k++) {
+      await jouer(tester, 69, 8);
+      aDit = aDit || find.byKey(SessionScreen.chercheKey).evaluate().isNotEmpty;
+      aPali = aPali ||
+          tester.widget<ScoreView>(find.byType(ScoreView)).cursorUncertain;
+    }
+    expect(aDit, isTrue);
+    expect(aPali, isTrue);
+    await tester.tap(find.text('Arreter'));
+    await tester.pump();
   });
 }

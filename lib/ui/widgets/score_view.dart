@@ -54,6 +54,7 @@ class ScoreView extends StatelessWidget {
     this.colorOf,
     this.ghostMidiOf,
     this.cursorTick,
+    this.cursorUncertain = false,
     this.spaceSize,
     this.maxSystems,
     this.maxSpaceSize = defaultMaxSpaceSize,
@@ -114,6 +115,11 @@ class ScoreView extends StatelessWidget {
 
   /// Instant courant, en ticks, ou `null` a l'arret. Trace le curseur.
   final int? cursorTick;
+
+  /// Le suiveur doute de la position (lot S5) : le curseur passe en encre
+  /// neutre. Il ne disparait pas -- l'eleve verrait l'application "partie" --
+  /// mais il cesse d'affirmer.
+  final bool cursorUncertain;
 
   /// Hauteur d'un interligne, en pixels. La portee en fait quatre.
   ///
@@ -277,7 +283,7 @@ class ScoreView extends StatelessWidget {
                 metrics: metrics,
                 spaceSize: spaceSize,
                 inkColor: scheme.onSurface,
-                cursorColor: scheme.primary,
+                cursorColor: cursorUncertain ? scheme.outline : scheme.primary,
                 cursorTick: cursorTick,
                 colorOf: colorOf,
                 ghostMidiOf: ghostMidiOf,

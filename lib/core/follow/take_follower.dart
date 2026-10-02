@@ -78,6 +78,25 @@ class TakeFollower {
 
   int? _derniereNote;
 
+  /// La confiance du suiveur, lissee sur une dizaine de trames (lot S5).
+  ///
+  /// Lissee parce qu'une trame isolee hesite toujours un peu, au passage
+  /// d'une attaque : un curseur qui palirait a chaque coup d'archet ne dirait
+  /// plus rien.
+  double confidence = 1;
+
+  /// En dessous, le suiveur dit qu'il cherche. Regle sur les prises du banc :
+  /// au-dessus, le direct est d'accord avec l'aligneur 88 % du temps ; en
+  /// dessous, une fois sur deux.
+  static const double unsureBelow = 0.4;
+
+  /// Il ne sait plus ou en est l'eleve.
+  ///
+  /// **Il le dit, plutot que de noter au hasard** : tant qu'il doute, rien
+  /// n'est rattache en direct. Les hauteurs ne sont pas perdues -- [rescore]
+  /// les reprend toutes, avec l'aligneur qui voit la suite.
+  bool get unsure => started && confidence < unsureBelow;
+
   /// Vrai des que la derniere note du passage a ete jouee.
   bool reachedEnd = false;
 
@@ -123,6 +142,7 @@ class TakeFollower {
       return const <HeardPitch>[];
     }
     position = p;
+    confidence = 0.8 * confidence + 0.2 * p.confidence;
     if (p.playing) {
       _debutDuSilence = null;
       if (p.noteIndex != _derniereNote) {
@@ -158,7 +178,7 @@ class TakeFollower {
         _enAttente.first.estimate.timestampMs <= p.timeMs + _pas) {
       final SmoothedPitch h = _enAttente.removeAt(0);
       final ScoreNote? note = currentNote;
-      if (note == null) {
+      if (note == null || unsure) {
         continue;
       }
       final int? debut = _debutDeLaNote;
