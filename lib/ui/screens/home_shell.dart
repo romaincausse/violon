@@ -644,8 +644,20 @@ class _HomeShellState extends State<HomeShell> {
                   (BuildContext c) => MetronomeScreen(engine: _son),
                 ),
               ),
-              // Le temps d'un cours : le bilan donne aussi le detail
-              // chiffre, pour le professeur (T4). A la maison, une tache.
+              ListTile(
+                leading: const Icon(Icons.mic),
+                title: const Text('Est-ce qu elle m entend ?'),
+                subtitle: const Text('Verifier le micro'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => MicCheckScreen(
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                  ),
+                ),
+              ),
+              // En dernier : il sert une fois par semaine. Le temps d'un
+              // cours, le bilan donne aussi le detail chiffre, pour le
+              // professeur (T4) ; a la maison, une tache.
               StatefulBuilder(
                 builder: (BuildContext c, StateSetter majTiroir) =>
                     SwitchListTile(
@@ -658,17 +670,6 @@ class _HomeShellState extends State<HomeShell> {
                     setState(() => _lecon = v);
                     majTiroir(() {});
                   },
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.mic),
-                title: const Text('Est-ce qu elle m entend ?'),
-                subtitle: const Text('Verifier le micro'),
-                onTap: () => _ouvrir(
-                  context,
-                  (BuildContext c) => MicCheckScreen(
-                    pitchSourceFactory: widget.pitchSourceFactory,
-                  ),
                 ),
               ),
               if (widget.benchRecorderFactory
