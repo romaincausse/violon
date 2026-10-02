@@ -58,7 +58,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
-| 7 | La note | 10 | 7 | Justesse et rythme, par mesure |
+| 7 | La note | 10 | 1 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
@@ -1563,13 +1563,13 @@ croche etait mesure contre la note **suivante** (repare par S4).
 | ~~N1~~ | ~~Justesse par note~~ | **Must** | ★★★ | fait |
 | ~~N2~~ | ~~Tempo reellement tenu~~ | **Must** | ★★ | fait |
 | ~~N3~~ | ~~Score de rythme, a ce tempo~~ | **Must** | ★★★ | fait |
-| N5 | Agregation par mesure | **Must** | ★★★ | 1 |
+| ~~N5~~ | ~~Agregation par mesure~~ | **Must** | ★★★ | fait |
 | N6 | Bilan de passage | **Must** | ★★★ | 1 |
 | ~~N4~~ | ~~Detection des hesitations~~ | | ★★★ | fait |
-| B1 | Compteur de reprises par mesure | | ★★★ | 1 |
-| B2 | Carte des arrets | | ★★ | 1 |
-| B3 | Notes evitees ou ecourtees | | ★★ | 1 |
-| C1 | Courbe de tempo interne | | ★★★ | 2 |
+| ~~B1~~ | ~~Compteur de reprises par mesure~~ | | ★★★ | fait |
+| ~~B2~~ | ~~Carte des arrets~~ | | ★★ | fait |
+| ~~B3~~ | ~~Notes evitees ou ecourtees~~ | | ★★ | fait |
+| ~~C1~~ | ~~Courbe de tempo interne~~ | | ★★★ | fait |
 
 **La regle du jalon (ADR-010).** Jouer juste a 74 au lieu de 92 n'est pas une
 faute de rythme : c'est un tempo tenu. Jouer une noire comme une croche en est
@@ -1619,6 +1619,20 @@ cas de l'ADR-010 sont les trois premiers tests.
 detachee tenue a 68 pour 72 ecrit, rythme 99 ; *Into the Stars* tenu a 72 a la
 noire pour 141 ecrit -- il le travaille lentement, et le juge ne le lui
 reproche pas -- rythme 80 et six hesitations, la ou l'oreille les entend.
+
+### N5, B1, B2, B3, C1 - Le diagnostic, mesure par mesure
+
+**Fait** (`TakeReport`). Pour chaque mesure : justesse, rythme au tempo tenu,
+fois ou il y est revenu (B1), arrets de plus d'une seconde avant une de ses
+notes (B2), notes sautees en chemin ou jouees moins de 40 % de leur duree
+(B3), et **tempo local rapporte au tempo tenu** (C1) -- en dessous de 85 %,
+*"tu y ralentis"*.
+
+**Il ne sert pas a dresser la liste des fautes.** Il sert a choisir **une**
+tache : la mesure la plus difficile, et la raison principale qu'on peut
+donner. Les arrets et les reprises pesent plus lourd que la justesse : une
+mesure juste qu'on rejoue quatorze fois est une mesure qui fait peur. En
+dessous d'un seuil, il n'y a pas de tache : tout tient, et il faut le dire.
 
 ---
 
