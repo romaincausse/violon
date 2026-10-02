@@ -58,7 +58,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
-| 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
+| 7 | La note | 10 | 7 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
@@ -1561,11 +1561,11 @@ croche etait mesure contre la note **suivante** (repare par S4).
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~N1~~ | ~~Justesse par note~~ | **Must** | ★★★ | fait |
-| N2 | Tempo reellement tenu | **Must** | ★★ | 2 |
-| N3 | Score de rythme, a ce tempo | **Must** | ★★★ | 2 |
+| ~~N2~~ | ~~Tempo reellement tenu~~ | **Must** | ★★ | fait |
+| ~~N3~~ | ~~Score de rythme, a ce tempo~~ | **Must** | ★★★ | fait |
 | N5 | Agregation par mesure | **Must** | ★★★ | 1 |
 | N6 | Bilan de passage | **Must** | ★★★ | 1 |
-| N4 | Detection des hesitations | | ★★★ | 2 |
+| ~~N4~~ | ~~Detection des hesitations~~ | | ★★★ | fait |
 | B1 | Compteur de reprises par mesure | | ★★★ | 1 |
 | B2 | Carte des arrets | | ★★ | 1 |
 | B3 | Notes evitees ou ecourtees | | ★★ | 1 |
@@ -1594,6 +1594,31 @@ mesure 7"* -- le passage n'est pas sur, meme si chaque note est juste.
 **Aucune dependance nouvelle pour finir ce jalon.** Le rythme est juge en
 comparant les attaques entre elles ; une latence de capture constante
 disparait de la soustraction.
+
+### N2, N3, N4 - Le juge de rythme
+
+**Fait, en un seul juge** (`RhythmJudge`), parce que les trois lots sont trois
+lectures du meme calcul. Il reprend les notes que l'aligneur a reconnues sur
+la prise entiere et :
+
+- **N2** en deduit le tempo tenu : la mediane des enchainements, puis la
+  mediane de ce qui n'est pas une hesitation au regard de la premiere. Rendu
+  dans l'unite ou se bat le morceau.
+- **N3** mesure chaque note **a ce tempo-la** : en place a 15 % pres, zero
+  quand une noire est devenue une croche ou une blanche, une pente entre les
+  deux, symetrique.
+- **N4** ecarte les hesitations : deux fois la duree ecrite et une
+  demi-seconde de trop avant la note suivante. Ni faute de rythme, ni tempo ;
+  comptees a part, sur la note **qu'il n'osait pas attaquer**.
+
+**Ne se juge que ce qui s'enchaine** : une reprise, un saut, ou un silence de
+plus d'une seconde coupent la prise ; on ne juge jamais par-dessus. Les trois
+cas de l'ADR-010 sont les trois premiers tests.
+
+**Sur les vraies prises du banc**, les chiffres tiennent debout : la gamme
+detachee tenue a 68 pour 72 ecrit, rythme 99 ; *Into the Stars* tenu a 72 a la
+noire pour 141 ecrit -- il le travaille lentement, et le juge ne le lui
+reproche pas -- rythme 80 et six hesitations, la ou l'oreille les entend.
 
 ---
 

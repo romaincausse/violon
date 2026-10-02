@@ -61,6 +61,9 @@ void main() {
     expect(suivi.tuning.heardNoteIds.length, greaterThanOrEqualTo(20));
     expect(suivi.tuning.overallScore, 100);
     expect(suivi.rescore().overallScore, 100);
+    // Le juge de rythme passe sur le meme alignement.
+    expect(suivi.rhythm!.quarterBpm, closeTo(92, 92 * 0.08));
+    expect(suivi.rhythm!.overallScore, greaterThanOrEqualTo(85));
   });
 
   test('un arret au milieu n est pas une fin', () {
