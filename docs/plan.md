@@ -63,14 +63,14 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
-| 12 | L'envie | 8 | 2 | On a envie d'y revenir |
+| 12 | L'envie | 8 | 0 | On a envie d'y revenir |
 
 **84 lots au 2 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
 corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
-attendent les ecoutes du parent --, le violon et le violoncelle de
-l'accompagnement (J8), et le jalon 12 entier, ne le meme jour d'une question
-posee a l'application : qu'est-ce qui ferait qu'un enfant la rouvre tous les
-soirs ?
+attendent les ecoutes du parent -- et le violon et le violoncelle de
+l'accompagnement (J8). Le jalon 12, ne le 2 octobre d'une question posee a
+l'application -- qu'est-ce qui ferait qu'un enfant la rouvre tous les
+soirs ? --, a ete livre le jour meme.
 
 Les jalons 6 a 11 ont ete livres **avant** ce verdict, a la demande de
 l'utilisateur, alors que le plan les faisait dependre de lui. Ce n'est pas
@@ -2085,8 +2085,8 @@ a l'ecran.
 | ~~V1~~ | ~~La seance du jour~~ | **Must** | ★★★ | fait |
 | ~~V2~~ | ~~Les premieres fois~~ | | ★★★ | fait |
 | ~~V3~~ | ~~Les jours joues~~ | | ★★★ | fait |
-| V0 | Le chemin de l'enfant | | ★★ | 1 |
-| V4 | La carte retournee | | ★★ | 1 |
+| ~~V0~~ | ~~Le chemin de l'enfant~~ | | ★★ | fait |
+| ~~V4~~ | ~~La carte retournee~~ | | ★★ | fait |
 | ~~V5~~ | ~~Ce soir, en une phrase~~ | | ★★ | fait |
 | ~~V6~~ | ~~L'accompagnement du fichier~~ | | ★★ | couvert par J4 |
 
@@ -2157,10 +2157,23 @@ erreur ne remet jamais un compteur a zero".
 le mode lecon et la latence sortent de son chemin et restent dans les
 outils. Rien n'est retire, tout est deplace.
 
+**Fait.** Le tiroir des outils a un trait, *Pour les grands* : au-dessus,
+accorder, jouer librement, le concert, le bourdon, le metronome ; au-dessous,
+le micro a verifier, la latence, le mode lecon, le banc. *Chercher mon point
+de rupture* ne se propose qu'en mode lecon, et les courbes par travail de
+*Progres* aussi : a la maison, l'onglet montre le jour, les jours du mois, la
+main gauche et la semaine a montrer.
+
 **V4 - La carte retournee.** La rangee de cases chaudes sur l'ecran du
 morceau devient les mesures qui ont le plus progresse. La carte cumulee des
 mesures qui resistent ne s'affiche qu'en mode lecon, ou elle sert a
 quelqu'un.
+
+**Fait** (`MeasureProgress`). Le progres d'une mesure : sa difficulte
+moyenne d'il y a une a quatre semaines, moins celle des sept derniers jours.
+Sur l'ecran du morceau, la rangee se colore de ce qui monte, et une phrase
+nomme *"Ce qui a le plus progresse : mesures 9 et 10"*, d'un appui vers ces
+mesures. La carte de chaleur (H2) ne vient plus qu'en mode lecon.
 
 **V5 - Ce soir, en une phrase.** A la fin de la seance, une phrase qu'il
 montre : la duree, ce qui a tenu, et un fait s'il y en a un -- "ta plus

@@ -25,9 +25,27 @@ void main() {
         notes: notes,
       );
 
-  Future<void> poser(WidgetTester tester, TakeHistory h) => tester.pumpWidget(
-        MaterialApp(home: ProgressScreen(history: h, clock: () => maintenant)),
+  Future<void> poser(WidgetTester tester, TakeHistory h,
+          {bool lecon = false}) =>
+      tester.pumpWidget(
+        MaterialApp(
+          home: ProgressScreen(
+            history: h,
+            clock: () => maintenant,
+            detailed: lecon,
+          ),
+        ),
       );
+
+  testWidgets('les courbes par travail ne sortent qu en mode lecon', (
+    WidgetTester tester,
+  ) async {
+    final TakeHistory h = TakeHistory.vide.withTake(prise(30));
+    await poser(tester, h);
+    expect(find.byKey(ProgressScreen.courbeKey('exo:gamme')), findsNothing);
+    await poser(tester, h, lecon: true);
+    expect(find.byKey(ProgressScreen.courbeKey('exo:gamme')), findsOneWidget);
+  });
 
   testWidgets('sans prise, il dit d ou viendront les courbes', (
     WidgetTester tester,

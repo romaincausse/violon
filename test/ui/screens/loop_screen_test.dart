@@ -138,7 +138,8 @@ void main() {
   ) async {
     await poser(tester);
     expect(find.byKey(LoopScreen.selectionKey), findsOneWidget);
-    expect(find.byKey(LoopScreen.ruptureKey), findsOneWidget);
+    // Le point de rupture est un outil d'adulte : pas sur son chemin (V0).
+    expect(find.byKey(LoopScreen.ruptureKey), findsNothing);
     await commencer(tester);
     expect(find.byKey(LoopScreen.selectionKey), findsNothing);
     await tester.tap(find.byKey(LoopScreen.finirKey));
