@@ -15,6 +15,7 @@ import 'core/music/pitch_utils.dart';
 import 'core/audio/bench_recorder.dart';
 import 'core/audio/take_player.dart';
 import 'core/play/audio_engine.dart';
+import 'core/play/headphones.dart';
 import 'core/store/piece_store.dart';
 import 'core/store/document_saver.dart';
 import 'core/store/homework.dart';
@@ -44,6 +45,7 @@ typedef PieceStoreFactory = PieceStore Function();
 typedef HistoryStoreFactory = HistoryStore Function();
 typedef DocumentSaverFactory = DocumentSaver Function();
 typedef HomeworkStoreFactory = HomeworkStore Function();
+typedef HeadphoneProbeFactory = HeadphoneProbe Function();
 typedef DocumentPickerFactory = DocumentPicker Function();
 
 class ViolonApp extends StatefulWidget {
@@ -57,6 +59,7 @@ class ViolonApp extends StatefulWidget {
     this.historyStoreFactory = defaultHistoryStore,
     this.documentSaverFactory = defaultDocumentSaver,
     this.homeworkStoreFactory = defaultHomeworkStore,
+    this.headphoneProbeFactory = defaultHeadphoneProbe,
     this.documentPickerFactory = defaultDocumentPicker,
     this.pieceImporter = const PieceImporter(inflate: inflateRaw),
     this.benchRecorderFactory = kDebugMode ? defaultBenchRecorder : null,
@@ -76,6 +79,9 @@ class ViolonApp extends StatefulWidget {
 
   /// Fabrique du magasin des devoirs (T1).
   final HomeworkStoreFactory homeworkStoreFactory;
+
+  /// Ce qui est branche en sortie, pour l'accompagnement qui suit (J5).
+  final HeadphoneProbeFactory headphoneProbeFactory;
 
   /// Fabrique du magasin des morceaux, injectable comme la memoire.
   final PieceStoreFactory pieceStoreFactory;
@@ -119,6 +125,7 @@ class _ViolonAppState extends State<ViolonApp> {
   late final HistoryStore _historiqueStore = widget.historyStoreFactory();
   late final DocumentSaver _enregistreur = widget.documentSaverFactory();
   late final HomeworkStore _devoirsStore = widget.homeworkStoreFactory();
+  late final HeadphoneProbe _casque = widget.headphoneProbeFactory();
   HomeworkList _devoirs = HomeworkList.vide;
   TakeHistory _historique = TakeHistory.vide;
   late final DocumentPicker _selecteur = widget.documentPickerFactory();
@@ -265,6 +272,7 @@ class _ViolonAppState extends State<ViolonApp> {
                 historyStore: _historiqueStore,
                 documentSaver: _enregistreur,
                 homeworkStore: _devoirsStore,
+                headphones: _casque,
                 initialHomework: _devoirs,
                 initialHistory: _historique,
                 initialExcerpt: _extrait,

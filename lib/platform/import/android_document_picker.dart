@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 import '../../core/import/piece_importer.dart';
+import '../../core/play/headphones.dart';
 import '../../core/store/document_saver.dart';
 
 /// Le selecteur de fichiers d'Android, par le Storage Access Framework.
@@ -56,6 +57,31 @@ class AndroidDocumentSaver implements DocumentSaver {
 }
 
 DocumentSaver defaultDocumentSaver() => AndroidDocumentSaver();
+
+/// Ce qui est branche en sortie, par le meme canal.
+class AndroidHeadphoneProbe implements HeadphoneProbe {
+  AndroidHeadphoneProbe({MethodChannel? channel})
+      : _canal = channel ?? const MethodChannel(AndroidDocumentPicker.canal);
+
+  final MethodChannel _canal;
+
+  @override
+  Future<Headphones> check() async {
+    try {
+      return switch (await _canal.invokeMethod<String>('casque')) {
+        'filaire' => Headphones.wired,
+        'bluetooth' => Headphones.bluetooth,
+        _ => Headphones.none,
+      };
+    } on PlatformException {
+      return Headphones.none;
+    } on MissingPluginException {
+      return Headphones.none;
+    }
+  }
+}
+
+HeadphoneProbe defaultHeadphoneProbe() => AndroidHeadphoneProbe();
 
 /// Le `deflate` brut d'une archive zip, par `dart:io`.
 List<int> inflateRaw(List<int> compressed) =>

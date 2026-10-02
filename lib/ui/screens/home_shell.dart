@@ -15,6 +15,7 @@ import '../../core/audio/bench_recorder.dart';
 import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
+import '../../core/play/headphones.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/document_saver.dart';
 import '../../core/store/homework.dart';
@@ -76,8 +77,12 @@ class HomeShell extends StatefulWidget {
     this.initialHomework = HomeworkList.vide,
     this.latencyMs,
     this.onLatencyChanged,
+    this.headphones,
     super.key,
   });
+
+  /// Ce qui est branche en sortie, pour l'accompagnement qui suit (J5).
+  final HeadphoneProbe? headphones;
 
   /// La latence mesuree (J2), et de quoi la retenir.
   final int? latencyMs;
@@ -362,6 +367,9 @@ class _HomeShellState extends State<HomeShell> {
           a4: widget.a4,
           scoreAccompaniment: morceau?.accompanimentFor(widget.passage) ??
               const <AccompanimentNote>[],
+          pitchSourceFactory: widget.pitchSourceFactory,
+          headphones: widget.headphones,
+          latencyMs: widget.latencyMs,
         ),
       ),
     );
