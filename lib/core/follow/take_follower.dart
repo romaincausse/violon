@@ -5,6 +5,7 @@ import '../music/score_note.dart';
 import '../scoring/live_tuning.dart';
 import '../scoring/rhythm_judge.dart';
 import '../scoring/take_report.dart';
+import '../store/take_history.dart';
 import 'offline_aligner.dart';
 import 'online_follower.dart';
 import 'performance_features.dart';
@@ -274,5 +275,48 @@ class TakeFollower {
     }
     tuning = juste;
     return juste;
+  }
+
+  /// Ce qu'on garde de cette prise (jalon 9), une fois [rescore] passe ;
+  /// `null` si rien du passage n'a ete entendu.
+  ///
+  /// [key] dit ce qu'on travaillait, d'une seance a l'autre ; [atMs] quand.
+  TakeRecord? record({required int atMs, required String key}) {
+    final TakeReport? rapport = report;
+    if (rapport == null ||
+        !rapport.measures.any((MeasureReport m) => m.heard)) {
+      return null;
+    }
+    final RhythmJudge juge = rapport.rhythm;
+    final int debut = juge.events.isEmpty ? 0 : juge.events.first.startMs;
+    return TakeRecord(
+      atMs: atMs,
+      key: key,
+      title: passage.title,
+      fromMeasure: passage.firstMeasure,
+      toMeasure: passage.lastMeasure,
+      writtenPulseBpm: passage.pulseBpm,
+      durationMs: lastFrameMs - debut,
+      heldPulseBpm: juge.pulseBpm,
+      tuningScore: tuning.overallScore,
+      rhythmScore: juge.overallScore,
+      reachedEnd: reachedEnd,
+      measures: <MeasureTrace>[
+        for (final MeasureReport m in rapport.measures)
+          if (m.heard)
+            MeasureTrace(
+              measure: m.measure,
+              difficulty: m.difficulty.round(),
+              stops: m.stops,
+              restarts: m.restarts,
+              tempoRatio: m.tempoRatio,
+            ),
+      ],
+      notes: <NoteTrace>[
+        for (final ScoreNote n in passage.notes)
+          if (tuning.medianCentsFor(n.id) case final double c)
+            NoteTrace(midi: n.midi, measure: n.measure, cents: c),
+      ],
+    );
   }
 }

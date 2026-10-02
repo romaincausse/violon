@@ -17,6 +17,7 @@ import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/session_store.dart';
+import '../../core/store/take_history.dart';
 import 'accompaniment_screen.dart';
 import 'loop_screen.dart';
 import 'bench_screen.dart';
@@ -29,6 +30,7 @@ import 'training_screen.dart';
 import 'mic_check_screen.dart';
 import 'passage_editor_screen.dart';
 import 'piece_screen.dart';
+import 'progress_screen.dart';
 import 'session_screen.dart';
 import 'tuner_screen.dart';
 
@@ -62,8 +64,18 @@ class HomeShell extends StatefulWidget {
     this.initialPieces = PieceLibrary.vide,
     this.initialExcerpt,
     this.benchRecorderFactory,
+    this.historyStore,
+    this.initialHistory = TakeHistory.vide,
+    this.clock = DateTime.now,
     super.key,
   });
+
+  /// L'historique des prises (jalon 9). `null` : rien ne se retient.
+  final HistoryStore? historyStore;
+  final TakeHistory initialHistory;
+
+  /// L'horloge de l'historique, injectable pour les tests.
+  final DateTime Function() clock;
 
   /// L'enregistreur du banc d'essai, present en debug seulement : sans lui,
   /// l'outil n'apparait pas.
@@ -117,6 +129,7 @@ class HomeShell extends StatefulWidget {
   final ValueChanged<double> onA4Changed;
 
   static const Key outilsKey = Key('ouvrir-les-outils');
+  static const Key progresKey = Key('onglet-progres');
   static const Key navKey = Key('navigation');
 
   /// Entree du catalogue de gammes et d'exercices, pour les tests.
@@ -176,6 +189,33 @@ class _HomeShellState extends State<HomeShell> {
   /// Qui mene la prise : l'eleve (suivi) ou le metronome (lot S6). Garde ici
   /// pour survivre aux changements d'onglet.
   SessionMode _menee = SessionMode.follow;
+
+  /// Ce que les prises ont laisse, d'une seance a l'autre.
+  late TakeHistory _historique = widget.initialHistory;
+
+  /// Ce qu'on travaille, de facon stable d'un jour a l'autre : l'exercice,
+  /// les mesures du morceau, ou le passage saisi.
+  String get _cleDuTravail {
+    final Exercise? e = _exercice;
+    if (e != null) {
+      return 'exo:${e.id}';
+    }
+    final RememberedExcerpt? x = _extrait;
+    if (x != null) {
+      return 'piece:${x.pieceId}:${x.fromMeasure}-${x.toMeasure}';
+    }
+    return 'passage:${widget.passage.title}';
+  }
+
+  void _garder(TakeRecord fiche) {
+    setState(() => _historique = _historique.withTake(fiche));
+    final HistoryStore? store = widget.historyStore;
+    if (store != null) {
+      // Une prise perdue n'empeche pas de jouer : l'ecriture echoue en
+      // silence, comme celle de la seance.
+      unawaited(store.save(_historique).catchError((Object _) {}));
+    }
+  }
 
   /// Le passage de morceau en cours, exclusif de [_exercice].
   late RememberedExcerpt? _extrait = widget.initialExcerpt;
@@ -579,6 +619,9 @@ class _HomeShellState extends State<HomeShell> {
               writtenPulseBpm: _tempoEcrit,
               onAccompany: () => unawaited(_accompagner()),
               mode: _menee,
+              historyKey: _cleDuTravail,
+              onTakeRecorded: _garder,
+              clock: widget.clock,
               onModeChanged: (SessionMode m) => setState(() => _menee = m),
               onLoop: (BarSelection s, int pulse) => unawaited(
                 Navigator.of(context).push<void>(
@@ -608,17 +651,20 @@ class _HomeShellState extends State<HomeShell> {
                 ),
               ),
             )
-          : _Repertoire(
-              passage: widget.passage,
-              a4: widget.a4,
-              progres: _progres,
-              exercice: _exercice,
-              onSaisir: () => unawaited(_saisirUnPassage()),
-              onExercices: () => unawaited(_ouvrirLesExercices()),
-              morceaux: _morceaux,
-              onImporter: () => unawaited(_importer()),
-              onMorceau: (ImportedPiece m) => unawaited(_ouvrirLeMorceau(m)),
-            ),
+          : _destination == 2
+              ? ProgressScreen(history: _historique, clock: widget.clock)
+              : _Repertoire(
+                  passage: widget.passage,
+                  a4: widget.a4,
+                  progres: _progres,
+                  exercice: _exercice,
+                  onSaisir: () => unawaited(_saisirUnPassage()),
+                  onExercices: () => unawaited(_ouvrirLesExercices()),
+                  morceaux: _morceaux,
+                  onImporter: () => unawaited(_importer()),
+                  onMorceau: (ImportedPiece m) =>
+                      unawaited(_ouvrirLeMorceau(m)),
+                ),
       bottomNavigationBar: _pleinEcran
           ? null
           : NavigationBar(
@@ -626,7 +672,7 @@ class _HomeShellState extends State<HomeShell> {
               selectedIndex: _destination,
               onDestinationSelected: (int i) {
                 // Le dernier bouton n'est pas une destination : c'est le tiroir.
-                if (i == 2) {
+                if (i == 3) {
                   unawaited(_ouvrirLesOutils());
                   return;
                 }
@@ -638,6 +684,11 @@ class _HomeShellState extends State<HomeShell> {
                 NavigationDestination(
                   icon: Icon(Icons.library_music),
                   label: 'Repertoire',
+                ),
+                NavigationDestination(
+                  key: HomeShell.progresKey,
+                  icon: Icon(Icons.show_chart),
+                  label: 'Progres',
                 ),
                 NavigationDestination(
                   key: HomeShell.outilsKey,

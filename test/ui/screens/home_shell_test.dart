@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/take_history.dart';
 import 'package:violon/core/import/piece_importer.dart';
 import 'package:violon/core/store/piece_store.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
@@ -19,6 +20,7 @@ import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
+import 'package:violon/ui/screens/progress_screen.dart';
 import 'package:violon/ui/screens/metronome_screen.dart';
 import 'package:violon/ui/screens/mic_check_screen.dart';
 import 'package:violon/ui/screens/session_screen.dart';
@@ -52,6 +54,7 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
       audioEngineFactory: sonInjecte,
       sessionStoreFactory: memoireInjectee,
       pieceStoreFactory: FakePieceStore.new,
+      historyStoreFactory: FakeHistoryStore.new,
       documentPickerFactory: FakeDocumentPicker.new,
     ),
   );
@@ -129,6 +132,47 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(LoopScreen), findsOneWidget);
       expect(find.byKey(LoopScreen.commencerKey), findsOneWidget);
+    });
+
+    testWidgets('l onglet progres montre les courbes de ce qui a ete joue', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      sonFactice = FakeAudioEngine();
+      memoireFactice = FakeSessionStore(RememberedSession.vide);
+      final DateTime hier = DateTime.now().subtract(const Duration(days: 1));
+      final TakeHistory h = TakeHistory.vide.withTake(TakeRecord(
+        atMs: hier.millisecondsSinceEpoch,
+        key: 'exo:gamme',
+        title: 'Gamme de sol',
+        fromMeasure: 1,
+        toMeasure: 4,
+        writtenPulseBpm: 72,
+        durationMs: 30000,
+        heldPulseBpm: 66,
+        tuningScore: 88,
+        rhythmScore: 92,
+        reachedEnd: true,
+      ));
+      await tester.pumpWidget(
+        ViolonApp(
+          pitchSourceFactory: micMuet,
+          audioEngineFactory: sonInjecte,
+          sessionStoreFactory: memoireInjectee,
+          pieceStoreFactory: FakePieceStore.new,
+          historyStoreFactory: () => FakeHistoryStore(h),
+          documentPickerFactory: FakeDocumentPicker.new,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.tap(find.byKey(HomeShell.progresKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProgressScreen), findsOneWidget);
+      expect(find.text('Gamme de sol'), findsOneWidget);
+      expect(find.textContaining('Record : 66'), findsOneWidget);
+      expect(find.text('Rien encore aujourd hui.'), findsOneWidget);
     });
 
     testWidgets('le repertoire montre le passage en cours', (

@@ -99,7 +99,8 @@ Quatre regles structurantes :
    une note a une frequence exacte, poser un clic a un instant exact
    (ADR-012), faire sonner un instrument enregistre a un instant de sa propre
    horloge (ADR-015).
-   `SessionStore` et `PieceStore` suivent la meme regle pour le stockage local,
+   `SessionStore`, `PieceStore` et `HistoryStore` suivent la meme regle pour le
+   stockage local,
    `ScreenKeeper` pour l'ecran et `DocumentPicker` pour le choix d'un fichier :
    `lib/core/` decrit ce qu'on se rappelle, quand l'ecran doit rester allume et
    quels octets il attend, `lib/platform/` sait ou le ranger, quel drapeau

@@ -60,7 +60,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 13 | Le progres devient visible |
+| 9 | La memoire | 8 | 10 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
@@ -1726,8 +1726,8 @@ et la notation du rythme, et attend donc sa place.
 |----|-----|------|-----|------|
 | ~~H1~~ | ~~Persistance passages et seances~~ | **Must** | ★★ | fait |
 | H3 | Erreurs systematiques par doigt | | ★★★ | 3 |
-| H4 | Courbes de progression | | ★★★ | 2 |
-| H5 | Journal de seance | | ★★ | 1 |
+| ~~H4~~ | ~~Courbes de progression~~ | | ★★★ | fait |
+| ~~H5~~ | ~~Journal de seance~~ | | ★★ | fait |
 | H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
 | M2 | Avant / apres audible | | ★★★ | 2 |
 | ~~H6~~ | ~~Import d'un morceau entier~~ | | ★★ | fait |
@@ -1798,6 +1798,25 @@ Ce que le lot livre :
 Laisse pour plus tard : les liaisons se lisent mais ne se dessinent pas, et
 un changement d'armure ou de mesure en cours de morceau garde la gravure du
 debut (les hauteurs, elles, restent justes).
+
+### H4, H5 - La memoire des prises, les courbes, le journal
+
+**Fait.** Chaque prise suivie laisse **une fiche compacte** (`TakeRecord`) :
+quand, quoi (l'exercice, les mesures du morceau, ou le passage saisi), le
+tempo tenu, la justesse, le rythme, quelques chiffres par mesure et l'ecart
+median de chaque note. Ni son, ni trame. Les trois cents dernieres tiennent
+dans les preferences, sous leur propre cle -- **sans base de donnees**, qui
+serait une dependance de plus.
+
+Un nouvel onglet, **Progres** :
+
+- **H5, le journal du jour** : combien de prises, combien de minutes
+  d'archet -- ce que l'archet a fait, pas le temps passe devant l'ecran -- et
+  les records battus aujourd'hui.
+- **H4, une courbe par travail** : le meilleur tempo tenu **jusqu'au bout**
+  chaque jour, et le record de tous les temps. **Le meilleur du jour, pas la
+  moyenne** : une soiree commence toujours plus mal qu'elle ne finit, et la
+  moyenne punirait les prises ou l'on travaille.
 
 ---
 

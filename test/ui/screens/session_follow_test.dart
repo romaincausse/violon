@@ -8,6 +8,7 @@ import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
 import 'package:violon/core/music/pitch_utils.dart';
+import 'package:violon/core/store/take_history.dart';
 import 'package:violon/ui/screens/session_screen.dart';
 import 'package:violon/ui/widgets/metronome_bar.dart';
 import 'package:violon/ui/widgets/score_view.dart';
@@ -38,6 +39,7 @@ void main() {
     WidgetTester tester, {
     ValueChanged<SessionResult>? onResult,
     Passage? autre,
+    ValueChanged<TakeRecord>? garder,
   }) async {
     t = 0;
     await tester.pumpWidget(
@@ -47,6 +49,9 @@ void main() {
           onChangePassage: () {},
           onTune: () {},
           onResult: onResult,
+          historyKey: 'passage:suivi',
+          onTakeRecorded: garder,
+          clock: () => DateTime(2026, 10, 2, 18),
           pitchSourceFactory: () async =>
               micro = FakePitchSource(const <PitchEstimate>[]),
         ),
@@ -232,5 +237,26 @@ void main() {
     await tester.tap(find.text('Arreter'));
     await tester.pump();
     expect(find.byKey(SessionScreen.poulsKey), findsNothing);
+  });
+
+  testWidgets('une prise suivie laisse une fiche dans l historique', (
+    WidgetTester tester,
+  ) async {
+    TakeRecord? fiche;
+    await poser(tester, garder: (TakeRecord r) => fiche = r);
+    await demarrer(tester);
+    await jouer(tester, null, 5);
+    for (final int m in <int>[62, 64, 66, 67, 69]) {
+      await jouer(tester, m, 26);
+    }
+    await jouer(tester, null, 90);
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(fiche, isNotNull);
+    expect(fiche!.key, 'passage:suivi');
+    expect(fiche!.at, DateTime(2026, 10, 2, 18));
+    expect(fiche!.reachedEnd, isTrue);
+    expect(fiche!.heldPulseBpm, 100);
+    expect(fiche!.tuningScore, 100);
+    expect(fiche!.notes, hasLength(5));
   });
 }
