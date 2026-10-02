@@ -63,7 +63,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
-| 12 | L'envie | 8 | 5 | On a envie d'y revenir |
+| 12 | L'envie | 8 | 2 | On a envie d'y revenir |
 
 **84 lots au 2 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
 corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
@@ -2083,8 +2083,8 @@ a l'ecran.
 |----|-----|------|-----|------|
 | ~~V7~~ | ~~Le mode concert~~ | | ★★★ | fait |
 | ~~V1~~ | ~~La seance du jour~~ | **Must** | ★★★ | fait |
-| V2 | Les premieres fois | | ★★★ | 2 |
-| V3 | Les jours joues | | ★★★ | 1 |
+| ~~V2~~ | ~~Les premieres fois~~ | | ★★★ | fait |
+| ~~V3~~ | ~~Les jours joues~~ | | ★★★ | fait |
 | V0 | Le chemin de l'enfant | | ★★ | 1 |
 | V4 | La carte retournee | | ★★ | 1 |
 | ~~V5~~ | ~~Ce soir, en une phrase~~ | | ★★ | fait |
@@ -2136,10 +2136,22 @@ calcule sur l'historique : "la mesure 7 tient pour la premiere fois", "tempo
 +8 depuis lundi". Les nombres absolus passent en second, plus petits. Une
 donnee qui monte se raconte comme un ecart, pas comme un niveau.
 
+**Fait** (`Firsts`). Au vu de l'historique avant la prise : *"Jusqu'au
+bout, pour la premiere fois."* ; *"La mesure 2 tient pour la premiere
+fois."* (propre aujourd'hui, jamais propre avant, vue au moins une fois) ;
+*"Tempo +8 depuis lundi."* (l'ecart au premier tempo tenu des sept derniers
+jours, s'il monte d'au moins quatre). Dans le bilan d'une prise suivie, ces
+phrases viennent en premier, en couleur ; les chiffres passent en dessous,
+en petit. La toute premiere prise d'un travail n'a pas de premiere fois :
+elle se mesure a ce qui precede.
+
 **V3 - Les jours joues.** Dans *Progres*, le nombre de jours joues ce mois,
 et rien d'autre. **Pas de serie, pas de remise a zero** : un jour manque ne
 retire rien, il n'ajoute pas. La seule regularite compatible avec "une
 erreur ne remet jamais un compteur a zero".
+
+**Fait** (`daysPlayedInMonth`), dans la carte *Aujourd'hui* de *Progres* :
+*"12 jours joues en octobre"*. Les jours, pas les prises.
 
 **V0 - Le chemin de l'enfant.** Le point de rupture, les courbes par gamme,
 le mode lecon et la latence sortent de son chemin et restent dans les

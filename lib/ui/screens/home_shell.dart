@@ -18,6 +18,7 @@ import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/play/headphones.dart';
 import '../../core/store/evening_line.dart';
+import '../../core/store/firsts.dart';
 import '../../core/store/take_sharer.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/document_saver.dart';
@@ -1145,6 +1146,7 @@ class _HomeShellState extends State<HomeShell> {
                     takePlayerFactory: widget.takePlayerFactory,
                     lesson: _lecon,
                     onTakeRecorded: _garder,
+                    firstsOf: (TakeRecord r) => Firsts.of(_historique, r),
                     clock: widget.clock,
                     onModeChanged: (SessionMode m) =>
                         setState(() => _menee = m),

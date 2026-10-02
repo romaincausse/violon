@@ -135,6 +135,7 @@ class SessionScreen extends StatefulWidget {
     this.onLoop,
     this.historyKey,
     this.onTakeRecorded,
+    this.firstsOf,
     this.clock = DateTime.now,
     this.takePlayerFactory,
     this.lesson = false,
@@ -164,6 +165,12 @@ class SessionScreen extends StatefulWidget {
 
   /// Une prise suivie vient de se terminer : voici ce qu'on en garde.
   final ValueChanged<TakeRecord>? onTakeRecorded;
+
+  /// Ce que la prise a de nouveau (V2), au vu de l'historique **avant**
+  /// qu'elle y soit ajoutee : le bilan le dit en premier.
+  final List<String> Function(TakeRecord take)? firstsOf;
+
+  static const Key premieresKey = Key('bilan-premieres');
 
   /// L'horloge de l'historique, injectable pour les tests.
   final DateTime Function() clock;
@@ -729,6 +736,7 @@ class _SessionScreenState extends State<SessionScreen>
           key: cle,
         );
         if (fiche != null) {
+          _premieres = widget.firstsOf?.call(fiche) ?? const <String>[];
           garder(fiche);
         }
       }
@@ -949,6 +957,9 @@ class _SessionScreenState extends State<SessionScreen>
   ///
   /// Rien pendant la lecture : un chiffre qui bouge pendant qu'on joue
   /// detournerait le regard de la partition, et changerait a chaque note.
+  /// Les premieres fois de la derniere prise (V2).
+  List<String> _premieres = const <String>[];
+
   _Bilan? _bilan() {
     if (_running) {
       return null;
@@ -978,6 +989,7 @@ class _SessionScreenState extends State<SessionScreen>
         selection: WorkLoop.weakBars(rapport),
         pulse: pulse,
         detail: widget.lesson ? _detail(rapport) : const <String>[],
+        premieres: _premieres,
       );
     }
     final String? pire = _tuning.weakestNoteId;
@@ -1802,7 +1814,11 @@ class _Bilan {
     this.selection,
     this.pulse,
     this.detail = const <String>[],
+    this.premieres = const <String>[],
   });
+
+  /// Ce que la prise a de nouveau (V2), dit avant les chiffres.
+  final List<String> premieres;
 
   /// Le detail chiffre du mode lecon (T4), une ligne par fait.
   final List<String> detail;
@@ -1962,15 +1978,29 @@ class _Resultat extends StatelessWidget {
     if (bilan.suivi) {
       final int? rythme = bilan.rythme;
       final int? mesure = bilan.mesure;
+      // Les premieres fois d'abord (V2) : une donnee qui monte se raconte
+      // comme un ecart, pas comme un niveau. Les chiffres passent en second,
+      // plus petits, quand il y a du nouveau a dire.
+      final bool duNouveau = bilan.premieres.isNotEmpty;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          if (duNouveau)
+            Text(
+              bilan.premieres.join(' '),
+              key: SessionScreen.premieresKey,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: theme.colorScheme.primary),
+              textAlign: TextAlign.center,
+            ),
           Text(
             rythme == null
                 ? 'Justesse ${bilan.score}'
                 : 'Justesse ${bilan.score} - Rythme $rythme',
             key: const Key('bilan-score'),
-            style: theme.textTheme.titleMedium,
+            style: duNouveau
+                ? theme.textTheme.bodySmall
+                : theme.textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
           if (bilan.tempo case final String tempo)
