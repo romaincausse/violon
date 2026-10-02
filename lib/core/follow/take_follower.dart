@@ -6,6 +6,7 @@ import '../scoring/live_tuning.dart';
 import 'offline_aligner.dart';
 import 'online_follower.dart';
 import 'performance_features.dart';
+import 'tempo_tracker.dart';
 
 /// Une hauteur entendue, rattachee a la note que l'eleve jouait.
 class HeardPitch {
@@ -44,7 +45,14 @@ class TakeFollower {
     this.featureA4 = PitchUtils.defaultA4,
     this.endSilenceMs = defaultEndSilenceMs,
   })  : _suiveur = OnlineFollower(passage, slurredInto: slurredInto),
+        tempo = TempoTracker(passage),
         tuning = LiveTuning(a4: a4);
+
+  /// Le tempo qu'il tient, deduit de ses attaques (lot D3).
+  final TempoTracker tempo;
+
+  /// Instant de la derniere trame recue : l'horloge de la prise.
+  int lastFrameMs = 0;
 
   final Passage passage;
 
@@ -137,6 +145,7 @@ class TakeFollower {
   List<HeardPitch> addFrame(FeatureFrame brute) {
     final FeatureFrame trame = brute.retuned(fromA4: featureA4, toA4: a4);
     _trames.add(trame);
+    lastFrameMs = trame.timeMs;
     final FollowPosition? p = _suiveur.add(trame);
     if (p == null) {
       return const <HeardPitch>[];
@@ -148,12 +157,19 @@ class TakeFollower {
       if (p.noteIndex != _derniereNote) {
         _derniereNote = p.noteIndex;
         _debutDeLaNote = p.timeMs;
+        // Le tempo ne se lit que sur ce dont le suiveur est sur.
+        if (!unsure) {
+          tempo.noteStarted(p.noteIndex!, p.timeMs);
+        }
       }
       if (p.noteIndex == passage.notes.length - 1) {
         reachedEnd = true;
       }
     } else {
       _debutDuSilence ??= p.timeMs;
+      if (_derniereNote != null) {
+        tempo.stopped();
+      }
       _derniereNote = null;
     }
     return _rattacher(p);
