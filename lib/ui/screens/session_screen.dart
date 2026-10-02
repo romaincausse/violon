@@ -125,6 +125,7 @@ class SessionScreen extends StatefulWidget {
     this.writtenPulseBpm,
     this.onAccompany,
     this.mode = SessionMode.follow,
+    this.onModeChanged,
     super.key,
   });
 
@@ -132,6 +133,16 @@ class SessionScreen extends StatefulWidget {
 
   /// Qui mene la prise : le suiveur par defaut, le metronome sur demande.
   final SessionMode mode;
+
+  /// L'eleve change de mode. `null` : le choix n'est pas propose.
+  ///
+  /// La coquille s'en souvient : l'ecran est reconstruit a chaque changement
+  /// d'onglet, et un choix qui s'oublierait en allant au repertoire serait un
+  /// piege.
+  final ValueChanged<SessionMode>? onModeChanged;
+
+  /// Le choix du mode, pour les tests.
+  static const Key modeKey = Key('choix-du-mode');
 
   /// Ouvre la saisie d'un autre passage.
   final VoidCallback onChangePassage;
@@ -233,6 +244,33 @@ class _SessionScreenState extends State<SessionScreen>
       );
 
   bool get _suit => widget.mode == SessionMode.follow;
+
+  /// Passer du suivi au metronome, ou l'inverse (lot S6).
+  ///
+  /// **Le suivi reste le defaut** (ADR-009) ; le metronome sert quand le but
+  /// est justement de tenir une mesure imposee -- un passage qu'on remonte
+  /// cran par cran, ou une gamme a tempo fixe.
+  Widget? _choixDuMode() {
+    final ValueChanged<SessionMode>? changer = widget.onModeChanged;
+    if (changer == null) {
+      return null;
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: SessionScreen.modeKey,
+        onPressed: _running
+            ? null
+            : () => changer(
+                  _suit ? SessionMode.metronome : SessionMode.follow,
+                ),
+        icon: Icon(_suit ? Icons.timer_outlined : Icons.hearing, size: 18),
+        label: Text(
+          _suit ? 'Jouer au metronome' : 'Jouer a mon tempo',
+        ),
+      ),
+    );
+  }
 
   /// Le suiveur doute de la position (S5).
   bool get _cherche => _suit && _running && (_suivi?.unsure ?? false);
@@ -620,6 +658,11 @@ class _SessionScreenState extends State<SessionScreen>
         _trace.reset();
       });
     }
+    // Changer de mode efface la prise precedente : son curseur et ses
+    // couleurs venaient de l'autre facon de jouer.
+    if (widget.mode != oldWidget.mode && _running) {
+      _stop();
+    }
     // Un nouveau diapason change tous les verdicts : les couleurs deja
     // affichees ont ete calculees contre l'ancien.
     if (widget.a4 != oldWidget.a4) {
@@ -999,6 +1042,7 @@ class _SessionScreenState extends State<SessionScreen>
         // En suivi, pas de metronome : il imposerait un tempo a celui qu'on
         // laisse jouer au sien (ADR-009).
         if (!_suit) _metronome(),
+        if (_choixDuMode() case final Widget choix) choix,
         // En decouverte, la partition a l'ecran serait une seconde partition
         // a suivre, en plus petit que celle du pupitre. Elle encombre.
         if (_profil == DisplayProfile.parCoeur)
@@ -1086,6 +1130,7 @@ class _SessionScreenState extends State<SessionScreen>
                         _metronome(compact: true),
                         const SizedBox(height: 12),
                       ],
+                      if (_choixDuMode() case final Widget choix) choix,
                       // Plus bas qu'en portrait : en paysage la hauteur est la
                       // ressource rare, et un ruban de 24 points se lit
                       // encore.
