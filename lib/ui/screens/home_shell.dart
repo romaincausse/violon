@@ -406,6 +406,7 @@ class _HomeShellState extends State<HomeShell> {
               startPulseBpm: widget.passage.pulseBpm,
               pitchSourceFactory: widget.pitchSourceFactory,
               a4: widget.a4,
+              lesson: _lecon,
             ),
           ),
         );
@@ -794,7 +795,12 @@ class _HomeShellState extends State<HomeShell> {
           piece: morceau,
           initialFrom: dernier?.fromMeasure,
           initialTo: dernier?.toMeasure,
-          heat: MeasureHeat.of(_historique, morceau.id, widget.clock()),
+          // La carte de ce qui a progresse pour lui ; celle de ce qui
+          // resiste pour le professeur, en mode lecon (V4).
+          heat: _lecon
+              ? MeasureHeat.of(_historique, morceau.id, widget.clock())
+              : null,
+          progress: MeasureProgress.of(_historique, morceau.id, widget.clock()),
         ),
       ),
     );
@@ -1029,6 +1035,20 @@ class _HomeShellState extends State<HomeShell> {
                   (BuildContext c) => MetronomeScreen(engine: _son),
                 ),
               ),
+              // Ce qui suit est pour les grands (V0) : le micro a verifier,
+              // la latence a mesurer, le mode lecon, le banc. Rien n'est
+              // retire, tout est deplace sous un trait.
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Pour les grands',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+              ),
               ListTile(
                 leading: const Icon(Icons.mic),
                 title: const Text('Est-ce qu elle m entend ?'),
@@ -1159,6 +1179,7 @@ class _HomeShellState extends State<HomeShell> {
                             startPulseBpm: pulse,
                             pitchSourceFactory: widget.pitchSourceFactory,
                             a4: widget.a4,
+                            lesson: _lecon,
                           ),
                         ),
                       ),
@@ -1187,6 +1208,7 @@ class _HomeShellState extends State<HomeShell> {
                   history: _historique,
                   clock: widget.clock,
                   saver: widget.documentSaver,
+                  detailed: _lecon,
                 )
               : _Repertoire(
                   passage: widget.passage,

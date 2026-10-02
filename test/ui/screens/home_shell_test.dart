@@ -177,8 +177,9 @@ void main() {
       await tester.tap(find.byKey(HomeShell.progresKey));
       await tester.pumpAndSettle();
       expect(find.byType(ProgressScreen), findsOneWidget);
-      expect(find.text('Gamme de sol'), findsOneWidget);
-      expect(find.textContaining('Record : 66'), findsOneWidget);
+      // Les courbes par travail sont sorties de son chemin (V0) : a la
+      // maison, le jour et ce qui monte ; les courbes en mode lecon.
+      expect(find.text('Gamme de sol'), findsNothing);
       expect(find.text('Rien encore aujourd hui.'), findsOneWidget);
     });
 

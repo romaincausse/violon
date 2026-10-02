@@ -30,6 +30,7 @@ void main() {
     int? de,
     int? a,
     MeasureHeat? chaleur,
+    MeasureProgress? progres,
   }) async {
     rendu = null;
     await tester.binding.setSurfaceSize(const Size(400, 900));
@@ -47,6 +48,7 @@ void main() {
                       initialFrom: de,
                       initialTo: a,
                       heat: chaleur,
+                      progress: progres,
                     ),
                   ),
                 );
@@ -127,6 +129,48 @@ void main() {
       await tester.tap(find.byKey(PieceScreen.chaudesKey));
       await tester.pump();
       expect(find.text('Mesures 9 a 10'), findsOneWidget);
+    });
+
+    testWidgets('la carte retournee nomme ce qui a le plus progresse', (
+      WidgetTester tester,
+    ) async {
+      final ImportedPiece piece = douzeMesures();
+      final DateTime maintenant = DateTime(2026, 10, 20);
+      TakeRecord prise(int joursAvant, List<MeasureTrace> mesures) =>
+          TakeRecord(
+            atMs: maintenant
+                .subtract(Duration(days: joursAvant))
+                .millisecondsSinceEpoch,
+            key: 'piece:${piece.id}:7-12',
+            title: piece.title,
+            fromMeasure: 7,
+            toMeasure: 12,
+            writtenPulseBpm: 94,
+            durationMs: 30000,
+            measures: mesures,
+          );
+      final TakeHistory h = TakeHistory.vide
+          .withTake(prise(14, const <MeasureTrace>[
+            MeasureTrace(measure: 9, difficulty: 50),
+            MeasureTrace(measure: 10, difficulty: 60),
+          ]))
+          .withTake(prise(1, const <MeasureTrace>[
+            MeasureTrace(measure: 9, difficulty: 10),
+            MeasureTrace(measure: 10, difficulty: 55),
+          ]));
+      await ouvrir(
+        tester,
+        piece,
+        progres: MeasureProgress.of(h, piece.id, maintenant),
+      );
+      expect(find.byKey(PieceScreen.progresKey), findsOneWidget);
+      // Sans la chaleur : elle ne vient qu'en mode lecon.
+      expect(find.byKey(PieceScreen.chaleurKey), findsNothing);
+      expect(
+          find.text('Ce qui a le plus progresse : mesure 9'), findsOneWidget);
+      await tester.tap(find.byKey(PieceScreen.progresseesKey));
+      await tester.pump();
+      expect(find.text('Mesure 9'), findsOneWidget);
     });
 
     testWidgets('un morceau jamais travaille n a pas de carte', (
