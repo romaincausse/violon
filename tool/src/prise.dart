@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:violon/core/audio/wav.dart';
 import 'package:violon/core/follow/bench_score.dart';
 import 'package:violon/core/follow/offline_aligner.dart';
+import 'package:violon/core/follow/online_follower.dart';
 import 'package:violon/core/follow/performance_features.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 
@@ -43,19 +44,41 @@ class Prise {
     return (Prise._(nom, base, m, partition), null);
   }
 
-  Alignment aligner() {
+  late final List<FeatureFrame> _trames = () {
     final WavData son = Wav.decode(File('$base.wav').readAsBytesSync());
     final double a4 =
         (meta['la_mesure_hz'] as num?)?.toDouble() ?? PitchUtils.defaultA4;
-    return OfflineAligner(
+    return PerformanceFeatures.extract(
+      son.samples,
+      sampleRate: son.sampleRate,
+      a4: a4,
+    );
+  }();
+
+  /// L'aligneur hors ligne : celui du critere du jalon 5.
+  Alignment aligner() => OfflineAligner(
+        partition.passage,
+        slurredInto: partition.slurredInto,
+      ).align(_trames);
+
+  /// Le suiveur en direct, trame apres trame, comme sur le telephone.
+  Alignment suivre() {
+    final OnlineFollower suiveur = OnlineFollower(
       partition.passage,
       slurredInto: partition.slurredInto,
-    ).align(
-      PerformanceFeatures.extract(
-        son.samples,
-        sampleRate: son.sampleRate,
-        a4: a4,
-      ),
+    );
+    final List<String?> notes = List<String?>.filled(_trames.length, null);
+    int i = 0;
+    for (final FeatureFrame t in _trames) {
+      final FollowPosition? pos = suiveur.add(t);
+      if (pos != null) {
+        notes[i++] =
+            pos.playing ? partition.passage.notes[pos.noteIndex!].id : null;
+      }
+    }
+    return Alignment(
+      frameTimesMs: <int>[for (final FeatureFrame t in _trames) t.timeMs],
+      frameNotes: notes,
     );
   }
 }

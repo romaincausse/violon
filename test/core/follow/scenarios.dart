@@ -47,6 +47,51 @@ Passage melodie() {
   );
 }
 
+/// Le piege d'*Into the Stars*, en petit : la mesure 3 reprend la mesure 1
+/// note pour note, et les phrases ne se separent qu'a la deuxieme note de la
+/// mesure suivante.
+///
+///   m1  re mi fa# sol    m2  la sol fa# mi
+///   m3  re mi fa# sol    m4  la si do# re
+Passage phraseRepetee() {
+  final PassageBuilder b = PassageBuilder();
+  for (final int m in <int>[
+    62, 64, 66, 67, 69, 67, 66, 64, //
+    62, 64, 66, 67, 69, 71, 73, 74,
+  ]) {
+    b.add(m, NoteValue.quarter);
+  }
+  return Passage(
+    title: 'phrase repetee',
+    notes: b.notes,
+    ticksPerBeat: b.ticksPerBeat,
+    writtenTempoBpm: 92,
+  );
+}
+
+/// Les positions d'une prise, au fil de l'eau, telles que le suiveur en
+/// direct les a rendues.
+Alignment enDirect(
+  List<FeatureFrame> trames,
+  Passage passage, {
+  Set<String> slurredInto = const <String>{},
+}) {
+  final OnlineFollower suiveur =
+      OnlineFollower(passage, slurredInto: slurredInto);
+  final List<String?> notes = List<String?>.filled(trames.length, null);
+  int i = 0;
+  for (final FeatureFrame t in trames) {
+    final FollowPosition? pos = suiveur.add(t);
+    if (pos != null) {
+      notes[i++] = pos.playing ? passage.notes[pos.noteIndex!].id : null;
+    }
+  }
+  return Alignment(
+    frameTimesMs: <int>[for (final FeatureFrame t in trames) t.timeMs],
+    frameNotes: notes,
+  );
+}
+
 /// Toute la chaine, du scenario au verdict.
 AlignmentReport aligner(
   SyntheticTake prise,
@@ -75,21 +120,8 @@ AlignmentReport suivre(
 }) {
   final List<FeatureFrame> trames =
       PerformanceFeatures.extract(prise.render(synth ?? ViolinSynth()));
-  final OnlineFollower suiveur =
-      OnlineFollower(passage, slurredInto: slurredInto);
-  final List<String?> notes = List<String?>.filled(trames.length, null);
-  int i = 0;
-  for (final FeatureFrame t in trames) {
-    final FollowPosition? pos = suiveur.add(t);
-    if (pos != null) {
-      notes[i++] = pos.playing ? passage.notes[pos.noteIndex!].id : null;
-    }
-  }
   return AlignmentReport.evaluate(
-    Alignment(
-      frameTimesMs: <int>[for (final FeatureFrame t in trames) t.timeMs],
-      frameNotes: notes,
-    ),
+    enDirect(trames, passage, slurredInto: slurredInto),
     GroundTruth.parseAudacity(prise.audacityLabels()),
     passage,
   );

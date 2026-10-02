@@ -247,6 +247,38 @@ une invitation -- et la seule recompense que le projet s'autorise.
 Le point commun des trois : **rien de neuf, que des liens**. Cinq soirees pour
 qu'une pile de fonctionnalites devienne une routine du soir.
 
+## Le suivi en direct, et ce qu'il ne peut pas savoir
+
+Octobre 2026, jalon 6, sur les premieres vraies prises du banc.
+
+Le suiveur en direct fait aussi bien que l'aligneur sur la synthese, et
+moins bien sur les vraies prises des que l'eleve revient en arriere (54 %
+d'accord sur la prise 06). La cause n'est pas technique : dans *Into the
+Stars*, la mesure 19 commence comme la 15, et 23 a 28 reprennent 15 a 20.
+**Quand l'eleve revient a la 15, le direct entend une suite normale vers la
+19.** Seule la suite le detrompe, et un retard d'affichage d'une seconde et
+demie n'y suffit pas.
+
+Deux consequences, tranchees :
+
+- **La note se calcule sur la prise entiere**, par l'aligneur hors ligne,
+  une fois l'archet pose. Le direct sert a l'ecran. C'est l'ADR-010 pris au
+  mot : le juge reprend les attaques apres coup, il n'a jamais eu besoin du
+  direct.
+- **Le direct doit dire quand il ne sait pas** (S5) plutot que de colorer
+  avec assurance une mesure qui n'est pas la bonne.
+
+**Un modele de duree, essaye puis retire.** Comparer le rapport des durees de
+deux notes voisines au rapport ecrit -- sans imposer de tempo, donc fidele a
+l'ADR-009 -- devait separer les noires de la mesure 15 des croches de la 27.
+Il a gagne trois points sur le morceau joue d'un trait, et fait basculer
+toute la prise 06 sur les mesures 23-26, identiques a 15-18 jusqu'au rythme.
+Lecon : sur un passage reellement repete, aucun indice acoustique ne tranche ;
+le seul juge est l'a priori de saut (revenir de trois mesures plutot
+qu'avancer de cinq), et tout terme qui le noie fait plus de mal que de bien.
+A reessayer seulement avec les etiquettes corrigees du banc, qui diront qui
+avait raison.
+
 ## Tensions ouvertes, a trancher un jour
 
 Notees ici plutot que tranchees dans l'urgence, parce que chacune oppose deux

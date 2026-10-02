@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 7 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 4 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1362,7 +1362,7 @@ sur le telephone.
 |----|-----|------|-----|------|
 | ~~S1~~ | ~~Flux unique hauteurs + attaques, sans trou~~ | **Must** | ★★ | fait |
 | ~~S2~~ | ~~Suiveur en ligne~~ | **Must** | ★★★ | fait |
-| S3 | Re-ancrage : arret, reprise, saut | **Must** | ★★★ | 3 |
+| ~~S3~~ | ~~Re-ancrage : arret, reprise, saut~~ | **Must** | ★★★ | fait |
 | S4 | Position suivie a l'ecran | **Must** | ★★★ | 1 |
 | S5 | Confiance du suiveur visible | | ★★★ | 1 |
 | D3 | Pouls du tempo detecte | | ★★ | 1 |
@@ -1437,6 +1437,36 @@ montrer ou il en est, et **dire quand il ne sait pas** (S5). **La note se
 calcule sur la prise entiere**, une fois l'archet pose, par l'aligneur hors
 ligne -- qui voit la suite et se corrige. Le juge n'a jamais eu besoin du
 direct : il reprend les attaques apres coup.
+
+### S3 - Re-ancrage : arret, reprise, saut
+
+**Fait, et surtout mesure.** Le modele savait deja revenir au debut de
+n'importe quelle mesure (P2) ; ce qui manquait, c'etait de savoir **combien de
+temps** le suiveur met a se retrouver apres une rupture. `Reanchoring` le
+mesure : pour chaque endroit ou l'eleve ne joue pas la note suivante, le delai
+avant que le suiveur soit dans la mesure ou l'eleve se trouve **et y reste**
+un quart de seconde. `tool/banc.dart` rapporte desormais, pour chaque prise,
+le taux du direct et son pire rattrapage, a cote du critere.
+
+| Cas | Hors ligne | Direct |
+|---|---|---|
+| Arret puis reprise, retour en arriere (synthese) | < 25 ms | < 25 ms |
+| Phrase repetee, retour au debut (synthese) | 18 ms | **3,3 s** |
+
+Les 3,3 secondes tombent exactement la ou la musique tranche : cinq noires
+apres le retour, a la deuxieme note de la mesure qui suit la phrase repetee.
+**Avant, personne ne peut savoir** -- c'est le cas d'*Into the Stars*, et les
+tests le gardent : il doit se retrouver des que la musique le permet, et pas
+plus tard.
+
+**Un modele de duree a ete essaye, et retire.** L'idee : comparer les durees
+de deux notes voisines au rapport ecrit, sans rien supposer du tempo, pour
+distinguer la mesure 15 (noires) de la mesure 27 (croches). Sur les vraies
+prises, il gagnait trois points sur le morceau joue d'un trait, mais il
+faisait **basculer toute la prise 06** sur les mesures 23 a 26 -- identiques
+a 15-18, notes et rythmes compris -- la ou l'aligneur sans lui avait raison.
+Un reglage qui degrade le cas qu'il devait guerir ne se livre pas. Detail
+dans `docs/journal.md`.
 
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.
