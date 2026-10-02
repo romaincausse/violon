@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/import/imported_piece.dart';
 import 'package:violon/core/import/musicxml_reader.dart';
+import 'package:violon/core/store/measure_heat.dart';
+import 'package:violon/core/store/take_history.dart';
 import 'package:violon/ui/screens/piece_screen.dart';
 import 'package:violon/ui/widgets/score_view.dart';
 
@@ -27,6 +29,7 @@ void main() {
     ImportedPiece piece, {
     int? de,
     int? a,
+    MeasureHeat? chaleur,
   }) async {
     rendu = null;
     await tester.binding.setSurfaceSize(const Size(400, 900));
@@ -40,7 +43,11 @@ void main() {
                 rendu = await Navigator.of(context).push<PieceAction>(
                   MaterialPageRoute<PieceAction>(
                     builder: (BuildContext c) => PieceScreen(
-                        piece: piece, initialFrom: de, initialTo: a),
+                      piece: piece,
+                      initialFrom: de,
+                      initialTo: a,
+                      heat: chaleur,
+                    ),
                   ),
                 );
               },
@@ -87,6 +94,46 @@ void main() {
         ),
       );
       expect(bouton.onPressed, isNull);
+    });
+
+    testWidgets('la carte de chaleur mene aux mesures qui coincent', (
+      WidgetTester tester,
+    ) async {
+      final ImportedPiece piece = douzeMesures();
+      final DateTime maintenant = DateTime(2026, 10, 20);
+      final TakeHistory h = TakeHistory.vide.withTake(
+        TakeRecord(
+          atMs: maintenant.millisecondsSinceEpoch,
+          key: 'piece:${piece.id}:7-12',
+          title: piece.title,
+          fromMeasure: 7,
+          toMeasure: 12,
+          writtenPulseBpm: 94,
+          durationMs: 30000,
+          measures: const <MeasureTrace>[
+            MeasureTrace(measure: 9, difficulty: 50),
+            MeasureTrace(measure: 10, difficulty: 60),
+            MeasureTrace(measure: 11, difficulty: 4),
+          ],
+        ),
+      );
+      await ouvrir(
+        tester,
+        piece,
+        chaleur: MeasureHeat.of(h, piece.id, maintenant),
+      );
+      expect(find.byKey(PieceScreen.chaleurKey), findsOneWidget);
+      expect(find.text('La ou ca coince : mesures 9 et 10'), findsOneWidget);
+      await tester.tap(find.byKey(PieceScreen.chaudesKey));
+      await tester.pump();
+      expect(find.text('Mesures 9 a 10'), findsOneWidget);
+    });
+
+    testWidgets('un morceau jamais travaille n a pas de carte', (
+      WidgetTester tester,
+    ) async {
+      await ouvrir(tester, douzeMesures());
+      expect(find.byKey(PieceScreen.chaleurKey), findsNothing);
     });
 
     testWidgets('retirer demande confirmation', (WidgetTester tester) async {

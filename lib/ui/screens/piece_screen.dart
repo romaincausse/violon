@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/import/imported_piece.dart';
 import '../../core/music/passage.dart';
+import '../../core/store/measure_heat.dart';
 import '../widgets/score_view.dart';
 
 /// Ce que l'ecran d'un morceau rend en se fermant.
@@ -35,8 +36,13 @@ class PieceScreen extends StatefulWidget {
     required this.piece,
     this.initialFrom,
     this.initialTo,
+    this.heat,
     super.key,
   });
+
+  /// Ou ca coince depuis des semaines (lot H2), si le morceau a deja ete
+  /// travaille.
+  final MeasureHeat? heat;
 
   final ImportedPiece piece;
 
@@ -47,6 +53,8 @@ class PieceScreen extends StatefulWidget {
   static const Key travaillerKey = Key('travailler-ces-mesures');
   static const Key retirerKey = Key('retirer-le-morceau');
   static const Key mesuresKey = Key('choisir-les-mesures');
+  static const Key chaleurKey = Key('carte-de-chaleur');
+  static const Key chaudesKey = Key('choisir-les-mesures-chaudes');
 
   /// Longueur proposee a l'ouverture d'un morceau neuf.
   static const int mesuresParDefaut = 8;
@@ -139,6 +147,19 @@ class _PieceScreenState extends State<PieceScreen> {
               const SizedBox(height: 12),
               _Simplifications(warnings: piece.warnings),
             ],
+            if (widget.heat case final MeasureHeat h
+                when h.heat.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 16),
+              _Chaleur(
+                heat: h,
+                premiere: _premiere,
+                derniere: _derniere,
+                onChoisir: (int de, int a) => setState(() {
+                  _de = de;
+                  _a = a;
+                }),
+              ),
+            ],
             const SizedBox(height: 24),
             Text(
               _de == _a ? 'Mesure $_de' : 'Mesures $_de a $_a',
@@ -220,6 +241,74 @@ class _Simplifications extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// La carte de chaleur du morceau (H2) : une case par mesure, d'autant plus
+/// coloree que la mesure resiste depuis des semaines.
+///
+/// **Pas une partition rouge** : une rangee discrete, et une seule phrase --
+/// les deux mesures les plus chaudes, et de quoi les travailler d'un appui.
+class _Chaleur extends StatelessWidget {
+  const _Chaleur({
+    required this.heat,
+    required this.premiere,
+    required this.derniere,
+    required this.onChoisir,
+  });
+
+  final MeasureHeat heat;
+  final int premiere;
+  final int derniere;
+  final void Function(int de, int a) onChoisir;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<int> chaudes = heat.hottest();
+    return Column(
+      key: PieceScreen.chaleurKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(
+          height: 14,
+          child: Row(
+            children: <Widget>[
+              for (int m = premiere; m <= derniere; m++)
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                    color: Color.lerp(
+                      theme.colorScheme.surfaceContainerHighest,
+                      theme.colorScheme.tertiary,
+                      heat.heat[m] ?? 0,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (chaudes.isNotEmpty)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              key: PieceScreen.chaudesKey,
+              // Deux mesures voisines se travaillent ensemble ; eloignees,
+              // on commence par la premiere.
+              onPressed: () =>
+                  chaudes.length == 2 && chaudes.last - chaudes.first <= 3
+                      ? onChoisir(chaudes.first, chaudes.last)
+                      : onChoisir(chaudes.first, chaudes.first),
+              child: Text(
+                chaudes.length == 1
+                    ? 'La ou ca coince : mesure ${chaudes.single}'
+                    : 'La ou ca coince : mesures ${chaudes.first} et '
+                        '${chaudes.last}',
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
