@@ -3,6 +3,7 @@ import '../music/passage.dart';
 import '../music/pitch_utils.dart';
 import '../music/score_note.dart';
 import '../scoring/live_tuning.dart';
+import '../scoring/rhythm_judge.dart';
 import 'offline_aligner.dart';
 import 'online_follower.dart';
 import 'performance_features.dart';
@@ -208,6 +209,9 @@ class TakeFollower {
     return sortie;
   }
 
+  /// Le juge de rythme de la prise entiere, une fois [rescore] passe.
+  RhythmJudge? rhythm;
+
   /// Reprend toute la prise avec l'aligneur hors ligne, et rend la justesse
   /// qui compte (ADR-010).
   ///
@@ -222,6 +226,9 @@ class TakeFollower {
     }
     final Alignment a =
         OfflineAligner(passage, slurredInto: slurredInto).align(_trames);
+    // Le meme alignement juge le rythme : un seul alignement, deux lectures
+    // (ADR-010).
+    rhythm = RhythmJudge.judge(passage, a);
     final Map<String, ScoreNote> parId = <String, ScoreNote>{
       for (final ScoreNote n in passage.notes) n.id: n,
     };
