@@ -16,6 +16,7 @@ import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
 import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
+import '../../core/store/measure_heat.dart';
 import '../../core/store/session_store.dart';
 import '../../core/store/take_history.dart';
 import 'accompaniment_screen.dart';
@@ -332,6 +333,7 @@ class _HomeShellState extends State<HomeShell> {
           piece: morceau,
           initialFrom: dernier?.fromMeasure,
           initialTo: dernier?.toMeasure,
+          heat: MeasureHeat.of(_historique, morceau.id, widget.clock()),
         ),
       ),
     );

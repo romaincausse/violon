@@ -60,7 +60,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 3 | Le progres devient visible |
+| 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
@@ -1728,7 +1728,7 @@ et la notation du rythme, et attend donc sa place.
 | ~~H3~~ | ~~Erreurs systematiques par doigt~~ | | ★★★ | fait |
 | ~~H4~~ | ~~Courbes de progression~~ | | ★★★ | fait |
 | ~~H5~~ | ~~Journal de seance~~ | | ★★ | fait |
-| H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
+| ~~H2~~ | ~~Heatmap cumulee sur la partition~~ | | ★★ | fait |
 | ~~M2~~ | ~~Avant / apres audible~~ | | ★★★ | fait |
 | ~~H6~~ | ~~Import d'un morceau entier~~ | | ★★ | fait |
 | ~~I3~~ | ~~Justesse par degre dans la tonalite~~ | | ★★ | fait |
@@ -1858,6 +1858,21 @@ chevalet."*
 **Limite connue** : la premiere position est supposee. En troisieme position,
 le doigt deduit est faux ; il faudra les doigtes de la partition (MusicXML les
 porte parfois) pour aller plus loin.
+
+### H2 - Carte de chaleur cumulee
+
+**Fait** (`MeasureHeat`). Pour chaque morceau, chaque mesure prend la
+difficulte moyenne que lui ont donnee les prises -- **la moyenne, pas la
+somme** : une mesure jouee vingt fois n'est pas vingt fois plus chaude. Une
+prise d'il y a une semaine pese moitie moins qu'une prise d'aujourd'hui : une
+mesure qui coincait et qu'on a travaillee **palit**, sinon la carte montrerait
+le passe et pas ce qu'il reste a faire.
+
+L'ecran du morceau montre une rangee discrete, une case par mesure -- pas une
+partition rouge -- et une phrase : *"La ou ca coince : mesures 9 et 10"*, qui
+selectionne ces mesures d'un appui.
+
+**Le jalon 9 est clos.**
 
 ---
 
