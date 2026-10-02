@@ -48,7 +48,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 ---
 
-## Les onze jalons
+## Les douze jalons
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
@@ -62,11 +62,15 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
-| 11 | L'accompagnement | 5 | 0 | On joue avec quelqu'un |
+| 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
+| 12 | L'envie | 8 | 12 | On a envie d'y revenir |
 
-**74 lots, tous livres sauf deux, au 2 octobre 2026.** Il ne reste que la fin
-du jalon 5 -- les etiquettes corrigees du banc (P1), puis le verdict chiffre
-et son ADR (P3) -- qui attendent les ecoutes du parent, pas du code.
+**84 lots au 2 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
+corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
+attendent les ecoutes du parent --, le violon et le violoncelle de
+l'accompagnement (J8), et le jalon 12 entier, ne le meme jour d'une question
+posee a l'application : qu'est-ce qui ferait qu'un enfant la rouvre tous les
+soirs ?
 
 Les jalons 6 a 11 ont ete livres **avant** ce verdict, a la demande de
 l'utilisateur, alors que le plan les faisait dependre de lui. Ce n'est pas
@@ -1957,6 +1961,8 @@ l'application a l'autre.
 | ~~J5~~ | ~~Accompagnement qui suit~~ | | ★ | fait |
 | ~~D6~~ | ~~Retour haptique hors ecoute~~ | | ★★ | fait |
 | ~~J6~~ | ~~Le son de l'accompagnement~~ | | ★★★ | fait |
+| ~~J7~~ | ~~Le banc d'ecoute~~ | | ★★★ | fait |
+| J8 | Violon et violoncelle sans vibrato | | ★★ | 2 |
 
 Le moteur audio (J1) et le metronome sonore (J3) ont ete avances au jalon 4,
 tires par le bourdon.
@@ -2042,6 +2048,97 @@ a la place du piano droit ; le profil classique du moteur ; les accords
 egrenes et les forces a peine inegales (`Humanizer`) ; le relache du piano
 allonge ; la basse remontee d'une octave sur le haut-parleur
 (`SpeakerVoicing`). Reste a entendre par celui qui a trouve le defaut.
+
+**J7 - Fait, le soir meme.** Le banc d'ecoute, `tool/ecoute.py` : il rend
+l'accompagnement en WAV **comme le telephone le joue** -- meme choix
+d'echantillon, meme vitesse, meme interpolation lineaire, meme boucle, meme
+relache, memes accords egrenes -- en trois scenes par instrument, et mesure
+les clics, l'aigu replie, la houle d'une boucle et le vibrato. Il existe
+parce que celui qui ecrit le code n'a pas d'oreilles sur le S22, et que le
+lot J4 avait tout mesure sauf ce qui s'entendait. Ses premiers chiffres sont
+dans `docs/journal.md`.
+
+**J8 - A faire.** Le violon et le violoncelle ne vont toujours pas, dit
+l'utilisateur ; le banc dit pourquoi : un vibrato de 51 cents sur le violon
+solo, 34 sur le violoncelle, qui fait tanguer un accord, et un violon riche
+en souffle. A essayer : les pupitres de VSCO (violons, altos) a la place du
+solo, un plafond de vibrato dans l'outil, sinon une autre source libre. Le
+banc tranche avant l'installation.
+
+
+## Jalon 12 - L'envie
+
+Le plan pose en tete que l'application doit donner envie de travailler son
+violon, et aucun jalon ne portait cette regle : les onze premiers
+construisent le professeur qui ecoute, aucun ne construit la raison de sortir
+le violon de sa boite. Ce jalon est ne le 2 octobre 2026 d'une question de
+l'utilisateur : qu'est-ce qui ferait qu'un enfant de onze ans fasse vingt
+minutes tous les jours, et aime ca ?
+
+**Il depend du verdict du jalon 5** : rien ici ne vaut si l'application n'est
+pas crue. Un seul "faux" quand il a joue juste, et il ne fera plus confiance
+a l'ecran.
+
+| ID | Lot | Must | ROI | Est. |
+|----|-----|------|-----|------|
+| V7 | Le mode concert | | ★★★ | 2 |
+| V1 | La seance du jour | **Must** | ★★★ | 3 |
+| V2 | Les premieres fois | | ★★★ | 2 |
+| V3 | Les jours joues | | ★★★ | 1 |
+| V0 | Le chemin de l'enfant | | ★★ | 1 |
+| V4 | La carte retournee | | ★★ | 1 |
+| V5 | Ce soir, en une phrase | | ★★ | 1 |
+| ~~V6~~ | ~~L'accompagnement du fichier~~ | | ★★ | couvert par J4 |
+
+**V7 - Le mode concert.** Jouer pour quelqu'un est le motivateur le plus
+fort qui existe, et la regle "aucun enregistrement conserve" l'interdisait.
+L'utilisateur a tranche (ADR-018) : l'enfant choisit d'enregistrer une prise,
+la reecoute, et l'envoie par le partage du systeme a qui il veut -- ou la
+range dans un fichier qu'il choisit. L'application ne la garde pas : elle
+vit en memoire le temps de l'ecran, et le fichier de partage ne survit pas
+au lancement suivant. Rien n'est note, rien ne va au professeur. En tete du
+jalon parce que la decision est prise et qu'il ne depend de rien.
+
+**V1 - La seance du jour.** Trois etapes, trois cases, et ce qui reste
+toujours visible. L'echauffement, une gamme dans la tonalite du morceau,
+bornee a trois minutes. Le travail, la mesure designee ou le devoir, en
+boucle, borne en essais -- et jamais au-dela de "on finit sur une
+reussite". La musique, le morceau entier, avec l'accompagnement si le casque
+est branche, sans note. **La seance se termine toujours par la musique** :
+c'est le point du lot. Il choisit l'ordre des deux premieres etapes, et
+laquelle des deux mesures proposees il prend. Le *must* du jalon : sans
+seance, l'application reste une boite a outils.
+
+**V2 - Les premieres fois.** Le bilan dit d'abord ce qui est nouveau,
+calcule sur l'historique : "la mesure 7 tient pour la premiere fois", "tempo
++8 depuis lundi". Les nombres absolus passent en second, plus petits. Une
+donnee qui monte se raconte comme un ecart, pas comme un niveau.
+
+**V3 - Les jours joues.** Dans *Progres*, le nombre de jours joues ce mois,
+et rien d'autre. **Pas de serie, pas de remise a zero** : un jour manque ne
+retire rien, il n'ajoute pas. La seule regularite compatible avec "une
+erreur ne remet jamais un compteur a zero".
+
+**V0 - Le chemin de l'enfant.** Le point de rupture, les courbes par gamme,
+le mode lecon et la latence sortent de son chemin et restent dans les
+outils. Rien n'est retire, tout est deplace.
+
+**V4 - La carte retournee.** La rangee de cases chaudes sur l'ecran du
+morceau devient les mesures qui ont le plus progresse. La carte cumulee des
+mesures qui resistent ne s'affiche qu'en mode lecon, ou elle sert a
+quelqu'un.
+
+**V5 - Ce soir, en une phrase.** A la fin de la seance, une phrase qu'il
+montre : la duree, ce qui a tenu, et un fait s'il y en a un -- "ta plus
+longue seance de la semaine". Elle s'adresse a lui, il la montre a qui il
+veut. La ligne du jalon 10 tient : l'application ne rapporte pas a l'adulte,
+l'enfant montre.
+
+**V6 - Couvert.** L'ADR-015 garde deja les parties du MusicXML que l'import
+jetait : quand le fichier porte un piano, c'est lui que l'accompagnement
+joue, devant les accords deduits.
+
+---
 
 ## Le palmares
 
