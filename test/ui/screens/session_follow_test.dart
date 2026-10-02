@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
+import 'package:violon/core/audio/take_player.dart';
 import 'package:violon/core/follow/performance_features.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
@@ -33,6 +35,13 @@ void main() {
   }
 
   late FakePitchSource micro;
+
+  // 23 ms d'un son fort, et autant de silence, en PCM 16 bits.
+  final Uint8List son = Uint8List.fromList(<int>[
+    for (int i = 0; i < 1014; i++)
+      ...(i.isEven ? <int>[0x00, 0x40] : <int>[0x00, 0xC0]),
+  ]);
+  final Uint8List silence = Uint8List(2028);
   int t = 0;
 
   Future<void> poser(
@@ -40,6 +49,7 @@ void main() {
     ValueChanged<SessionResult>? onResult,
     Passage? autre,
     ValueChanged<TakeRecord>? garder,
+    TakePlayerFactory? liseur,
   }) async {
     t = 0;
     await tester.pumpWidget(
@@ -52,6 +62,7 @@ void main() {
           historyKey: 'passage:suivi',
           onTakeRecorded: garder,
           clock: () => DateTime(2026, 10, 2, 18),
+          takePlayerFactory: liseur,
           pitchSourceFactory: () async =>
               micro = FakePitchSource(const <PitchEstimate>[]),
         ),
@@ -82,6 +93,8 @@ void main() {
           ),
         );
       }
+      // Le son lui-meme, pour l'avant / apres : fort quand il joue.
+      micro.emitAudio(midi == null ? silence : son);
       micro.emitFeature(
         FeatureFrame(
           timeMs: t,
@@ -258,5 +271,39 @@ void main() {
     expect(fiche!.heldPulseBpm, 100);
     expect(fiche!.tuningScore, 100);
     expect(fiche!.notes, hasLength(5));
+  });
+
+  testWidgets('apres deux prises, on reentend la premiere et la derniere', (
+    WidgetTester tester,
+  ) async {
+    final FakeTakePlayer liseur = FakeTakePlayer();
+    await poser(tester, liseur: () => liseur);
+    Future<void> unePrise() async {
+      await demarrer(tester);
+      await jouer(tester, null, 5);
+      for (final int m in <int>[62, 64, 66, 67, 69]) {
+        await jouer(tester, m, 15);
+      }
+      await jouer(tester, null, 90);
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+
+    await unePrise();
+    expect(find.byKey(SessionScreen.avantKey), findsNothing,
+        reason: 'une seule prise : rien a comparer');
+    await unePrise();
+    expect(find.byKey(SessionScreen.avantKey), findsOneWidget);
+    expect(find.byKey(SessionScreen.apresKey), findsOneWidget);
+    await tester.tap(find.byKey(SessionScreen.avantKey));
+    await tester.pump();
+    expect(liseur.joues, hasLength(1));
+    liseur.terminer();
+    await tester.pump();
+    await tester.tap(find.byKey(SessionScreen.apresKey));
+    await tester.pump();
+    expect(liseur.joues, hasLength(2));
+    expect(liseur.joues.first, isNot(same(liseur.joues.last)));
+    liseur.terminer();
+    await tester.pump();
   });
 }
