@@ -21,6 +21,7 @@ import 'core/store/document_saver.dart';
 import 'core/store/homework.dart';
 import 'core/store/session_store.dart';
 import 'core/store/take_history.dart';
+import 'core/store/take_sharer.dart';
 import 'platform/audio/default_pitch_source.dart';
 import 'platform/audio/record_bench_recorder.dart';
 import 'platform/audio/soloud_audio_engine.dart';
@@ -46,6 +47,7 @@ typedef HistoryStoreFactory = HistoryStore Function();
 typedef DocumentSaverFactory = DocumentSaver Function();
 typedef HomeworkStoreFactory = HomeworkStore Function();
 typedef HeadphoneProbeFactory = HeadphoneProbe Function();
+typedef TakeSharerFactory = TakeSharer Function();
 typedef DocumentPickerFactory = DocumentPicker Function();
 
 class ViolonApp extends StatefulWidget {
@@ -60,6 +62,7 @@ class ViolonApp extends StatefulWidget {
     this.documentSaverFactory = defaultDocumentSaver,
     this.homeworkStoreFactory = defaultHomeworkStore,
     this.headphoneProbeFactory = defaultHeadphoneProbe,
+    this.takeSharerFactory = defaultTakeSharer,
     this.documentPickerFactory = defaultDocumentPicker,
     this.pieceImporter = const PieceImporter(inflate: inflateRaw),
     this.benchRecorderFactory = kDebugMode ? defaultBenchRecorder : null,
@@ -82,6 +85,9 @@ class ViolonApp extends StatefulWidget {
 
   /// Ce qui est branche en sortie, pour l'accompagnement qui suit (J5).
   final HeadphoneProbeFactory headphoneProbeFactory;
+
+  /// Fabrique du partage d'une prise de concert (V7, ADR-018).
+  final TakeSharerFactory takeSharerFactory;
 
   /// Fabrique du magasin des morceaux, injectable comme la memoire.
   final PieceStoreFactory pieceStoreFactory;
@@ -126,6 +132,7 @@ class _ViolonAppState extends State<ViolonApp> {
   late final DocumentSaver _enregistreur = widget.documentSaverFactory();
   late final HomeworkStore _devoirsStore = widget.homeworkStoreFactory();
   late final HeadphoneProbe _casque = widget.headphoneProbeFactory();
+  late final TakeSharer _partage = widget.takeSharerFactory();
   HomeworkList _devoirs = HomeworkList.vide;
   TakeHistory _historique = TakeHistory.vide;
   late final DocumentPicker _selecteur = widget.documentPickerFactory();
@@ -273,6 +280,7 @@ class _ViolonAppState extends State<ViolonApp> {
                 documentSaver: _enregistreur,
                 homeworkStore: _devoirsStore,
                 headphones: _casque,
+                takeSharer: _partage,
                 initialHomework: _devoirs,
                 initialHistory: _historique,
                 initialExcerpt: _extrait,

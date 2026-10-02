@@ -44,6 +44,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Le partage d'une prise de concert (ADR-018) : Android ne partage
+             qu'un fichier, et un fichier du cache prive ne se montre a une
+             autre application que par ce fournisseur. Rien d'autre n'est
+             expose : le seul chemin autorise est cache/concert/. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fichiers"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/chemins_partages" />
+        </provider>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

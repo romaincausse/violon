@@ -100,11 +100,17 @@ des intentions :
    ne joue plus pareil -- et ca poserait en prime une question de donnees
    personnelles d'un mineur que l'ADR-005 avait justement evacuee.
 
-   Une seule exception, qui n'est pas l'application : l'enregistreur du banc
-   d'essai (jalon 5), present dans la **version de debug seulement**, retire
-   de la version publiee a la compilation. Ses prises ne quittent le
+   Deux exceptions, et aucune n'est du travail mesure. L'enregistreur du
+   banc d'essai (jalon 5), present dans la **version de debug seulement**,
+   retire de la version publiee a la compilation : ses prises ne quittent le
    telephone que par cable, vers le banc hors depot, et y sont effacees
-   (`docs/banc-d-essai.md`).
+   (`docs/banc-d-essai.md`). Et le **mode concert** (ADR-018), que
+   l'utilisateur a voulu : l'enfant joue ce qu'il veut, se reecoute, et
+   choisit d'envoyer la prise a quelqu'un ou de la ranger dans un fichier.
+   Rien n'y est note, le professeur n'y a pas acces, le rapport n'en parle
+   pas, et l'application ne garde pas la prise au-dela de l'ecran. Jouer
+   pour quelqu'un est ce qui fait travailler la semaine : c'est l'exception
+   qui sert la regle.
 
 ---
 

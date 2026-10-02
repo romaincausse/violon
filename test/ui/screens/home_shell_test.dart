@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/take_sharer.dart';
 import 'package:violon/core/store/homework.dart';
 import 'package:violon/core/store/take_history.dart';
 import 'package:violon/core/import/piece_importer.dart';
@@ -19,6 +20,7 @@ import 'package:violon/main.dart';
 import 'package:violon/ui/screens/drone_screen.dart';
 import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
+import 'package:violon/ui/screens/concert_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
 import 'package:violon/ui/screens/progress_screen.dart';
@@ -58,6 +60,7 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
       historyStoreFactory: FakeHistoryStore.new,
       homeworkStoreFactory: FakeHomeworkStore.new,
       documentPickerFactory: FakeDocumentPicker.new,
+      takeSharerFactory: FakeTakeSharer.new,
     ),
   );
   // Deux images : l'application attend d'avoir relu la memoire avant de
@@ -257,6 +260,9 @@ void main() {
     ) async {
       await poser(tester);
       await ouvrirLesOutils(tester);
+      // Le tiroir defile : l'outil est sous le pli du telephone de test.
+      await tester.ensureVisible(find.text('Est-ce qu elle m entend ?'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Est-ce qu elle m entend ?'));
       await tester.pumpAndSettle();
       expect(find.byType(MicCheckScreen), findsOneWidget);
@@ -546,6 +552,15 @@ void main() {
         find.text('Diapason : ${PitchUtils.defaultA4.round()} Hz (par defaut)'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('les outils menent au concert', (WidgetTester tester) async {
+      await poser(tester);
+      await ouvrirLesOutils(tester);
+      await tester.tap(find.byKey(HomeShell.concertKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Concert'), findsWidgets);
+      expect(find.byKey(ConcertScreen.jouerKey), findsOneWidget);
     });
   });
 }

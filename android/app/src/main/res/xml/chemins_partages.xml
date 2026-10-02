@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ce que le FileProvider accepte de montrer : la prise de concert en cours
+     de partage, et rien d'autre (ADR-018). -->
+<paths>
+    <cache-path name="concert" path="concert/" />
+</paths>

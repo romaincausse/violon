@@ -8,7 +8,9 @@ import android.media.AudioManager
 import android.os.Build
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
+import java.io.File
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -25,6 +27,9 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Une prise de concert partagee hier n'a rien a faire la ce soir
+        // (ADR-018) : l'application ne garde aucun son.
+        dossierConcert().deleteRecursively()
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CANAL)
             .setMethodCallHandler { appel, resultat ->
                 when (appel.method) {
@@ -33,11 +38,47 @@ class MainActivity : FlutterActivity() {
                     "enregistrer" -> enregistrer(
                         appel.argument<String>("nom") ?: "violon.txt",
                         appel.argument<ByteArray>("octets") ?: ByteArray(0),
+                        appel.argument<String>("type") ?: "text/plain",
+                        resultat,
+                    )
+                    "partager" -> partager(
+                        appel.argument<String>("nom") ?: "concert.wav",
+                        appel.argument<ByteArray>("octets") ?: ByteArray(0),
+                        appel.argument<String>("type") ?: "audio/wav",
                         resultat,
                     )
                     else -> resultat.notImplemented()
                 }
             }
+    }
+
+    private fun dossierConcert() = File(cacheDir, "concert")
+
+    /**
+     * Envoyer une prise a quelqu'un (mode concert, ADR-018). Android ne
+     * partage qu'un fichier : on le pose dans le cache prive, derriere le
+     * FileProvider declare dans le manifeste, et le systeme ouvre son
+     * selecteur. C'est l'enfant qui choisit a qui ; l'application ne garde
+     * pas le fichier au-dela du concert suivant ou du lancement suivant.
+     */
+    private fun partager(nom: String, octets: ByteArray, type: String, resultat: MethodChannel.Result) {
+        try {
+            val dossier = dossierConcert()
+            dossier.deleteRecursively()
+            dossier.mkdirs()
+            val fichier = File(dossier, nom)
+            fichier.writeBytes(octets)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fichiers", fichier)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                this.type = type
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(intent, nom))
+            resultat.success(true)
+        } catch (e: Exception) {
+            resultat.error("partage", e.message, null)
+        }
     }
 
     /**
@@ -85,7 +126,7 @@ class MainActivity : FlutterActivity() {
      * rapport de la semaine (lot T3) part par ce geste volontaire, jamais
      * tout seul. ACTION_CREATE_DOCUMENT ne demande aucune permission.
      */
-    private fun enregistrer(nom: String, octets: ByteArray, resultat: MethodChannel.Result) {
+    private fun enregistrer(nom: String, octets: ByteArray, type: String, resultat: MethodChannel.Result) {
         if (aEcrire != null || enAttente != null) {
             resultat.error("occupe", "Un choix de fichier est deja ouvert", null)
             return
@@ -93,7 +134,7 @@ class MainActivity : FlutterActivity() {
         aEcrire = Pair(resultat, octets)
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/plain"
+            this.type = type
             putExtra(Intent.EXTRA_TITLE, nom)
         }
         startActivityForResult(intent, REQUETE_ECRIRE)

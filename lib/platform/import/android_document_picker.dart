@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../core/import/piece_importer.dart';
 import '../../core/play/headphones.dart';
 import '../../core/store/document_saver.dart';
+import '../../core/store/take_sharer.dart';
 
 /// Le selecteur de fichiers d'Android, par le Storage Access Framework.
 ///
@@ -48,15 +49,48 @@ class AndroidDocumentSaver implements DocumentSaver {
   final MethodChannel _canal;
 
   @override
-  Future<bool> save(String name, Uint8List bytes) async =>
+  Future<bool> save(
+    String name,
+    Uint8List bytes, {
+    String mimeType = 'text/plain',
+  }) async =>
       await _canal.invokeMethod<bool>(
         'enregistrer',
-        <String, Object?>{'nom': name, 'octets': bytes},
+        <String, Object?>{'nom': name, 'octets': bytes, 'type': mimeType},
       ) ??
       false;
 }
 
 DocumentSaver defaultDocumentSaver() => AndroidDocumentSaver();
+
+/// Envoyer une prise a quelqu'un, par le partage du systeme (ADR-018).
+///
+/// Android ne partage qu'un fichier : il est pose dans le cache prive de
+/// l'application, derriere un `FileProvider`, et le Kotlin l'efface au
+/// concert suivant et au lancement suivant. Aucune permission, aucun paquet.
+class AndroidTakeSharer implements TakeSharer {
+  AndroidTakeSharer({MethodChannel? channel})
+      : _canal = channel ?? const MethodChannel(AndroidDocumentPicker.canal);
+
+  final MethodChannel _canal;
+
+  @override
+  Future<bool> share(String name, Uint8List wav) async {
+    try {
+      return await _canal.invokeMethod<bool>(
+            'partager',
+            <String, Object?>{'nom': name, 'octets': wav, 'type': 'audio/wav'},
+          ) ??
+          false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+}
+
+TakeSharer defaultTakeSharer() => AndroidTakeSharer();
 
 /// Ce qui est branche en sortie, par le meme canal.
 class AndroidHeadphoneProbe implements HeadphoneProbe {
