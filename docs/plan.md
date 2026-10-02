@@ -61,7 +61,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
-| 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
+| 10 | Le professeur | 4 | 4 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
 **73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
@@ -1882,14 +1882,34 @@ Detail et garde-fous : `docs/professeur.md`.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| T2 | Rapport de travail | | ★★★ | 2 |
+| ~~T2~~ | ~~Rapport de travail~~ | | ★★★ | fait |
 | T1 | Devoirs de la semaine | | ★★ | 2 |
-| T3 | Export fichier | | ★★ | 1 |
+| ~~T3~~ | ~~Export fichier~~ | | ★★ | fait |
 | T4 | Mode lecon | | ★ | 2 |
 
 **La ligne a ne pas franchir.** Le jour ou l'enfant comprend que l'application
 rapporte a l'adulte ce qu'il n'a pas fait, il arrete de jouer devant elle.
 L'export reste un geste volontaire, sur son telephone, avec ses donnees.
+
+### T2, T3 - Le rapport de la semaine, et son export
+
+**Fait.** Dans l'onglet *Progres*, *"Ma semaine, pour le professeur"* ouvre
+le rapport des sept derniers jours (`WeekReport`), que l'enfant montre en
+debut de cours :
+
+- **les jours joues** et les minutes d'archet -- jamais les jours manques ;
+- **ce qui a monte** en tete : *"Into the Stars : tempo 60 -> 70"*, la
+  meilleure justesse et le meilleur rythme ;
+- **ce qui resiste encore**, dit comme un fait et adresse a personne : les
+  mesures reprises le plus (*"mesure 10 : reprise 15 fois"* -- souvent plus
+  parlant que le score), le doigt qui derive (H3), et la note la plus
+  constamment sortie du meme cote (*"Do#5 : bas de 22 cents, 4 prises sur
+  5"*).
+
+**T3, l'export, est un geste** : *Copier pour l'envoyer*, ou *Enregistrer un
+fichier* texte la ou l'enfant le choisit -- par le selecteur du systeme
+(`ACTION_CREATE_DOCUMENT`, sans permission, dans le meme Kotlin que l'import).
+Rien ne part tout seul, et aucun son n'y figure.
 
 ---
 

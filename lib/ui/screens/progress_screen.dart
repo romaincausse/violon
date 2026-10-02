@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/scoring/finger_diagnosis.dart';
+import '../../core/store/document_saver.dart';
 import '../../core/store/progress.dart';
 import '../../core/store/take_history.dart';
+import 'week_report_screen.dart';
 
 /// Le progres, enfin visible (jalon 9).
 ///
@@ -14,11 +16,17 @@ class ProgressScreen extends StatelessWidget {
   const ProgressScreen({
     required this.history,
     this.clock = DateTime.now,
+    this.saver,
     super.key,
   });
 
   final TakeHistory history;
   final DateTime Function() clock;
+
+  /// Pour enregistrer le rapport de la semaine (T3).
+  final DocumentSaver? saver;
+
+  static const Key semaineKey = Key('ouvrir-ma-semaine');
 
   static const Key journalKey = Key('journal-du-jour');
   static const Key mainKey = Key('diagnostic-de-la-main');
@@ -46,6 +54,21 @@ class ProgressScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 children: <Widget>[
                   _Journal(jour: jour, history: history),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    key: semaineKey,
+                    onPressed: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (BuildContext c) => WeekReportScreen(
+                          history: history,
+                          saver: saver,
+                          clock: clock,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.school_outlined),
+                    label: const Text('Ma semaine, pour le professeur'),
+                  ),
                   if (FingerDiagnosis.of(history).main
                       case final FingerFinding f) ...<Widget>[
                     const SizedBox(height: 16),

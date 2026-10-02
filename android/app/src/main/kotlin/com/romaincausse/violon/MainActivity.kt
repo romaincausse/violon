@@ -17,6 +17,7 @@ import io.flutter.plugin.common.MethodChannel
  */
 class MainActivity : FlutterActivity() {
     private var enAttente: MethodChannel.Result? = null
+    private var aEcrire: Pair<MethodChannel.Result, ByteArray>? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -24,6 +25,11 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { appel, resultat ->
                 when (appel.method) {
                     "choisir" -> choisir(resultat)
+                    "enregistrer" -> enregistrer(
+                        appel.argument<String>("nom") ?: "violon.txt",
+                        appel.argument<ByteArray>("octets") ?: ByteArray(0),
+                        resultat,
+                    )
                     else -> resultat.notImplemented()
                 }
             }
@@ -45,9 +51,49 @@ class MainActivity : FlutterActivity() {
         startActivityForResult(intent, REQUETE)
     }
 
+    /**
+     * L'utilisateur choisit ou ranger un fichier, et on n'ecrit que la : le
+     * rapport de la semaine (lot T3) part par ce geste volontaire, jamais
+     * tout seul. ACTION_CREATE_DOCUMENT ne demande aucune permission.
+     */
+    private fun enregistrer(nom: String, octets: ByteArray, resultat: MethodChannel.Result) {
+        if (aEcrire != null || enAttente != null) {
+            resultat.error("occupe", "Un choix de fichier est deja ouvert", null)
+            return
+        }
+        aEcrire = Pair(resultat, octets)
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TITLE, nom)
+        }
+        startActivityForResult(intent, REQUETE_ECRIRE)
+    }
+
     @Deprecated("startActivityForResult reste le chemin de FlutterActivity")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUETE_ECRIRE) {
+            val (resultat, octets) = aEcrire ?: return
+            aEcrire = null
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null) {
+                resultat.success(false)
+                return
+            }
+            Thread {
+                try {
+                    contentResolver.openOutputStream(uri).use { flux ->
+                        requireNotNull(flux) { "Fichier impossible a ecrire" }
+                        flux.write(octets)
+                    }
+                    runOnUiThread { resultat.success(true) }
+                } catch (e: Exception) {
+                    runOnUiThread { resultat.error("ecriture", e.message, null) }
+                }
+            }.start()
+            return
+        }
         if (requestCode != REQUETE) return
         val resultat = enAttente ?: return
         enAttente = null
@@ -98,6 +144,7 @@ class MainActivity : FlutterActivity() {
     companion object {
         private const val CANAL = "violon/documents"
         private const val REQUETE = 4217
+        private const val REQUETE_ECRIRE = 4218
         private const val MAX_OCTETS = 20 * 1024 * 1024
     }
 }

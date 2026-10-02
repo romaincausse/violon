@@ -16,6 +16,7 @@ import 'core/audio/bench_recorder.dart';
 import 'core/audio/take_player.dart';
 import 'core/play/audio_engine.dart';
 import 'core/store/piece_store.dart';
+import 'core/store/document_saver.dart';
 import 'core/store/session_store.dart';
 import 'core/store/take_history.dart';
 import 'platform/audio/default_pitch_source.dart';
@@ -39,6 +40,7 @@ void main() {
 typedef SessionStoreFactory = SessionStore Function();
 typedef PieceStoreFactory = PieceStore Function();
 typedef HistoryStoreFactory = HistoryStore Function();
+typedef DocumentSaverFactory = DocumentSaver Function();
 typedef DocumentPickerFactory = DocumentPicker Function();
 
 class ViolonApp extends StatefulWidget {
@@ -50,6 +52,7 @@ class ViolonApp extends StatefulWidget {
     this.screenKeeperFactory = defaultScreenKeeper,
     this.pieceStoreFactory = defaultPieceStore,
     this.historyStoreFactory = defaultHistoryStore,
+    this.documentSaverFactory = defaultDocumentSaver,
     this.documentPickerFactory = defaultDocumentPicker,
     this.pieceImporter = const PieceImporter(inflate: inflateRaw),
     this.benchRecorderFactory = kDebugMode ? defaultBenchRecorder : null,
@@ -63,6 +66,9 @@ class ViolonApp extends StatefulWidget {
 
   /// Fabrique du magasin de l'historique des prises (jalon 9).
   final HistoryStoreFactory historyStoreFactory;
+
+  /// Fabrique de l'enregistrement de fichier, pour le rapport (T3).
+  final DocumentSaverFactory documentSaverFactory;
 
   /// Fabrique du magasin des morceaux, injectable comme la memoire.
   final PieceStoreFactory pieceStoreFactory;
@@ -104,6 +110,7 @@ class _ViolonAppState extends State<ViolonApp> {
   late final SessionStore _memoire = widget.sessionStoreFactory();
   late final PieceStore _morceaux = widget.pieceStoreFactory();
   late final HistoryStore _historiqueStore = widget.historyStoreFactory();
+  late final DocumentSaver _enregistreur = widget.documentSaverFactory();
   TakeHistory _historique = TakeHistory.vide;
   late final DocumentPicker _selecteur = widget.documentPickerFactory();
   PieceLibrary _repertoire = PieceLibrary.vide;
@@ -235,6 +242,7 @@ class _ViolonAppState extends State<ViolonApp> {
                 pieceImporter: widget.pieceImporter,
                 initialPieces: _repertoire,
                 historyStore: _historiqueStore,
+                documentSaver: _enregistreur,
                 initialHistory: _historique,
                 initialExcerpt: _extrait,
                 benchRecorderFactory: widget.benchRecorderFactory,

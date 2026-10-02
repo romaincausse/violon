@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 import '../../core/import/piece_importer.dart';
+import '../../core/store/document_saver.dart';
 
 /// Le selecteur de fichiers d'Android, par le Storage Access Framework.
 ///
@@ -37,6 +38,24 @@ class AndroidDocumentPicker implements DocumentPicker {
     return PickedDocument(name: nom is String ? nom : '', bytes: octets);
   }
 }
+
+/// Ranger un fichier ou l'utilisateur le choisit, par le meme canal.
+class AndroidDocumentSaver implements DocumentSaver {
+  AndroidDocumentSaver({MethodChannel? channel})
+      : _canal = channel ?? const MethodChannel(AndroidDocumentPicker.canal);
+
+  final MethodChannel _canal;
+
+  @override
+  Future<bool> save(String name, Uint8List bytes) async =>
+      await _canal.invokeMethod<bool>(
+        'enregistrer',
+        <String, Object?>{'nom': name, 'octets': bytes},
+      ) ??
+      false;
+}
+
+DocumentSaver defaultDocumentSaver() => AndroidDocumentSaver();
 
 /// Le `deflate` brut d'une archive zip, par `dart:io`.
 List<int> inflateRaw(List<int> compressed) =>
