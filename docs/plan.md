@@ -60,7 +60,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 7 | Le progres devient visible |
+| 9 | La memoire | 8 | 5 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
@@ -1729,7 +1729,7 @@ et la notation du rythme, et attend donc sa place.
 | ~~H4~~ | ~~Courbes de progression~~ | | ★★★ | fait |
 | ~~H5~~ | ~~Journal de seance~~ | | ★★ | fait |
 | H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
-| M2 | Avant / apres audible | | ★★★ | 2 |
+| ~~M2~~ | ~~Avant / apres audible~~ | | ★★★ | fait |
 | ~~H6~~ | ~~Import d'un morceau entier~~ | | ★★ | fait |
 | I3 | Justesse par degre dans la tonalite | | ★★ | 2 |
 
@@ -1744,10 +1744,15 @@ accordeur du marche ne sait le faire.
 d'une seance, et le laisser les comparer. S'entendre progresser en vingt
 minutes est le motivateur le plus puissant qui existe, bien plus qu'un score.
 
-> **A trancher avant de commencer ce lot.** `docs/professeur.md` interdit de
-> conserver le moindre enregistrement audio, pour de bonnes raisons. Sortie
-> possible : strictement local, strictement ephemere, efface en quittant,
-> jamais exportable, jamais accessible au professeur. Sa voix a lui, pour lui.
+> **Tranche, et fait, par la sortie que ce plan proposait** : strictement
+> local, strictement ephemere, efface en quittant, jamais exportable, jamais
+> accessible au professeur. Sa voix a lui, pour lui.
+>
+> En mode suivi, la premiere prise de la seance et la derniere restent **en
+> memoire** -- soixante secondes chacune au plus, jamais sur le disque --
+> et deux boutons, *Avant* et *Apres*, apparaissent des qu'il y en a deux.
+> Changer de passage ou quitter l'ecran les efface. `docs/professeur.md`
+> reste vrai : rien n'est conserve.
 
 **I3 - Justesse par degre.** Le complement de I2. Une quinte et une tierce
 n'ont pas la meme marge : la premiere ne varie que de deux cents d'un systeme

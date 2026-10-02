@@ -620,6 +620,7 @@ class _HomeShellState extends State<HomeShell> {
               onAccompany: () => unawaited(_accompagner()),
               mode: _menee,
               historyKey: _cleDuTravail,
+              takePlayerFactory: widget.takePlayerFactory,
               onTakeRecorded: _garder,
               clock: widget.clock,
               onModeChanged: (SessionMode m) => setState(() => _menee = m),

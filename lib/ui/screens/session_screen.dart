@@ -5,6 +5,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/audio/microphone_pitch_source.dart';
+import '../../core/audio/pcm_take.dart';
+import '../../core/audio/take_player.dart';
 import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
 import '../../core/exercises/work_loop.dart';
@@ -134,6 +136,7 @@ class SessionScreen extends StatefulWidget {
     this.historyKey,
     this.onTakeRecorded,
     this.clock = DateTime.now,
+    this.takePlayerFactory,
     super.key,
   });
 
@@ -162,6 +165,14 @@ class SessionScreen extends StatefulWidget {
 
   /// L'horloge de l'historique, injectable pour les tests.
   final DateTime Function() clock;
+
+  /// Pour reentendre la premiere et la derniere prise de la seance (M2).
+  /// `null` : rien n'est garde.
+  final TakePlayerFactory? takePlayerFactory;
+
+  /// Les deux boutons de l'avant / apres.
+  static const Key avantKey = Key('ecouter-la-premiere-prise');
+  static const Key apresKey = Key('ecouter-la-derniere-prise');
 
   /// Le bouton de la boucle, et celui que propose le bilan.
   static const Key boucleKey = Key('ouvrir-la-boucle');
@@ -315,6 +326,35 @@ class _SessionScreenState extends State<SessionScreen>
   /// veut, c'est elle qui attend.
   bool get _enDecompte =>
       !_suit && _running && !_decompte.isFinishedAt(_depuisLeDepart);
+
+  /// Avant / apres (M2) : la premiere prise suivie de la seance, et la
+  /// derniere, **en memoire seulement**.
+  ///
+  /// `docs/professeur.md` interdit de conserver un enregistrement ; ces deux
+  /// prises ne touchent jamais le disque, ne s'exportent pas, et meurent
+  /// avec l'ecran. Sa voix a lui, pour lui, le temps d'une seance --
+  /// s'entendre progresser en vingt minutes vaut tous les scores.
+  final PcmTake _sonDeLaPrise = PcmTake(maxSeconds: 60);
+  StreamSubscription<Uint8List>? _abonnementSon;
+  Uint8List? _avant;
+  Uint8List? _apres;
+  late final TakePlayer? _liseur = widget.takePlayerFactory?.call();
+  bool _relecture = false;
+
+  Future<void> _reecouter(Uint8List wav) async {
+    final TakePlayer? liseur = _liseur;
+    if (liseur == null || _relecture || _running) {
+      return;
+    }
+    setState(() => _relecture = true);
+    try {
+      await liseur.play(wav);
+    } finally {
+      if (mounted) {
+        setState(() => _relecture = false);
+      }
+    }
+  }
 
   /// La prise suivie, en mode suivi, pendant et apres la prise.
   TakeFollower? _suivi;
@@ -507,6 +547,10 @@ class _SessionScreenState extends State<SessionScreen>
       _abonnement = source.smoothedPitches.listen(_onPitch);
       if (_suit) {
         _abonnementTrames = source.features.listen(_onTrame);
+        if (_liseur != null) {
+          _sonDeLaPrise.reset();
+          _abonnementSon = source.audio.listen(_sonDeLaPrise.add);
+        }
       }
       await source.start();
       if (mounted) {
@@ -630,6 +674,17 @@ class _SessionScreenState extends State<SessionScreen>
       // La note qui compte se calcule sur la prise entiere, qui voit la suite
       // et corrige ce que le direct a rattache de travers (ADR-010).
       _tuning = suivi.rescore();
+      // Une prise qui a joue quelque chose du passage : elle devient la
+      // premiere de la seance, ou la derniere.
+      final Uint8List? son = suivi.started ? _sonDeLaPrise.wav() : null;
+      if (son != null) {
+        if (_avant == null) {
+          _avant = son;
+        } else {
+          _apres = son;
+        }
+      }
+      _sonDeLaPrise.reset();
       final String? cle = widget.historyKey;
       final ValueChanged<TakeRecord>? garder = widget.onTakeRecorded;
       if (cle != null && garder != null) {
@@ -662,6 +717,11 @@ class _SessionScreenState extends State<SessionScreen>
     final PitchSource? source = _source;
     final StreamSubscription<SmoothedPitch>? abonnement = _abonnement;
     final StreamSubscription<FeatureFrame>? trames = _abonnementTrames;
+    final StreamSubscription<Uint8List>? son = _abonnementSon;
+    _abonnementSon = null;
+    if (son != null) {
+      unawaited(son.cancel());
+    }
     _source = null;
     _abonnement = null;
     _abonnementTrames = null;
@@ -687,6 +747,9 @@ class _SessionScreenState extends State<SessionScreen>
     // Changer de passage arrete la lecture : ni le tempo ni les notes ne sont
     // les memes, et laisser courir l'ancienne induirait en erreur.
     if (widget.passage != oldWidget.passage) {
+      // L'avant / apres compare un passage a lui-meme, jamais a un autre.
+      _avant = null;
+      _apres = null;
       if (_running) {
         _stop();
       }
@@ -720,6 +783,9 @@ class _SessionScreenState extends State<SessionScreen>
   @override
   void dispose() {
     _ticker.dispose();
+    unawaited(_liseur?.dispose());
+    _avant = null;
+    _apres = null;
     unawaited(_fermerLeMicro());
     if (_pleinEcran) {
       // Les barres du systeme appartiennent a l'application entiere, pas a
@@ -1438,7 +1504,44 @@ class _SessionScreenState extends State<SessionScreen>
   /// Tout le reste de l'interface est en encre sur papier ; lancer la prise
   /// est la seule chose qu'on vient y faire, et c'est la seule qui porte la
   /// couleur.
+  /// Le bouton, et au-dessus, l'avant / apres quand il y a deux prises.
   Widget _bouton() {
+    final Uint8List? avant = _avant;
+    final Uint8List? apres = _apres;
+    final Widget bouton = _boutonSeul();
+    if (avant == null || apres == null || _running || _liseur == null) {
+      return bouton;
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        // En Wrap : la colonne du paysage ne fait que deux cents points.
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          children: <Widget>[
+            TextButton.icon(
+              key: SessionScreen.avantKey,
+              onPressed: _relecture ? null : () => unawaited(_reecouter(avant)),
+              icon: const Icon(Icons.history),
+              label: const Text('Avant'),
+            ),
+            TextButton.icon(
+              key: SessionScreen.apresKey,
+              onPressed: _relecture ? null : () => unawaited(_reecouter(apres)),
+              icon: const Icon(Icons.hearing),
+              label: const Text('Apres'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        bouton,
+      ],
+    );
+  }
+
+  Widget _boutonSeul() {
     final Widget jouer = FilledButton.icon(
       onPressed: _running ? _stop : _start,
       icon: Icon(_running ? Icons.stop : Icons.play_arrow),
