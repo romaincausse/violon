@@ -62,7 +62,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
-| 11 | L'accompagnement | 4 | 6 | On joue avec quelqu'un |
+| 11 | L'accompagnement | 4 | 5 | On joue avec quelqu'un |
 
 **73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
@@ -1950,7 +1950,7 @@ l'application a l'autre.
 | ~~J4~~ | ~~Accompagnement deduit du passage~~ | | ★★★ | fait |
 | ~~J2~~ | ~~Calibration de latence~~ | | ★★ | fait |
 | J5 | Accompagnement qui suit | | ★ | 5 |
-| D6 | Retour haptique hors ecoute | | ★★ | 1 |
+| ~~D6~~ | ~~Retour haptique hors ecoute~~ | | ★★ | fait |
 
 Le moteur audio (J1) et le metronome sonore (J3) ont ete avances au jalon 4,
 tires par le bourdon.
@@ -1996,6 +1996,14 @@ en bois **est une source sonore** qui entre dans le micro. Le vibreur est donc
 interdit pendant l'ecoute, et reserve aux moments ou l'application n'ecoute
 pas : un depart compte qu'on sent, la relance d'une boucle. Il est range au dernier jalon
 pour cette raison, pas par manque d'interet.
+
+**Fait, pour le depart compte.** En mode metronome, chaque temps du decompte
+se sent -- sans lever les yeux de la partition. Le micro est deja ouvert a ce
+moment-la : **plus rien de ce qu'il entend pendant le decompte n'est
+retenu**, ce qui corrige au passage un defaut reel -- l'archet qui se
+preparait etait compte contre la premiere note. En suivi, rien ne vibre
+jamais : il n'y a pas de decompte, et le micro ecoute. La relance d'une boucle
+n'a pas de vibration : le micro y ecoute deja l'essai suivant.
 
 **La contradiction a resoudre avant J5.** L'ADR-008 interdit d'ecouter pendant
 que l'application joue. Mais un accompagnement qui *suit* -- le seul qui

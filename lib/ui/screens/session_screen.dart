@@ -138,6 +138,7 @@ class SessionScreen extends StatefulWidget {
     this.clock = DateTime.now,
     this.takePlayerFactory,
     this.lesson = false,
+    this.vibrate = _vibrer,
     super.key,
   });
 
@@ -174,6 +175,17 @@ class SessionScreen extends StatefulWidget {
   /// Le mode lecon (T4) : le bilan donne aussi le detail chiffre, pour le
   /// professeur.
   final bool lesson;
+
+  /// Le vibreur (D6), injectable pour les tests.
+  ///
+  /// **Seulement hors ecoute** : un telephone qui vibre sur un pupitre en bois
+  /// est une source sonore, qui entrerait dans le micro. Il ne sert donc
+  /// qu'au depart compte du mode metronome -- un decompte qu'on sent, sans
+  /// lever les yeux -- pendant lequel rien de ce que le micro entend n'est
+  /// retenu.
+  final VoidCallback vibrate;
+
+  static void _vibrer() => unawaited(HapticFeedback.heavyImpact());
 
   static const Key detailKey = Key('detail-de-la-lecon');
 
@@ -464,10 +476,18 @@ class _SessionScreenState extends State<SessionScreen>
         tempoBpm: widget.passage.writtenTempoBpm,
       );
 
+  /// Le dernier temps du decompte deja signale au vibreur.
+  int? _tempsVibre;
+
   void _onTick(Duration elapsed) {
     // Pendant le decompte, le curseur n'a pas commence : le comparer a la fin
     // du passage l'arreterait avant meme d'avoir demarre.
     if (!_decompte.isFinishedAt(elapsed)) {
+      final int? temps = _decompte.beatAt(elapsed);
+      if (temps != null && temps != _tempsVibre) {
+        _tempsVibre = temps;
+        widget.vibrate();
+      }
       setState(() => _depuisLeDepart = elapsed);
       return;
     }
@@ -526,6 +546,7 @@ class _SessionScreenState extends State<SessionScreen>
       _trace.reset();
       _derive = null;
       _mesureVue = null;
+      _tempsVibre = null;
       if (_suit) {
         final TakeFollower suivi = TakeFollower(widget.passage, a4: widget.a4);
         _suivi = suivi;
@@ -590,6 +611,11 @@ class _SessionScreenState extends State<SessionScreen>
     }
     // L'accord se surveille meme entre deux notes attendues : une corde a
     // vide tiree pour verifier compte autant qu'une du passage.
+    // Pendant le decompte, rien de ce qu'on entend n'est la premiere note :
+    // c'est l'archet qui se prepare -- et le vibreur qui compte (D6).
+    if (_enDecompte) {
+      return;
+    }
     final StringDrift? derive = _accord.observe(pitch);
     final TakeFollower? suivi = _suivi;
     if (_suit && suivi != null) {
