@@ -62,7 +62,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
-| 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
+| 11 | L'accompagnement | 4 | 6 | On joue avec quelqu'un |
 
 **73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
 est ce qui rend l'application agreable, et ce n'est pas du luxe : un outil
@@ -1948,7 +1948,7 @@ l'application a l'autre.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~J4~~ | ~~Accompagnement deduit du passage~~ | | ★★★ | fait |
-| J2 | Calibration de latence | | ★★ | 2 |
+| ~~J2~~ | ~~Calibration de latence~~ | | ★★ | fait |
 | J5 | Accompagnement qui suit | | ★ | 5 |
 | D6 | Retour haptique hors ecoute | | ★★ | 1 |
 
@@ -1976,6 +1976,20 @@ c'est l'application qui mene, dans un mode ou elle joue et n'ecoute pas
 
 Laisse pour plus tard : le choix d'instrument ne se retient pas d'une seance
 a l'autre, et l'accompagnement ne se regle pas en volume par voix.
+
+**J2 - Fait.** *Outils > Latence* joue six clics a des instants connus de
+l'horloge du moteur ; le micro les entend, et la mediane des ecarts donne la
+latence aller-retour (`LatencyCalibration`). Les deux horloges se relient par
+un pont : a l'arrivee du premier paquet du micro, on lit celle du moteur. La
+mesure est refusee si moins de quatre clics sont entendus ou s'ils s'ecartent
+de plus de 30 ms -- une piece bruyante ne donne pas un chiffre faux, elle
+n'en donne pas. Le resultat se retient d'une seance a l'autre.
+
+Elle **inclut le biais du detecteur d'attaques**, qui date un son un peu tot,
+toujours du meme montant : c'est ce qu'il faut pour rapporter a l'horloge du
+moteur les attaques de l'eleve, datees par le meme detecteur (J5). **Reste a
+la mesurer sur le S22** : la verification de bout en bout est faite sur un
+micro simule.
 
 **D6 - Retour haptique.** Tentant, mais un telephone qui vibre sur un pupitre
 en bois **est une source sonore** qui entre dans le micro. Le vibreur est donc
