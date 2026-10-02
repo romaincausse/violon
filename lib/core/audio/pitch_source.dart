@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../follow/performance_features.dart';
 import 'pitch_estimate.dart';
 import 'pitch_smoother.dart';
 
@@ -37,6 +38,14 @@ abstract class PitchSource {
   /// materiel a Android -- qui le refuse le plus souvent, et le fait mal
   /// quand il l'accepte.
   Stream<Uint8List> get audio;
+
+  /// Le flux du suiveur : une trame toutes les 1024 echantillons, hauteur,
+  /// energie et attaque, **sans trou** (lot S1).
+  ///
+  /// Ses hauteurs sont rapportees a 440 Hz ; le consommateur les rapporte a
+  /// l'accord mesure par [FeatureFrame.retuned]. Il n'est calcule que s'il est
+  /// ecoute : l'accordeur n'en paie pas le prix.
+  Stream<FeatureFrame> get features;
 
   /// Comment la source se nomme, pour l'ecran de controle du micro.
   ///

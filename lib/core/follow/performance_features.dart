@@ -1,10 +1,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import '../audio/onset_detector.dart';
-import '../audio/pitch_estimate.dart';
-import '../audio/yin_detector.dart';
 import '../music/pitch_utils.dart';
+import 'feature_extractor.dart';
 
 /// Ce que l'oreille retient d'une trame : une hauteur, une energie, et si une
 /// note vient de commencer.
@@ -14,6 +12,7 @@ class FeatureFrame {
     required this.midi,
     required this.rms,
     required this.onset,
+    this.analysed = true,
   });
 
   /// Debut de la trame, depuis le debut de la prise.
@@ -30,7 +29,31 @@ class FeatureFrame {
   /// Une attaque a ete detectee pendant cette trame.
   final bool onset;
 
+  /// Faux quand l'analyse de hauteur a ete sautee faute de temps (S1).
+  ///
+  /// Une trame non analysee n'est pas un silence : on ne sait pas ce qui
+  /// sonnait. L'energie et l'attaque, elles, sont toujours la.
+  final bool analysed;
+
   bool get voiced => midi != null;
+
+  /// La meme trame, rapportee a un autre accord.
+  ///
+  /// L'analyse en direct rend ses hauteurs par rapport a 440 Hz ; le suiveur
+  /// les veut par rapport au la que l'instrument donne vraiment.
+  FeatureFrame retuned({required double fromA4, required double toA4}) {
+    final double? m = midi;
+    if (m == null || fromA4 == toA4) {
+      return this;
+    }
+    return FeatureFrame(
+      timeMs: timeMs,
+      midi: m - 12 * math.log(toA4 / fromA4) / math.ln2,
+      rms: rms,
+      onset: onset,
+      analysed: analysed,
+    );
+  }
 }
 
 /// Transforme une prise entiere en une suite de [FeatureFrame].
@@ -52,55 +75,19 @@ class PerformanceFeatures {
   /// En dessous, YIN a repondu mais il devine.
   static const double minConfidence = 0.7;
 
+  /// Tout d'un coup : c'est [FeatureExtractor] nourri de la prise entiere,
+  /// pour que l'analyse hors ligne et le direct ne puissent pas diverger.
   static List<FeatureFrame> extract(
     Float32List samples, {
     int sampleRate = 44100,
     int frameSize = 2048,
     int hopSize = 1024,
     double a4 = PitchUtils.defaultA4,
-  }) {
-    final YinDetector yin = YinDetector(sampleRate: sampleRate);
-    final List<Onset> attaques =
-        OnsetDetector(sampleRate: sampleRate).addSamples(samples);
-
-    final List<FeatureFrame> trames = <FeatureFrame>[];
-    int prochaineAttaque = 0;
-    for (int debut = 0; debut + frameSize <= samples.length; debut += hopSize) {
-      final int timeMs = debut * 1000 ~/ sampleRate;
-
-      // Une attaque marque la premiere trame qui commence apres elle : c'est
-      // la premiere dont la fenetre entend la nouvelle note plutot que la
-      // queue de l'ancienne. Chaque attaque marque une seule trame, sinon
-      // l'aligneur pourrait avancer deux fois sur deux notes repetees.
-      bool onset = false;
-      while (prochaineAttaque < attaques.length &&
-          attaques[prochaineAttaque].timestampMs <= timeMs) {
-        onset = true;
-        prochaineAttaque++;
-      }
-
-      final Float32List fenetre =
-          Float32List.sublistView(samples, debut, debut + frameSize);
-      final double rms = _efficace(fenetre);
-      double? midi;
-      if (rms >= silenceRms) {
-        final PitchEstimate? e = yin.detect(fenetre, timestampMs: timeMs);
-        if (e != null && e.confidence >= minConfidence) {
-          midi = PitchUtils.frequencyToMidi(e.frequencyHz, a4: a4);
-        }
-      }
-      trames.add(
-        FeatureFrame(timeMs: timeMs, midi: midi, rms: rms, onset: onset),
-      );
-    }
-    return trames;
-  }
-
-  static double _efficace(Float32List fenetre) {
-    double somme = 0;
-    for (final double v in fenetre) {
-      somme += v * v;
-    }
-    return math.sqrt(somme / fenetre.length);
-  }
+  }) =>
+      FeatureExtractor(
+        sampleRate: sampleRate,
+        frameSize: frameSize,
+        hopSize: hopSize,
+        a4: a4,
+      ).addSamples(samples);
 }
