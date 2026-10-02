@@ -1,13 +1,26 @@
 Echantillons d'instruments de l'application Violon
 ===================================================
 
+Piano
+-----
+Source : Salamander Grand Piano V3, par Alexander Holm.
+https://github.com/sfzinstruments/SalamanderGrandPiano
+Licence : Creative Commons Attribution 3.0 Unported (CC BY 3.0).
+https://creativecommons.org/licenses/by/3.0/
+Un Yamaha C5 enregistre par Alexander Holm ; seule la neuvieme des seize
+nuances est embarquee, transposee pour couvrir chaque note.
+
+Violon, violoncelle, flute, orgue, clarinette
+---------------------------------------------
 Source : VSCO 2 Community Edition, par Versilian Studios.
 https://github.com/sgossner/VSCO-2-CE
 Licence : CC0 1.0 Universal (domaine public).
 
 Credits, comme les auteurs le demandent :
 - Versilian Studios / Sam Gossner (violon, violoncelle, flute, clarinette) ;
-- Ivy Audio / Simon Dalzell (piano droit, orgue).
+- Ivy Audio / Simon Dalzell (orgue).
 
-Les fichiers ont ete coupes, mis en boucle, mis au meme niveau et compresses
-par tool/echantillons.py, qui permet de les refaire a l'identique.
+Preparation
+-----------
+Les fichiers ont ete coupes, transposes, mis en boucle, mis au meme niveau et
+compresses par tool/echantillons.py, qui permet de les refaire a l'identique.

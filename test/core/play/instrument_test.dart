@@ -66,6 +66,17 @@ void main() {
       expect(
           lib.sustaining.map((Instrument i) => i.id), isNot(contains('piano')));
       for (final Instrument i in lib.instruments) {
+        // Une note livree tous les deux demi-tons au plus : le moteur ne
+        // transpose plus que d'un demi-ton, et le piano pas du tout
+        // (ADR-017).
+        for (int k = 1; k < i.samples.length; k++) {
+          expect(
+            i.samples[k].midi - i.samples[k - 1].midi,
+            lessThanOrEqualTo(i.id == 'piano' ? 1 : 2),
+            reason:
+                '${i.id} : ${i.samples[k - 1].midi} -> ${i.samples[k].midi}',
+          );
+        }
         for (final InstrumentSample s in i.samples) {
           expect(File('assets/sons/${s.file}').existsSync(), isTrue,
               reason: s.file);
@@ -83,6 +94,9 @@ void main() {
       expect(licence, contains('CC0'));
       expect(licence, contains('Versilian Studios'));
       expect(licence, contains('Simon Dalzell'));
+      // Le piano vient d'ailleurs, et sa licence demande le nom de l'auteur.
+      expect(licence, contains('CC BY 3.0'));
+      expect(licence, contains('Alexander Holm'));
     });
   });
 }

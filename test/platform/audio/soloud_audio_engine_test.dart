@@ -19,8 +19,10 @@ void main() {
 
     test('la frequence d echantillonnage est fixee, pas devinee', () {
       // SoLoud garde la sienne privee : un clic planifie a partir d'une
-      // frequence supposee tomberait a cote.
-      expect(SoloudAudioEngine.sampleRate, 44100);
+      // frequence supposee tomberait a cote. 48 kHz : celle du telephone et
+      // des echantillons, pour qu'une note ne soit reechantillonnee nulle
+      // part (ADR-017).
+      expect(SoloudAudioEngine.sampleRate, 48000);
     });
   });
 }

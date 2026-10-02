@@ -62,9 +62,9 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
-| 11 | L'accompagnement | 4 | 0 | On joue avec quelqu'un |
+| 11 | L'accompagnement | 5 | 0 | On joue avec quelqu'un |
 
-**73 lots, tous livres sauf deux, au 2 octobre 2026.** Il ne reste que la fin
+**74 lots, tous livres sauf deux, au 2 octobre 2026.** Il ne reste que la fin
 du jalon 5 -- les etiquettes corrigees du banc (P1), puis le verdict chiffre
 et son ADR (P3) -- qui attendent les ecoutes du parent, pas du code.
 
@@ -1956,6 +1956,7 @@ l'application a l'autre.
 | ~~J2~~ | ~~Calibration de latence~~ | | ★★ | fait |
 | ~~J5~~ | ~~Accompagnement qui suit~~ | | ★ | fait |
 | ~~D6~~ | ~~Retour haptique hors ecoute~~ | | ★★ | fait |
+| ~~J6~~ | ~~Le son de l'accompagnement~~ | | ★★★ | fait |
 
 Le moteur audio (J1) et le metronome sonore (J3) ont ete avances au jalon 4,
 tires par le bourdon.
@@ -2027,6 +2028,20 @@ tenu : une reprise le recale, un arret le laisse s'eteindre.
 les deux sont verifies sur un micro simule.
 
 ---
+
+**J6 - Fait, ne du premier essai sur le haut-parleur du S22.** L'utilisateur
+a trouve le son des instruments horrible : ca gresillait, le timbre etait
+moche, les accords mecaniques. Trois causes, toutes dans la chaine et non
+dans l'idee d'instruments enregistres : le profil a faible latence du moteur,
+qui craque sur Android ; deux reechantillonnages lineaires a l'execution
+(32 kHz vers 44,1 vers 48) plus trois demi-tons de transposition, qui
+repliaient l'aigu ; et un plan ou chaque accord part d'un bloc, a la meme
+force, coupe net. Decision et details : ADR-017. En bref : 48 kHz de bout en
+bout et un fichier par note, transpose dans l'outil ; le piano de Salamander
+a la place du piano droit ; le profil classique du moteur ; les accords
+egrenes et les forces a peine inegales (`Humanizer`) ; le relache du piano
+allonge ; la basse remontee d'une octave sur le haut-parleur
+(`SpeakerVoicing`). Reste a entendre par celui qui a trouve le defaut.
 
 ## Le palmares
 

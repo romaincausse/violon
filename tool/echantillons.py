@@ -11,14 +11,23 @@
 # boucle et compresse toujours de la meme facon. Refaire les assets doit
 # redonner les memes assets.
 #
-# Source : VSCO 2 Community Edition, Versilian Studios, CC0 1.0.
-# https://github.com/sgossner/VSCO-2-CE
+# Sources :
+#  - VSCO 2 Community Edition, Versilian Studios, CC0 1.0
+#    https://github.com/sgossner/VSCO-2-CE
+#  - Salamander Grand Piano V3, Alexander Holm, CC BY 3.0
+#    https://github.com/sfzinstruments/SalamanderGrandPiano
+#
+# Sans Python equipe sous la main : la meme chose dans un conteneur, avec
+# l'image decrite dans `docs/decisions.md` (ADR-017) :
+#   docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/w \
+#     -v ~/.cache/violon-vsco:/cache -w /w violon-sons python3 tool/echantillons.py /cache
 import json
 import os
 import sys
 import urllib.parse
 import urllib.request
 
+from fractions import Fraction
 from math import gcd
 
 import numpy as np
@@ -28,10 +37,18 @@ from scipy.signal import resample_poly
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SORTIE = os.path.join(RACINE, 'assets', 'sons')
 DEPOT = 'https://raw.githubusercontent.com/sgossner/VSCO-2-CE/master/'
+SALAMANDER = ('https://raw.githubusercontent.com/sfzinstruments/'
+              'SalamanderGrandPiano/master/Samples/')
 # Niveau efficace commun, bien sous la saturation : l'accompagnement additionne
 # plusieurs voix, et un accord de piano ne doit pas ecreter.
 NIVEAU = 0.06
-TAUX = 32000  # Assez pour un violon (harmoniques utiles sous 12 kHz), moitie moins lourd.
+# **Le taux du moteur de son, qui est celui du telephone.** La premiere
+# version livrait du 32 kHz dans un moteur a 44,1 kHz, que l'appareil sortait
+# a 48 kHz : deux reechantillonnages a l'execution, lineaires tous les deux
+# (c'est tout ce que SoLoud sait faire), chacun repliant l'aigu en
+# sifflements. A 48 kHz de bout en bout, une note lue a sa hauteur n'est
+# reechantillonnee nulle part (ADR-017).
+TAUX = 48000
 
 NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 
@@ -56,9 +73,15 @@ def midi_de(nom, decalage=0):
 # et la clarinette, mezzo-forte pour le piano (plus timbre que le pianissimo,
 # aussi rapide).
 def piano():
-    carte = [21 + 2 * i for i in range(44)] + [108]
-    return [(f'Keys/Upright Piano/Player_dyn2_rr1_{i:03d}.wav', m)
-            for i, m in enumerate(carte) if 37 <= m <= 101 and (m - 37) % 4 == 0]
+    # Salamander Grand Piano V3 : un Yamaha C5 de concert, un echantillon
+    # tous les trois demi-tons, seize nuances. Le piano droit de VSCO sonnait
+    # boite a chaussures, et c'est le piano que l'eleve entend le plus. La
+    # neuvieme nuance : un mezzo-forte franc, sans le bruit de marteau des
+    # fortissimos. De la2 au do7 : la basse d'un accompagnement et bien
+    # au-dela de la melodie d'un violon.
+    noms = [f'{n}{o}' for o in range(1, 8) for n in ('A', 'C', 'D#', 'F#')]
+    return [(SALAMANDER + urllib.parse.quote(f'{n}v9.flac'), midi_de(n))
+            for n in noms if 33 <= midi_de(n) <= 96]
 
 
 def violon():
@@ -97,22 +120,43 @@ def clarinette():
 
 
 INSTRUMENTS = {
-    # id: (liste, tient la note, nom affiche)
-    'piano': (piano, False, 'Piano'),
-    'violon': (violon, True, 'Violon'),
-    'violoncelle': (violoncelle, True, 'Violoncelle'),
-    'flute': (flute, True, 'Flute'),
-    'orgue': (orgue, True, 'Orgue'),
-    'clarinette': (clarinette, True, 'Clarinette'),
+    # id: (liste, tient la note, nom affiche, pas entre deux notes livrees)
+    #
+    # **Un fichier par note livree, transposes ici et pas dans le telephone.**
+    # Le moteur ne sait transposer qu'en interpolant lineairement entre deux
+    # echantillons, ce qui replie l'aigu : trois demi-tons de transposition a
+    # l'execution s'entendaient, surtout sur le piano. Ici la transposition
+    # passe par un filtre polyphase propre, et le moteur lit chaque note a sa
+    # vitesse, ou presque (le diapason mesure, a quelques cents pres). Le
+    # piano, riche en transitoires, est livre chromatique ; les instruments
+    # tenus tous les deux demi-tons, un demi-ton d'ecart au plus a
+    # l'execution.
+    'piano': (piano, False, 'Piano', 1),
+    'violon': (violon, True, 'Violon', 2),
+    'violoncelle': (violoncelle, True, 'Violoncelle', 2),
+    'flute': (flute, True, 'Flute', 2),
+    'orgue': (orgue, True, 'Orgue', 2),
+    'clarinette': (clarinette, True, 'Clarinette', 2),
 }
 
 
 def telecharger(chemin, cache):
-    local = os.path.join(cache, chemin.replace('/', '__'))
+    url = chemin if chemin.startswith('http') else DEPOT + urllib.parse.quote(chemin)
+    local = os.path.join(cache, chemin.split('/master/')[-1].replace('/', '__'))
     if not os.path.exists(local):
-        url = DEPOT + urllib.parse.quote(chemin)
         urllib.request.urlretrieve(url, local)
     return local
+
+
+def transposer(x, demi_tons):
+    # Transposition hors ligne : lire plus vite, c'est garder moins
+    # d'echantillons. Le rapport 2^(k/12) est approche par une fraction, a
+    # moins d'un dixieme de cent pres, et le filtre polyphase fait le reste --
+    # la ou le moteur, lui, interpolerait entre deux echantillons.
+    if demi_tons == 0:
+        return x
+    r = Fraction(2 ** (demi_tons / 12)).limit_denominator(2000)
+    return resample_poly(x, r.denominator, r.numerator)
 
 
 def reechantillonner(x, sr):
@@ -344,9 +388,13 @@ def main():
         '~/.cache/violon-vsco')
     os.makedirs(cache, exist_ok=True)
     os.makedirs(SORTIE, exist_ok=True)
-    index = {'source': 'VSCO 2 Community Edition (CC0 1.0)',
+    index = {'source': 'VSCO 2 Community Edition (CC0 1.0) ; '
+                       'Salamander Grand Piano V3 (CC BY 3.0)',
              'instruments': []}
-    for ident, (liste, tient, nom) in INSTRUMENTS.items():
+    for ident, (liste, tient, nom, pas) in INSTRUMENTS.items():
+        for ancien in os.listdir(SORTIE):
+            if ancien.startswith(f'{ident}_'):
+                os.remove(os.path.join(SORTIE, ancien))
         echantillons = []
         brut = []
         for chemin, attendu in liste():
@@ -366,27 +414,40 @@ def main():
             if abs(ecart) > 60:
                 raise SystemExit(f'{chemin}: {hz:.1f} Hz, {ecart:+.0f} cents '
                                  f'de la note attendue')
-            brut.append((chemin, attendu, hz, x))
+            brut.append((chemin, attendu, x))
         # Meme niveau pour tous : sinon la melodie monterait et baisserait
         # d'un echantillon a l'autre.
         niveaux = [np.sqrt(np.mean(x[:int(1.5 * TAUX)] ** 2)) for *_, x in brut]
-        for (chemin, attendu, hz, x), niveau in zip(brut, niveaux):
-            x = x * (NIVEAU / niveau)
+        brut = [(chemin, attendu, x * (NIVEAU / niveau))
+                for (chemin, attendu, x), niveau in zip(brut, niveaux)]
+        # Les notes livrees : du grave a l'aigu des enregistrements, par pas,
+        # chacune depuis l'enregistrement le plus proche.
+        grave = min(m for _, m, _ in brut)
+        aigu = max(m for _, m, _ in brut)
+        for note in range(grave, aigu + 1, pas):
+            chemin, source, x = min(brut, key=lambda b: abs(b[1] - note))
+            x = transposer(x, note - source)
+            # On mesure la note livree, pas la note d'origine : c'est elle
+            # que le moteur lira.
+            hz = hauteur(x, TAUX, note)
             # Le fichier doit s'arreter exactement la ou la boucle repart : le
             # decodeur OGG ne doit rien ajouter, ce que verifie le test.
-            entree = {'midi': attendu, 'hz': round(hz, 3)}
+            entree = {'midi': note, 'hz': round(hz, 3)}
             if tient:
                 x, depart, ressemblance = boucle(x, TAUX)
                 entree['loopStart'] = round(depart, 4)
                 ecart = ecart_au_raccord(x, TAUX, depart)
                 if ecart > ECART_MAX_DB:
-                    raise SystemExit(f'{chemin}: le raccord de boucle s entend '
-                                     f'({ecart:+.1f} dB, ressemblance '
-                                     f'{ressemblance:.2f})')
+                    raise SystemExit(f'{chemin} -> {note}: le raccord de '
+                                     f'boucle s entend ({ecart:+.1f} dB, '
+                                     f'ressemblance {ressemblance:.2f})')
             else:
-                x = x[:int(3.0 * TAUX)]
-                x[-int(0.3 * TAUX):] *= np.linspace(1, 0, int(0.3 * TAUX))
-            fichier = f'{ident}_{attendu}.ogg'
+                # Un piano de concert resonne longtemps ; cinq secondes
+                # couvrent une ronde lente, le moteur eteint le reste.
+                x = x[:int(5.0 * TAUX)]
+                queue = int(0.6 * TAUX)
+                x[-queue:] *= np.linspace(1, 0, queue)
+            fichier = f'{ident}_{note}.ogg'
             entree['file'] = fichier
             echantillons.append(entree)
             sf.write(os.path.join(SORTIE, fichier), x.clip(-1, 1), TAUX,
@@ -394,7 +455,7 @@ def main():
         index['instruments'].append({'id': ident, 'name': nom,
                                      'sustains': tient,
                                      'samples': echantillons})
-        print(f'{nom}: {len(echantillons)} echantillons')
+        print(f'{nom}: {len(echantillons)} echantillons', flush=True)
     with open(os.path.join(SORTIE, 'instruments.json'), 'w') as f:
         json.dump(index, f, indent=1)
 
