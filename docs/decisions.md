@@ -676,3 +676,83 @@ plus d'objet, et elle reste entiere pour le haut-parleur.
   pas un examen. La notation reste dans l'ecran de seance, micro seul.
 - Reste a l'eprouver sur le S22, casque branche : la calibration et le
   recalage sont verifies sur un micro simule.
+
+## ADR-017 : Le son de l'accompagnement, ce qui le rendait laid et ce qu'on y a change
+
+**Contexte.** L'utilisateur a ecoute l'accompagnement sur le haut-parleur du
+S22 et l'a trouve horrible, en trois mots : ca gresille, le timbre est moche,
+c'est mecanique et hache. Trois defauts, trois causes distinctes, toutes dans
+la chaine livree par l'ADR-015 -- pas dans l'idee d'instruments enregistres,
+qui tient.
+
+**Diagnostic.**
+
+- **Le gresillement** vient du profil a faible latence du moteur. Sur
+  Android, il passe par le chemin MMAP d'AAudio, avec si peu de marge que le
+  melange de quelques voix craque des que l'interface travaille. Le paquet
+  lui-meme le dit.
+- **Le timbre** vient du reechantillonnage. SoLoud ne sait reechantillonner
+  qu'en interpolant lineairement, et il le faisait deux fois : des
+  echantillons a 32 kHz vers un moteur a 44,1 kHz, puis vers l'appareil qui
+  sort a 48 kHz ; et par-dessus, jusqu'a trois demi-tons de transposition a
+  l'execution. Chaque etage replie l'aigu en sifflements. L'outil de
+  preparation prenait soin d'un filtre polyphase pour son propre
+  reechantillonnage, et livrait le resultat a un moteur qui defaisait ce soin.
+  S'y ajoutait le piano droit de VSCO, boite a chaussures.
+- **Le mecanique** vient du plan : un accord dont les trois notes partent au
+  meme echantillon, a la meme force, lues dans le meme enregistrement, et
+  qu'un relache d'un quart de seconde coupe net. Et sur le haut-parleur, la
+  basse ecrite a l'octave du violoncelle ne sort pas : il n'en reste qu'un
+  vrombissement, et l'harmonie n'a plus de fondement.
+
+**Decision.**
+
+1. **48 kHz de bout en bout.** Le moteur tourne a la frequence de l'appareil,
+   les echantillons sont livres a cette frequence, et **un fichier par note**
+   -- chromatique pour le piano, tous les deux demi-tons pour les instruments
+   tenus. La transposition se fait dans l'outil, par le filtre polyphase, a
+   partir de l'enregistrement le plus proche. A l'execution, une note se lit a
+   sa vitesse a quelques cents pres (le diapason mesure), et le moteur n'a
+   plus rien a replier. Le poids passe de 3,5 a une dizaine de megaoctets :
+   le prix d'un son propre, pour une application hors ligne.
+2. **Le piano change.** Salamander Grand Piano V3 (Alexander Holm, CC BY
+   3.0), un Yamaha C5 de concert, une seule nuance sur les seize, un
+   mezzo-forte franc. La licence demande le nom de l'auteur : il est dans
+   `assets/sons/LICENCE.txt`, et le test l'exige. Ce n'est plus du domaine
+   public strict, c'est une attribution, et c'est le seul asset du depot dans
+   ce cas.
+3. **Le profil classique du moteur**, pas celui a faible latence. Il ajoute
+   quelques dizaines de millisecondes de sortie, constantes. Rien ne derive :
+   les clics et les notes sont planifies d'avance (ADR-012), et la
+   calibration (J2) mesure ce retard pour l'accompagnement qui suit.
+4. **Une main plutot qu'une boite a musique** (`Humanizer`) : un accord
+   s'egrene de bas en haut de six millisecondes par note, dix-huit au plus,
+   et la force varie de six pour cent -- un demi-decibel. Deterministe, par
+   hachage de l'instant et de la note : deux tours d'une boucle sonnent
+   pareil. Une note seule garde son instant exact.
+5. **Le relache du piano passe a 600 ms** : l'etouffoir qui retombe, et un
+   peu de pedale, comme un accompagnateur.
+6. **Sur le haut-parleur, la basse remonte** (`SpeakerVoicing`) : ce qui
+   s'ecrit sous do3 monte d'une octave, au casque on joue ce qui est ecrit.
+   Le plancher est a l'oreille, sur le S22.
+
+**Ce qu'on n'a pas fait.**
+
+- Pas de resampler de meilleure qualite dans le moteur : SoLoud en a un
+  (Catmull-Rom), mais le paquet ne l'expose pas, et modifier le paquet est
+  exclu. Livrer les notes deja transposees contourne le probleme a la
+  source.
+- Pas de nuances multiples pour le piano : une seconde couche changerait le
+  timbre des accords doux et des basses fortes, pour deux megaoctets de
+  plus. A faire si l'oreille le demande encore.
+
+**Consequences.**
+
+- `tool/echantillons.py` tourne aussi dans un conteneur, sans rien installer
+  sur la machine : une image `python:3.12-slim` avec numpy, scipy et
+  soundfile, nommee `violon-sons` ; la commande est en tete de l'outil.
+- Le liseur de prise (O7, M2) lit un WAV a 44,1 kHz dans un moteur a 48 kHz :
+  un reechantillonnage lineaire, sur une prise qu'on reecoute une fois. Le
+  micro reste a 44,1 kHz, ou YIN est calibre.
+- Reste a entendre sur le S22 : c'est l'oreille de l'utilisateur qui a trouve
+  le defaut, c'est elle qui dira si la correction suffit.

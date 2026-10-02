@@ -45,8 +45,10 @@ class SoloudAudioEngine implements AudioEngine {
   static const Duration _relache = Duration(milliseconds: 70);
 
   /// Un piano ne s'arrete pas net quand on leve le doigt : l'etouffoir met un
-  /// instant a retomber.
-  static const Duration _relachePiano = Duration(milliseconds: 250);
+  /// instant a retomber, et un accompagnateur garde un peu de pedale. Un
+  /// quart de seconde hachait chaque accord (ADR-017) ; ici la note s'eteint
+  /// comme une corde qu'on etouffe sans se presser.
+  static const Duration _relachePiano = Duration(milliseconds: 600);
 
   /// Voix simultanees permises. Seize par defaut : un accord, sa basse, une
   /// melodie et les notes deja posees pour la seconde qui vient les depassent,
@@ -95,9 +97,13 @@ class SoloudAudioEngine implements AudioEngine {
     if (_soloud.isInitialized) {
       return;
     }
-    // `lowLatency` reduit la taille du tampon : un clic planifie dans 20 ms
-    // doit pouvoir etre pose dans 20 ms.
-    await _soloud.init(sampleRate: sampleRate, lowLatency: true);
+    // **Pas le profil a faible latence.** Sur Android il passe par le chemin
+    // MMAP d'AAudio, avec si peu de marge que le melange de quelques voix
+    // d'accompagnement craquait sur le S22 (ADR-017). Le profil classique
+    // ajoute quelques dizaines de millisecondes de sortie, constantes : les
+    // clics et les notes sont planifies d'avance, rien ne derive, et la
+    // calibration (J2) mesure ce retard pour l'accompagnement qui suit.
+    await _soloud.init(sampleRate: sampleRate, lowLatency: false);
     _soloud.setMaxActiveVoiceCount(_voix);
   }
 
@@ -205,7 +211,13 @@ class SoloudAudioEngine implements AudioEngine {
   /// un clic planifie a partir d'une frequence supposee tomberait a cote. On
   /// impose donc la valeur qu'on utilisera pour convertir les delais en
   /// echantillons, et les deux ne peuvent plus diverger.
-  static const int sampleRate = 44100;
+  ///
+  /// **48 kHz : celle du telephone, et celle des echantillons.** SoLoud ne
+  /// sait reechantillonner qu'en interpolant lineairement, ce qui replie
+  /// l'aigu en sifflements. A 44,1 kHz, chaque note passait par deux
+  /// reechantillonnages, vers le moteur puis vers l'appareil. A 48 kHz de
+  /// bout en bout, une note lue a sa hauteur n'en subit aucun (ADR-017).
+  static const int sampleRate = 48000;
 
   @override
   Future<DroneVoice> startDrone({

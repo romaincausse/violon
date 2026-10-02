@@ -16,7 +16,9 @@ import '../../core/play/audio_engine.dart';
 import '../../core/play/following_accompanist.dart';
 import '../../core/play/harmonizer.dart';
 import '../../core/play/headphones.dart';
+import '../../core/play/humanize.dart';
 import '../../core/play/instrument.dart';
+import '../../core/play/speaker_voicing.dart';
 import '../widgets/keep_screen_awake.dart';
 import '../widgets/score_view.dart';
 import 'session_screen.dart' show PitchSourceFactory;
@@ -162,11 +164,20 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
     super.dispose();
   }
 
-  List<AccompanimentNote> get _notes => switch (_source) {
-        AccompanimentSource.melody => melodyOf(widget.passage),
-        AccompanimentSource.score => widget.scoreAccompaniment,
-        AccompanimentSource.chords => Harmonizer.accompaniment(widget.passage),
-      };
+  List<AccompanimentNote> get _notes {
+    final List<AccompanimentNote> ecrites = switch (_source) {
+      AccompanimentSource.melody => melodyOf(widget.passage),
+      AccompanimentSource.score => widget.scoreAccompaniment,
+      AccompanimentSource.chords => Harmonizer.accompaniment(widget.passage),
+    };
+    // Sur le haut-parleur, les basses ne sortent pas : on les remonte
+    // (ADR-017). Au casque, on joue ce qui est ecrit.
+    return _sortie == Headphones.none ? SpeakerVoicing.raise(ecrites) : ecrites;
+  }
+
+  /// Les accords egrenes, les forces a peine inegales : une main, pas une
+  /// boite a musique (ADR-017).
+  static const Humanizer _main = Humanizer();
 
   Future<void> _basculer() async {
     if (_joue) {
@@ -291,13 +302,13 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
       return;
     }
     final Duration maintenant = await widget.engine.now();
-    for (final TimedNote n in acc.noteStarted(
+    for (final TimedNote n in _main.apply(acc.noteStarted(
       noteIndex: note,
       attackMicMs: attaqueMs,
       micToEngineMs: pont,
       nowEngineMs: maintenant.inMilliseconds,
       quarterBpm: noire,
-    )) {
+    ))) {
       await widget.engine.scheduleNote(
         instrument: instrument.id,
         at: n.at,
@@ -365,7 +376,7 @@ class _AccompanimentScreenState extends State<AccompanimentScreen>
       await widget.engine
           .scheduleClickAt(at: _origine + c.at, accent: c.accent);
     }
-    for (final TimedNote n in notes) {
+    for (final TimedNote n in _main.apply(notes)) {
       await widget.engine.scheduleNote(
         instrument: instrument.id,
         at: _origine + n.at,

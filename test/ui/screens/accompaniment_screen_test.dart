@@ -6,6 +6,7 @@ import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/music/score_note.dart';
 import 'package:violon/core/play/accompaniment.dart';
 import 'package:violon/core/play/fake_audio_engine.dart';
+import 'package:violon/core/play/headphones.dart';
 import 'package:violon/core/play/metronome_clock.dart';
 import 'package:violon/ui/screens/accompaniment_screen.dart';
 
@@ -45,6 +46,7 @@ void main() {
     WidgetTester tester, {
     List<AccompanimentNote> partition = const <AccompanimentNote>[],
     double a4 = 440,
+    HeadphoneProbe? headphones,
   }) async {
     moteur = FakeAudioEngine()..clock = const Duration(seconds: 10);
     await tester.binding.setSurfaceSize(const Size(400, 900));
@@ -56,6 +58,7 @@ void main() {
           engine: moteur,
           scoreAccompaniment: partition,
           a4: a4,
+          headphones: headphones,
         ),
       ),
     );
@@ -132,11 +135,15 @@ void main() {
     testWidgets('la partie ecrite du morceau, quand elle existe', (
       WidgetTester tester,
     ) async {
+      // Au casque : sur le haut-parleur, la basse serait remontee avant
+      // meme d'atteindre l'instrument (ADR-017), et c'est la tessiture de
+      // l'instrument qu'on veut voir agir ici.
       await poser(
         tester,
         partition: const <AccompanimentNote>[
           AccompanimentNote(midi: 28, onsetTicks: 0, durationTicks: 1440),
         ],
+        headphones: FakeHeadphoneProbe(Headphones.wired),
       );
       final ChoiceChip piano = tester.widget<ChoiceChip>(
         find.byKey(AccompanimentScreen.sourceKey(AccompanimentSource.score)),
@@ -158,6 +165,89 @@ void main() {
       final int avant = moteur.stopAlls;
       await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
       expect(moteur.stopAlls, greaterThan(avant));
+    });
+
+    testWidgets('sur le haut-parleur la basse remonte, au casque non',
+        (WidgetTester tester) async {
+      Future<int> basse(HeadphoneProbe sonde) async {
+        moteur = FakeAudioEngine()..clock = const Duration(seconds: 10);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AccompanimentScreen(
+              passage: valse(),
+              engine: moteur,
+              headphones: sonde,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await jouer(tester);
+        final int midi =
+            PitchUtils.frequencyToMidi(moteur.notes.first.frequencyHz).round();
+        await tester.tap(find.byKey(AccompanimentScreen.jouerKey));
+        await tester.pumpAndSettle();
+        return midi;
+      }
+
+      // Sol2 ecrit : le haut-parleur du telephone ne le sort pas, il monte
+      // d'une octave (ADR-017). Au casque, on joue ce qui est ecrit.
+      expect(await basse(FakeHeadphoneProbe()), 55);
+      expect(await basse(FakeHeadphoneProbe(Headphones.wired)), 43);
+    });
+
+    testWidgets('un accord s egrene, la basse seule reste a l heure',
+        (WidgetTester tester) async {
+      // Une mesure a deux temps : la basse puis l'accord tombent tous deux
+      // dans l'horizon de la premiere planification.
+      final Passage polka = Passage(
+        title: 'Polka',
+        notes: const <ScoreNote>[
+          ScoreNote(
+              id: 'n1',
+              midi: 67,
+              onsetTicks: 0,
+              durationTicks: 960,
+              measure: 1),
+          ScoreNote(
+              id: 'n2',
+              midi: 74,
+              onsetTicks: 960,
+              durationTicks: 960,
+              measure: 2),
+        ],
+        ticksPerBeat: 480,
+        writtenTempoBpm: 120,
+        meter: const Meter(2, 4),
+        keyFifths: 1,
+        bars: const <Bar>[
+          Bar(number: 1, startTicks: 0, durationTicks: 960),
+          Bar(number: 2, startTicks: 960, durationTicks: 960),
+        ],
+      );
+      moteur = FakeAudioEngine()..clock = const Duration(seconds: 10);
+      await tester.pumpWidget(
+        MaterialApp(home: AccompanimentScreen(passage: polka, engine: moteur)),
+      );
+      await tester.pumpAndSettle();
+      await jouer(tester);
+      // Deux clics de decompte (1 s), puis la basse seule, exactement a
+      // l'heure : 10 s + 300 ms de marge + 1 s.
+      expect(moteur.notes.first.at, const Duration(milliseconds: 11300));
+      // L'accord du deuxieme temps, 500 ms plus tard : ses notes ne partent
+      // pas toutes au meme instant, et s'etalent sur moins de vingt
+      // millisecondes.
+      final List<Duration> accord = <Duration>[
+        for (final FakeNote n in moteur.notes)
+          if (n.at >= const Duration(milliseconds: 11800) &&
+              n.at < const Duration(milliseconds: 11900))
+            n.at,
+      ];
+      expect(accord.length, 3);
+      expect(accord.toSet().length, 3);
+      expect(accord.first, const Duration(milliseconds: 11800));
+      expect(accord.last, lessThan(const Duration(milliseconds: 11820)));
+      await tester.tap(find.byKey(AccompanimentScreen.jouerKey));
+      await tester.pumpAndSettle();
     });
   });
 }
