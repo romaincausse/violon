@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 10 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 7 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1361,7 +1361,7 @@ sur le telephone.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~S1~~ | ~~Flux unique hauteurs + attaques, sans trou~~ | **Must** | ★★ | fait |
-| S2 | Suiveur en ligne | **Must** | ★★★ | 3 |
+| ~~S2~~ | ~~Suiveur en ligne~~ | **Must** | ★★★ | fait |
 | S3 | Re-ancrage : arret, reprise, saut | **Must** | ★★★ | 3 |
 | S4 | Position suivie a l'ecran | **Must** | ★★★ | 1 |
 | S5 | Confiance du suiveur visible | | ★★★ | 1 |
@@ -1394,6 +1394,49 @@ echantillon, et sous pression il ne lache que la hauteur.**
   qui n'est pas un silence. Un compteur dit combien de fois c'est arrive.
 - Les hauteurs sortent rapportees a 440 Hz, et `FeatureFrame.retuned` les
   ramene a l'accord mesure : l'isolate n'a pas a connaitre le diapason.
+
+### S2 - Suiveur en ligne
+
+**Fait.** `OnlineFollower` rend, trame apres trame, la note jouee (ou celle
+apres laquelle l'eleve s'est arrete) et une confiance entre 0 et 1.
+
+**Un seul modele pour les deux suiveurs.** Le modele de Markov de l'aligneur
+est sorti dans `FollowModel` ; l'aligneur hors ligne et le suiveur en direct
+le partagent a l'identique. Les marqueurs du banc n'ont pas bouge d'un
+millieme. Le direct ne garde que le dernier pas, ramene a zero a chaque trame
+pour qu'une heure de travail ne fasse pas deriver les logarithmes, et tranche
+la position avec **deux trames de retard** (46 ms) pour ne pas sauter sur une
+fausse attaque.
+
+**Mesure, sur la synthese** : les huit scenarios du banc de synthese passent
+aussi en direct. Six a 100 %, comme l'aligneur. Les fausses notes et la
+seance la plus chargee descendent a 86-89 % : une note ajoutee fait partir le
+direct ailleurs une mesure, la ou l'aligneur se corrige apres coup.
+
+**Mesure, sur les vraies prises du banc** (accord avec l'aligneur, en
+attendant les corrections du parent) :
+
+| Prise | Meme mesure |
+|---|---|
+| Gammes, notes repetees | 95-99 % |
+| Into the Stars d'un trait | 91 % |
+| Arret et reprise | 85 % |
+| Retour en arriere (06) | **54 %** |
+| Firework, 96 croches identiques (07, 08) | 59-63 % |
+
+**Ce que la prise 06 a appris.** Dans *Into the Stars*, la mesure 19
+commence exactement comme la 15, et 23 a 28 reprennent 15 a 20. Quand
+l'eleve revient a la 15, le direct entend une suite normale vers la 19 :
+**l'ambiguite est dans la musique**, et seule la suite la leve. Un retard plus
+long n'y change presque rien -- 69 % a une seconde et demie, ce qui est deja
+trop tard pour l'ecran. Sur Firework, huit la identiques par mesure pendant
+douze mesures, personne ne peut savoir en direct ou en est l'eleve.
+
+**D'ou la decision, conforme a l'ADR-010.** Le direct sert a l'**ecran** :
+montrer ou il en est, et **dire quand il ne sait pas** (S5). **La note se
+calcule sur la prise entiere**, une fois l'archet pose, par l'aligneur hors
+ligne -- qui voit la suite et se corrige. Le juge n'a jamais eu besoin du
+direct : il reprend les attaques apres coup.
 
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.

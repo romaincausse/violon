@@ -40,6 +40,21 @@ void main() {
       expect(r.noteRate, greaterThanOrEqualTo(0.90), reason: rates);
       expect(r.extrasTakenForNotes, 0);
     });
+    test('$nom, en direct', () {
+      // Le suiveur en direct ne peut pas se corriger apres coup : il est
+      // tenu un peu moins haut que l'aligneur, qui reste sa borne (S2).
+      final AlignmentReport r = suivre(
+        scenario.build(),
+        p,
+        slurredInto: liees,
+        synth: synth,
+      );
+      final String rates = r.misses
+          .map((NoteVerdict v) => '${v.label.noteId}>${v.alignedId}')
+          .join(' ');
+      expect(r.measureRate, greaterThanOrEqualTo(0.85), reason: rates);
+      expect(r.noteRate, greaterThanOrEqualTo(0.85), reason: rates);
+    });
   }
 
   group('Alignement de prises de synthese', () {

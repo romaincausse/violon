@@ -1,6 +1,7 @@
 import 'package:violon/core/audio/violin_synth.dart';
 import 'package:violon/core/follow/alignment_report.dart';
 import 'package:violon/core/follow/offline_aligner.dart';
+import 'package:violon/core/follow/online_follower.dart';
 import 'package:violon/core/follow/performance_features.dart';
 import 'package:violon/core/follow/synthetic_take.dart';
 import 'package:violon/core/music/note_value.dart';
@@ -59,6 +60,36 @@ AlignmentReport aligner(
       OfflineAligner(passage, slurredInto: slurredInto).align(trames);
   return AlignmentReport.evaluate(
     a,
+    GroundTruth.parseAudacity(prise.audacityLabels()),
+    passage,
+  );
+}
+
+/// La meme chaine, avec le suiveur en direct a la place de l'aligneur : la
+/// position qu'il a rendue pour chaque trame, au fil de l'eau.
+AlignmentReport suivre(
+  SyntheticTake prise,
+  Passage passage, {
+  Set<String> slurredInto = const <String>{},
+  ViolinSynth? synth,
+}) {
+  final List<FeatureFrame> trames =
+      PerformanceFeatures.extract(prise.render(synth ?? ViolinSynth()));
+  final OnlineFollower suiveur =
+      OnlineFollower(passage, slurredInto: slurredInto);
+  final List<String?> notes = List<String?>.filled(trames.length, null);
+  int i = 0;
+  for (final FeatureFrame t in trames) {
+    final FollowPosition? pos = suiveur.add(t);
+    if (pos != null) {
+      notes[i++] = pos.playing ? passage.notes[pos.noteIndex!].id : null;
+    }
+  }
+  return AlignmentReport.evaluate(
+    Alignment(
+      frameTimesMs: <int>[for (final FeatureFrame t in trames) t.timeMs],
+      frameNotes: notes,
+    ),
     GroundTruth.parseAudacity(prise.audacityLabels()),
     passage,
   );
