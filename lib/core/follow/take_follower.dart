@@ -142,6 +142,12 @@ class TakeFollower {
 
   int? _debutDuSilence;
 
+  /// Depuis combien de temps il ne joue plus, ou zero s'il joue.
+  int get restingForMs {
+    final int? debut = _debutDuSilence;
+    return debut == null || position == null ? 0 : position!.timeMs - debut;
+  }
+
   /// Ajoute une trame du flux du suiveur. Rend les hauteurs qu'elle a permis
   /// de rattacher, dans l'ordre.
   List<HeardPitch> addFrame(FeatureFrame brute) {

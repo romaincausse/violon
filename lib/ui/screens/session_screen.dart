@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../core/audio/microphone_pitch_source.dart';
 import '../../core/audio/pitch_smoother.dart';
 import '../../core/audio/pitch_source.dart';
+import '../../core/exercises/work_loop.dart';
 import '../../core/follow/performance_features.dart';
 import '../../core/follow/score_cursor.dart';
 import '../../core/follow/take_follower.dart';
@@ -128,6 +129,7 @@ class SessionScreen extends StatefulWidget {
     this.onAccompany,
     this.mode = SessionMode.follow,
     this.onModeChanged,
+    this.onLoop,
     super.key,
   });
 
@@ -142,6 +144,14 @@ class SessionScreen extends StatefulWidget {
   /// d'onglet, et un choix qui s'oublierait en allant au repertoire serait un
   /// piege.
   final ValueChanged<SessionMode>? onModeChanged;
+
+  /// Ouvre la boucle de travail sur une selection, avec le tempo de depart
+  /// (jalon 8). `null` : pas de boucle.
+  final void Function(BarSelection selection, int startPulseBpm)? onLoop;
+
+  /// Le bouton de la boucle, et celui que propose le bilan.
+  static const Key boucleKey = Key('ouvrir-la-boucle');
+  static const Key travaillerKey = Key('travailler-la-selection');
 
   /// Le choix du mode, pour les tests.
   static const Key modeKey = Key('choix-du-mode');
@@ -832,6 +842,8 @@ class _SessionScreenState extends State<SessionScreen>
         mesure: tache?.measure,
         raison: tache == null ? null : _raison(tache),
         suivi: true,
+        selection: WorkLoop.weakBars(rapport),
+        pulse: pulse,
       );
     }
     final String? pire = _tuning.weakestNoteId;
@@ -1408,21 +1420,70 @@ class _SessionScreenState extends State<SessionScreen>
       label: Text(_running ? 'Arreter' : 'Jouer le passage'),
     );
     final VoidCallback? accompagner = widget.onAccompany;
-    if (accompagner == null || _running) {
+    final void Function(BarSelection, int)? boucler = widget.onLoop;
+    final _Bilan? bilan = _bilan();
+    final BarSelection? proposee = bilan?.selection;
+    // R1 : le bilan a designe des mesures, on propose de les travailler --
+    // au-dessus du bouton, en toutes lettres.
+    if (boucler != null && proposee != null && !_running) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          OutlinedButton.icon(
+            key: SessionScreen.travaillerKey,
+            onPressed: () => boucler(
+              proposee,
+              bilan!.pulse ?? widget.passage.pulseBpm,
+            ),
+            icon: const Icon(Icons.repeat),
+            label: Text('Travailler les $proposee'),
+          ),
+          const SizedBox(height: 8),
+          _rangeeDuBouton(jouer, accompagner, boucler),
+        ],
+      );
+    }
+    return _rangeeDuBouton(jouer, accompagner, boucler);
+  }
+
+  Widget _rangeeDuBouton(
+    Widget jouer,
+    VoidCallback? accompagner,
+    void Function(BarSelection, int)? boucler,
+  ) {
+    if (_running || (accompagner == null && boucler == null)) {
       return jouer;
     }
-    // A cote du bouton, pas dans la barre : c'est une autre facon de jouer
-    // le meme passage, et la barre est deja pleine. Contour seulement -- le
-    // seul bouton plein de l'ecran reste celui qui lance la prise notee.
+    // A cote du bouton, pas dans la barre : ce sont d'autres facons de jouer
+    // le meme passage. Contour seulement -- le seul bouton plein de l'ecran
+    // reste celui qui lance la prise notee. La boucle (R5) travaille des
+    // mesures qu'il choisit lui-meme.
+    final int premiere = widget.passage.firstMeasure;
+    final BarSelection parDefaut = BarSelection(
+      premiere,
+      premiere + 1 <= widget.passage.lastMeasure ? premiere + 1 : premiere,
+    );
     return Row(
       children: <Widget>[
-        IconButton.outlined(
-          key: SessionScreen.accompagnementKey,
-          onPressed: accompagner,
-          icon: const Icon(Icons.piano),
-          tooltip: 'Jouer avec accompagnement',
-        ),
-        const SizedBox(width: 8),
+        if (boucler != null) ...<Widget>[
+          IconButton.outlined(
+            key: SessionScreen.boucleKey,
+            onPressed: () => boucler(parDefaut, widget.passage.pulseBpm),
+            icon: const Icon(Icons.repeat),
+            tooltip: 'Boucler des mesures',
+          ),
+          const SizedBox(width: 8),
+        ],
+        if (accompagner != null) ...<Widget>[
+          IconButton.outlined(
+            key: SessionScreen.accompagnementKey,
+            onPressed: accompagner,
+            icon: const Icon(Icons.piano),
+            tooltip: 'Jouer avec accompagnement',
+          ),
+          const SizedBox(width: 8),
+        ],
         Expanded(child: jouer),
       ],
     );
@@ -1551,7 +1612,13 @@ class _Bilan {
     this.mesure,
     this.raison,
     this.suivi = false,
+    this.selection,
+    this.pulse,
   });
+
+  /// Les mesures que le bilan propose de boucler (R1), et le tempo tenu.
+  final BarSelection? selection;
+  final int? pulse;
 
   final int score;
   final ScoreNote? aTravailler;
