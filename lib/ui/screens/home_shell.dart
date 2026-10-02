@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/exercises/exercise.dart';
+import '../../core/exercises/work_loop.dart';
 import '../../core/exercises/exercise_catalog.dart';
 import '../../core/exercises/exercise_progress.dart';
 import '../../core/import/imported_piece.dart';
@@ -17,6 +18,7 @@ import '../../core/play/audio_engine.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/session_store.dart';
 import 'accompaniment_screen.dart';
+import 'loop_screen.dart';
 import 'bench_screen.dart';
 import 'drone_screen.dart';
 import 'exercises_screen.dart';
@@ -578,6 +580,19 @@ class _HomeShellState extends State<HomeShell> {
               onAccompany: () => unawaited(_accompagner()),
               mode: _menee,
               onModeChanged: (SessionMode m) => setState(() => _menee = m),
+              onLoop: (BarSelection s, int pulse) => unawaited(
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext c) => LoopScreen(
+                      passage: widget.passage,
+                      selection: s,
+                      startPulseBpm: pulse,
+                      pitchSourceFactory: widget.pitchSourceFactory,
+                      a4: widget.a4,
+                    ),
+                  ),
+                ),
+              ),
               // Accorder est la premiere chose de chaque seance : elle
               // merite son raccourci, en plus du tiroir.
               onFullScreen: (bool plein) => setState(() => _pleinEcran = plein),

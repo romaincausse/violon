@@ -18,6 +18,7 @@ import 'package:violon/ui/screens/drone_screen.dart';
 import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
+import 'package:violon/ui/screens/loop_screen.dart';
 import 'package:violon/ui/screens/metronome_screen.dart';
 import 'package:violon/ui/screens/mic_check_screen.dart';
 import 'package:violon/ui/screens/session_screen.dart';
@@ -118,6 +119,16 @@ void main() {
       await tester.tap(find.byKey(SessionScreen.modeKey));
       await tester.pumpAndSettle();
       expect(find.byType(MetronomeBar), findsNothing);
+    });
+
+    testWidgets('la boucle s ouvre depuis l ecran de seance', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await tester.tap(find.byKey(SessionScreen.boucleKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoopScreen), findsOneWidget);
+      expect(find.byKey(LoopScreen.commencerKey), findsOneWidget);
     });
 
     testWidgets('le repertoire montre le passage en cours', (

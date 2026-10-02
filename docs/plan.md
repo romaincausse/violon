@@ -59,7 +59,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
-| 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
+| 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
@@ -1662,12 +1662,12 @@ dixieme fois, c'est la mesure qui designe la mesure.
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| R1 | Selection des mesures faibles | **Must** | ★★★ | 1 |
-| R2 | Boucle sur la selection | **Must** | ★★★ | 2 |
-| R3 | Montee de tempo automatique | **Must** | ★★★ | 2 |
-| R5 | Selection manuelle des mesures | | ★★★ | 1 |
-| R4 | Fin sur une reussite | | ★★★ | 1 |
-| C2 | Point de rupture | | ★★★ | 2 |
+| ~~R1~~ | ~~Selection des mesures faibles~~ | **Must** | ★★★ | fait |
+| ~~R2~~ | ~~Boucle sur la selection~~ | **Must** | ★★★ | fait |
+| ~~R3~~ | ~~Montee de tempo automatique~~ | **Must** | ★★★ | fait |
+| ~~R5~~ | ~~Selection manuelle des mesures~~ | | ★★★ | fait |
+| ~~R4~~ | ~~Fin sur une reussite~~ | | ★★★ | fait |
+| ~~C2~~ | ~~Point de rupture~~ | | ★★★ | fait |
 
 **R5 - Selection manuelle.** R1 designe les mesures faibles automatiquement,
 mais il doit pouvoir repondre "non, moi je veux celles-la". **L'application
@@ -1679,6 +1679,33 @@ un passage que la mesure n'a pas encore vu.
 casse, note le chiffre, et redescend. C'est la technique de travail classique,
 automatisee -- et c'est une donnee qui monte de semaine en semaine, ce que le
 projet cherche depuis le debut.
+
+### Ce qui a ete fait
+
+**Le jalon entier, en une boucle** (`WorkLoop`, `LoopScreen`).
+
+- **R1** : a la fin d'une prise suivie, le bilan propose *"Travailler les
+  mesures 3 a 4"* -- la mesure designee, et sa voisine si elle est fragile
+  aussi : un passage difficile deborde souvent d'une mesure.
+- **R5** : un bouton de boucle a cote de *Jouer*, et un curseur de mesures
+  avant de commencer. **L'application propose, il dispose.**
+- **R2** : un seul micro pour toute la boucle ; chaque essai a son suivi, se
+  termine sur la derniere note et l'archet pose -- ou, abandonne en route,
+  apres trois secondes de silence. Une phrase par essai, sans reproche.
+- **R3** : **deux reussites de suite, et l'objectif monte d'un cran** (six
+  battements, comme les exercices), jusqu'au tempo ecrit. Une reussite exige
+  d'aller au bout, sans arret, juste (85), en place (80) et a l'objectif a
+  5 % pres. **L'objectif est un but, pas une contrainte** : en suivi, l'eleve
+  joue a son tempo ; une reussite en dessous ne fait simplement pas monter.
+  **Une erreur ne remet jamais le compteur de reussites a zero**, seulement
+  la serie qui fait monter.
+- **R4** : il veut s'arreter apres un echec ? *"Une derniere fois, a 72 : on
+  termine sur une reussite"* -- la ou ca tenait.
+- **C2** : *Chercher mon point de rupture* monte au-dela du papier jusqu'a
+  ce que ca casse, dit le chiffre, et redescend de deux crans consolider.
+
+**Ce qui manque encore** : le point de rupture n'est pas encore garde d'une
+seance a l'autre -- c'est le role de la memoire (jalon 9, H4).
 
 ---
 
