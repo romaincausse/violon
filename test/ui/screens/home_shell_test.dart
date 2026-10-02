@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/homework.dart';
 import 'package:violon/core/store/take_history.dart';
 import 'package:violon/core/import/piece_importer.dart';
 import 'package:violon/core/store/piece_store.dart';
@@ -55,6 +56,7 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
       sessionStoreFactory: memoireInjectee,
       pieceStoreFactory: FakePieceStore.new,
       historyStoreFactory: FakeHistoryStore.new,
+      homeworkStoreFactory: FakeHomeworkStore.new,
       documentPickerFactory: FakeDocumentPicker.new,
     ),
   );
@@ -162,6 +164,7 @@ void main() {
           sessionStoreFactory: memoireInjectee,
           pieceStoreFactory: FakePieceStore.new,
           historyStoreFactory: () => FakeHistoryStore(h),
+          homeworkStoreFactory: FakeHomeworkStore.new,
           documentPickerFactory: FakeDocumentPicker.new,
         ),
       );
@@ -173,6 +176,23 @@ void main() {
       expect(find.text('Gamme de sol'), findsOneWidget);
       expect(find.textContaining('Record : 66'), findsOneWidget);
       expect(find.text('Rien encore aujourd hui.'), findsOneWidget);
+    });
+
+    testWidgets('le professeur pose un devoir, l eleve le retrouve', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(HomeShell.donnerKey));
+      await tester.tap(find.byKey(HomeShell.donnerKey));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Lie les croches');
+      await tester.tap(find.text('Poser le devoir'));
+      await tester.pumpAndSettle();
+      expect(find.text('Les devoirs de la semaine'), findsOneWidget);
+      expect(find.textContaining('Lie les croches'), findsOneWidget);
+      expect(find.textContaining('Vise'), findsOneWidget);
     });
 
     testWidgets('le repertoire montre le passage en cours', (

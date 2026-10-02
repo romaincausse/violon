@@ -61,7 +61,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 0 | Le progres devient visible |
-| 10 | Le professeur | 4 | 4 | La semaine cesse d'etre invisible |
+| 10 | Le professeur | 4 | 2 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
 **73 lots, 65 soirees restantes**, dont **23 de *must*** -- le reste
@@ -1883,7 +1883,7 @@ Detail et garde-fous : `docs/professeur.md`.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~T2~~ | ~~Rapport de travail~~ | | ★★★ | fait |
-| T1 | Devoirs de la semaine | | ★★ | 2 |
+| ~~T1~~ | ~~Devoirs de la semaine~~ | | ★★ | fait |
 | ~~T3~~ | ~~Export fichier~~ | | ★★ | fait |
 | T4 | Mode lecon | | ★ | 2 |
 
@@ -1910,6 +1910,20 @@ debut de cours :
 fichier* texte la ou l'enfant le choisit -- par le selecteur du systeme
 (`ACTION_CREATE_DOCUMENT`, sans permission, dans le meme Kotlin que l'import).
 Rien ne part tout seul, et aucun son n'y figure.
+
+### T1 - Les devoirs de la semaine
+
+**Fait** (`Homework`). En fin de cours, sur le telephone de l'enfant, le
+professeur ouvre le repertoire : *"Donner ce passage en devoir"*, un tempo
+vise, un mot s'il en a un. Chez lui, l'enfant trouve **"Les devoirs de la
+semaine"** en tete du repertoire : le passage, *"Vise 80 - tu en es a 70"*, le
+mot du professeur ; un appui le rouvre, exercice ou mesures du morceau.
+
+Le devoir avance tout seul avec les prises jouees **depuis qu'il est pose**
+et allees au bout ; il se coche quand le tempo vise est tenu. Un nouveau
+devoir sur le meme passage remplace l'ancien : il n'y a pas deux objectifs.
+Ca remplace la ligne du cahier que personne ne relit -- et la marge de
+negociation entre ce qui a ete demande et ce qui a ete compris.
 
 ---
 

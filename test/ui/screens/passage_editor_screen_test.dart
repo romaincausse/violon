@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/homework.dart';
 import 'package:violon/core/store/take_history.dart';
 import 'package:violon/core/import/piece_importer.dart';
 import 'package:violon/core/store/piece_store.dart';
@@ -195,6 +196,7 @@ void main() {
         sessionStoreFactory: FakeSessionStore.new,
         pieceStoreFactory: FakePieceStore.new,
         historyStoreFactory: FakeHistoryStore.new,
+        homeworkStoreFactory: FakeHomeworkStore.new,
         documentPickerFactory: FakeDocumentPicker.new,
       ),
     );
