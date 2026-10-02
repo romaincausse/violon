@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 3 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 2 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1364,7 +1364,7 @@ sur le telephone.
 | ~~S2~~ | ~~Suiveur en ligne~~ | **Must** | ★★★ | fait |
 | ~~S3~~ | ~~Re-ancrage : arret, reprise, saut~~ | **Must** | ★★★ | fait |
 | ~~S4~~ | ~~Position suivie a l'ecran~~ | **Must** | ★★★ | fait |
-| S5 | Confiance du suiveur visible | | ★★★ | 1 |
+| ~~S5~~ | ~~Confiance du suiveur visible~~ | | ★★★ | fait |
 | D3 | Pouls du tempo detecte | | ★★ | 1 |
 | S6 | Mode metronome conserve | | ★ | 1 |
 
@@ -1490,6 +1490,31 @@ avec lui quand il reprend.
   n'est plus mesure contre la note suivante.**
 - Le curseur sur l'horloge, avec decompte et metronome, reste disponible
   (`SessionMode.metronome`) ; c'est S6 qui le rend accessible a l'eleve.
+
+### S5 - Confiance du suiveur visible
+
+**Fait.** Quand le suiveur ne sait plus ou en est l'eleve, **il le dit** :
+*"Je cherche ou tu en es..."*, le curseur passe en encre neutre, la case de
+mesure s'eteint -- et **rien n'est note en direct** tant que dure le doute.
+Les hauteurs ne sont pas perdues : l'aligneur les reprend toutes a l'arret.
+
+La confiance est la part de vraisemblance portee par la note retenue, lissee
+sur une dizaine de trames pour ne pas palir a chaque coup d'archet. **Le
+seuil (0,4) est regle sur les vraies prises du banc** :
+
+| | Part du temps | D'accord avec l'aligneur |
+|---|---|---|
+| Sur de lui | 75 % | **88 %** |
+| Il cherche | 25 % | 51 % |
+
+Sur Firework (douze mesures de la repetes), le signal est franc : quand il
+est sur, il a raison de 92 a 100 % du temps. **Sa limite** : sur la phrase
+repetee d'*Into the Stars* (prise 06), il se trompe avec assurance -- les deux
+lectures sont musicalement identiques, et la vraisemblance se concentre sur
+la mauvaise. C'est l'aligneur qui corrige, en fin de prise.
+
+Un test d'ecran a revele au passage que deux des quatre bandeaux (pupitre et
+paysage) ne recevaient pas l'information : corrige.
 
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.

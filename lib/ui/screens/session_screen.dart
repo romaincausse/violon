@@ -197,6 +197,9 @@ class SessionScreen extends StatefulWidget {
   /// Le tempo affiche, qui ouvre son reglage.
   static const Key tempoKey = Key('regler-le-tempo');
 
+  /// Le suiveur dit qu'il cherche (S5).
+  static const Key chercheKey = Key('suiveur-cherche');
+
   /// L'invitation a commencer, en mode suivi.
   static const Key attenteKey = Key('attente-du-premier-son');
 
@@ -230,6 +233,9 @@ class _SessionScreenState extends State<SessionScreen>
       );
 
   bool get _suit => widget.mode == SessionMode.follow;
+
+  /// Le suiveur doute de la position (S5).
+  bool get _cherche => _suit && _running && (_suivi?.unsure ?? false);
 
   /// Le micro ecoute, et rien du passage n'a encore ete entendu.
   bool get _attendLePremierSon =>
@@ -742,7 +748,8 @@ class _SessionScreenState extends State<SessionScreen>
   Widget _mesures({double hauteur = MeasureStrip.hauteur}) {
     return MeasureStrip(
       measures: scoreByMeasure(widget.passage, _tuning),
-      currentMeasure: _mesureCourante,
+      // Une case allumee affirme une mesure : pas quand il cherche.
+      currentMeasure: _cherche ? null : _mesureCourante,
       height: hauteur,
     );
   }
@@ -976,6 +983,7 @@ class _SessionScreenState extends State<SessionScreen>
             bilan: _bilan(),
             derive: _derive,
             attend: _attendLePremierSon,
+            cherche: _cherche,
           ),
           const SizedBox(height: 20),
           _bouton(),
@@ -1009,6 +1017,7 @@ class _SessionScreenState extends State<SessionScreen>
           bilan: _bilan(),
           derive: _derive,
           attend: _attendLePremierSon,
+          cherche: _cherche,
         ),
         const SizedBox(height: 16),
         _bouton(),
@@ -1036,6 +1045,7 @@ class _SessionScreenState extends State<SessionScreen>
             bilan: _bilan(),
             derive: _derive,
             attend: _attendLePremierSon,
+            cherche: _cherche,
           ),
           const SizedBox(height: 12),
           _bouton(),
@@ -1088,6 +1098,7 @@ class _SessionScreenState extends State<SessionScreen>
                         bilan: _bilan(),
                         derive: _derive,
                         attend: _attendLePremierSon,
+                        cherche: _cherche,
                       ),
                     ],
                   ),
@@ -1310,6 +1321,7 @@ class _SessionScreenState extends State<SessionScreen>
       child: ScoreView(
         passage: joue?.passage ?? widget.passage,
         cursorTick: _tickCourant,
+        cursorUncertain: _cherche,
         colorOf: joue == null
             ? _couleurDe
             : (ScoreNote note) => _couleurJouee(joue, note),
@@ -1411,7 +1423,11 @@ class _Bandeau extends StatelessWidget {
     required this.bilan,
     this.derive,
     this.attend = false,
+    this.cherche = false,
   });
+
+  /// Le suiveur ne sait plus ou en est l'eleve : on le dit.
+  final bool cherche;
 
   final _MicState etat;
 
@@ -1449,14 +1465,21 @@ class _Bandeau extends StatelessWidget {
               ? _AlerteAccord(derive: d)
               : switch (etat) {
                   _MicState.arrete => const SizedBox.shrink(),
-                  _MicState.ecoute => attend
+                  _MicState.ecoute => cherche
                       ? Text(
-                          'Je t ecoute. Commence quand tu veux.',
-                          key: SessionScreen.attenteKey,
+                          'Je cherche ou tu en es...',
+                          key: SessionScreen.chercheKey,
                           style: style,
                           textAlign: TextAlign.center,
                         )
-                      : const _Legende(),
+                      : attend
+                          ? Text(
+                              'Je t ecoute. Commence quand tu veux.',
+                              key: SessionScreen.attenteKey,
+                              style: style,
+                              textAlign: TextAlign.center,
+                            )
+                          : const _Legende(),
                   _MicState.refuse => Text(
                       'Micro refuse : le passage defile sans notation.',
                       style: style,
