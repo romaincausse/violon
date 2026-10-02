@@ -57,7 +57,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
 | 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
-| 6 | Le suivi | 7 | 1 | L'application ne perd plus le fil |
+| 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 13 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 9 | La boucle de travail se ferme |
 | 9 | La memoire | 8 | 13 | Le progres devient visible |
@@ -1365,7 +1365,7 @@ sur le telephone.
 | ~~S3~~ | ~~Re-ancrage : arret, reprise, saut~~ | **Must** | ★★★ | fait |
 | ~~S4~~ | ~~Position suivie a l'ecran~~ | **Must** | ★★★ | fait |
 | ~~S5~~ | ~~Confiance du suiveur visible~~ | | ★★★ | fait |
-| D3 | Pouls du tempo detecte | | ★★ | 1 |
+| ~~D3~~ | ~~Pouls du tempo detecte~~ | | ★★ | fait |
 | ~~S6~~ | ~~Mode metronome conserve~~ | | ★ | fait |
 
 **S1 est le point dur.** L'analyse de hauteur jette des trames sous pression,
@@ -1524,6 +1524,24 @@ sens, *Jouer a mon tempo*. **Le suivi reste le defaut** (ADR-009) ; le
 metronome sert quand le but est justement de tenir une mesure imposee, comme
 remonter un passage cran par cran. La coquille garde le choix d'un onglet a
 l'autre ; il ne change pas pendant une prise.
+
+### D3 - Pouls du tempo detecte
+
+**Fait.** En mode suivi, la ou etait le metronome, un point bat **au tempo que
+l'eleve tient** -- *"Tu joues a 100 (noire)"*, ou a la noire pointee en 6/8.
+Rien tant que l'application ne sait pas : une pulsation inventee serait un
+metronome deguise.
+
+`TempoTracker` prend la mediane des huit derniers enchainements (note puis
+note suivante sur le papier) : une hesitation de quatre secondes ne fait pas
+s'effondrer le tempo, une reprise ou un arret ne comptent pas, et seules les
+positions dont le suiveur est sur (S5) l'alimentent. La pulsation se cale sur
+la derniere attaque posee sur un temps : quand il ralentit, elle ralentit
+avec lui.
+
+**Le jalon 6 est clos.** Le suiveur tient, dit quand il doute, et la note se
+calcule sur la prise entiere. Ce qu'il reste a mesurer -- le direct contre
+les etiquettes corrigees du banc -- viendra avec la fin du jalon 5.
 
 **S5** n'est pas un confort : un suiveur qui se trompe en silence noterait
 n'importe quoi. Quand il ne sait plus, il doit le dire.

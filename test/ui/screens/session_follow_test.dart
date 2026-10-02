@@ -209,4 +209,23 @@ void main() {
     await tester.tap(find.text('Arreter'));
     await tester.pump();
   });
+
+  testWidgets('le pouls bat au tempo qu il tient, pas a celui du papier', (
+    WidgetTester tester,
+  ) async {
+    await poser(tester);
+    await demarrer(tester);
+    expect(find.byKey(SessionScreen.poulsKey), findsNothing);
+    await jouer(tester, null, 5);
+    // Une noire toutes les 26 trames de 23 ms : 598 ms, soit 100 a la
+    // noire -- le papier dit 80.
+    for (final int m in <int>[62, 64, 66, 67]) {
+      await jouer(tester, m, 26);
+    }
+    expect(find.byKey(SessionScreen.poulsKey), findsOneWidget);
+    expect(find.textContaining('Tu joues a 100'), findsOneWidget);
+    await tester.tap(find.text('Arreter'));
+    await tester.pump();
+    expect(find.byKey(SessionScreen.poulsKey), findsNothing);
+  });
 }

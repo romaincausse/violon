@@ -208,6 +208,9 @@ class SessionScreen extends StatefulWidget {
   /// Le tempo affiche, qui ouvre son reglage.
   static const Key tempoKey = Key('regler-le-tempo');
 
+  /// Le pouls de l'eleve (D3).
+  static const Key poulsKey = Key('pouls-de-l-eleve');
+
   /// Le suiveur dit qu'il cherche (S5).
   static const Key chercheKey = Key('suiveur-cherche');
 
@@ -1041,7 +1044,7 @@ class _SessionScreenState extends State<SessionScreen>
         const SizedBox(height: 20),
         // En suivi, pas de metronome : il imposerait un tempo a celui qu'on
         // laisse jouer au sien (ADR-009).
-        if (!_suit) _metronome(),
+        if (!_suit) _metronome() else _pouls(),
         if (_choixDuMode() case final Widget choix) choix,
         // En decouverte, la partition a l'ecran serait une seconde partition
         // a suivre, en plus petit que celle du pupitre. Elle encombre.
@@ -1129,6 +1132,9 @@ class _SessionScreenState extends State<SessionScreen>
                       if (!_suit) ...<Widget>[
                         _metronome(compact: true),
                         const SizedBox(height: 12),
+                      ] else ...<Widget>[
+                        _pouls(),
+                        const SizedBox(height: 8),
                       ],
                       if (_choixDuMode() case final Widget choix) choix,
                       // Plus bas qu'en portrait : en paysage la hauteur est la
@@ -1251,6 +1257,57 @@ class _SessionScreenState extends State<SessionScreen>
     if (choisi != null && choisi != widget.passage.pulseBpm) {
       changer(choisi);
     }
+  }
+
+  /// Le pouls de l'eleve (lot D3) : un point qui bat **au tempo qu'il
+  /// tient**, et ce tempo.
+  ///
+  /// **C'est le retour qui rend le suivi credible** : il voit que
+  /// l'application respire avec lui, donc il la croit. Rien tant qu'elle ne
+  /// sait pas -- une pulsation inventee serait un metronome deguise.
+  ///
+  /// Hauteur fixe : le pouls qui apparait ne doit pas faire sauter la
+  /// partition.
+  Widget _pouls() {
+    final TakeFollower? suivi = _suivi;
+    final int? pulse = _running ? suivi?.tempo.pulseBpm : null;
+    final double? phase =
+        pulse == null ? null : suivi!.tempo.beatPhase(suivi.lastFrameMs);
+    final ThemeData theme = Theme.of(context);
+    return SizedBox(
+      height: 24,
+      child: pulse == null
+          ? null
+          : Row(
+              key: SessionScreen.poulsKey,
+              children: <Widget>[
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    // Plein sur le temps, puis il s'eteint jusqu'au suivant.
+                    color: theme.colorScheme.primary
+                        .withValues(alpha: 0.15 + 0.85 * (1 - (phase ?? 1))),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Dans la colonne etroite du paysage, le texte se reduit
+                // plutot que de deborder.
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Tu joues a $pulse '
+                      '(${widget.passage.meter?.pulseName(widget.passage.ticksPerBeat) ?? 'noire'})',
+                      style: theme.textTheme.labelMedium,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
   }
 
   /// Le metronome, et de quoi choisir sa subdivision d'un appui.
