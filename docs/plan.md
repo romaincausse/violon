@@ -60,7 +60,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
-| 9 | La memoire | 8 | 10 | Le progres devient visible |
+| 9 | La memoire | 8 | 7 | Le progres devient visible |
 | 10 | Le professeur | 4 | 7 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 4 | 8 | On joue avec quelqu'un |
 
@@ -1725,7 +1725,7 @@ et la notation du rythme, et attend donc sa place.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~H1~~ | ~~Persistance passages et seances~~ | **Must** | ★★ | fait |
-| H3 | Erreurs systematiques par doigt | | ★★★ | 3 |
+| ~~H3~~ | ~~Erreurs systematiques par doigt~~ | | ★★★ | fait |
 | ~~H4~~ | ~~Courbes de progression~~ | | ★★★ | fait |
 | ~~H5~~ | ~~Journal de seance~~ | | ★★ | fait |
 | H2 | Heatmap cumulee sur la partition | | ★★ | 3 |
@@ -1817,6 +1817,27 @@ Un nouvel onglet, **Progres** :
   chaque jour, et le record de tous les temps. **Le meilleur du jour, pas la
   moyenne** : une soiree commence toujours plus mal qu'elle ne finit, et la
   moyenne punirait les prises ou l'on travaille.
+
+### H3 - Erreurs systematiques par doigt
+
+**Fait** (`FingerDiagnosis`). Chaque note retenue dans l'historique est
+rapportee a sa corde et a son doigt **en premiere position** -- de la corde a
+vide, chaque demi-ton designe un doigt et une place : *1er doigt bas*, *2e
+doigt haut*... Les ecarts sont regroupes par doigt, **toutes cordes
+confondues**, sur les trente dernieres prises.
+
+Un doigt est dit systematique s'il derive de plus de 12 cents en mediane, sur
+au moins six notes, et sur plus d'une corde ou plus d'une prise : sinon c'est
+un accident, pas la main. Les cordes a vide sont ecartees, elles disent
+l'accord du violon.
+
+L'onglet *Progres* nomme **le plus net, et lui seul** : *"Ton 2e doigt haut
+tombe bas, sur les cordes de sol, re et la. Avance-le un peu vers le
+chevalet."*
+
+**Limite connue** : la premiere position est supposee. En troisieme position,
+le doigt deduit est faux ; il faudra les doigtes de la partition (MusicXML les
+porte parfois) pour aller plus loin.
 
 ---
 
