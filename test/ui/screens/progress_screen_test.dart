@@ -45,6 +45,11 @@ void main() {
     );
     expect(find.textContaining('2 prises, 2 min d archet'), findsOneWidget);
     expect(find.textContaining('nouveau record, 70'), findsOneWidget);
+    // Les jours joues ce mois (V3) : deux prises le meme jour, un jour.
+    expect(
+      tester.widget<Text>(find.byKey(ProgressScreen.joursKey)).data,
+      '1 jour joue en octobre',
+    );
   });
 
   testWidgets('un doigt qui derive sur plusieurs cordes est nomme', (

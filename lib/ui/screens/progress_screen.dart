@@ -29,6 +29,7 @@ class ProgressScreen extends StatelessWidget {
   static const Key semaineKey = Key('ouvrir-ma-semaine');
 
   static const Key journalKey = Key('journal-du-jour');
+  static const Key joursKey = Key('jours-joues');
   static const Key mainKey = Key('diagnostic-de-la-main');
   static Key courbeKey(String key) => Key('courbe-$key');
 
@@ -112,6 +113,19 @@ class _Journal extends StatelessWidget {
                       ' d archet',
               style: theme.textTheme.bodyMedium,
             ),
+            // Les jours joues ce mois (V3) : un compteur qui monte, jamais de
+            // serie qui casse.
+            if (daysPlayedInMonth(history, jour.day) case final int n
+                when n > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  '$n jour${n > 1 ? 's' : ''} joue${n > 1 ? 's' : ''} en '
+                  '${monthName(jour.day)}',
+                  key: ProgressScreen.joursKey,
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
             for (final String k in jour.keys)
               if (jour.recordFor(history, k) case final int r)
                 Padding(

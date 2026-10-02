@@ -51,6 +51,7 @@ void main() {
     ValueChanged<TakeRecord>? garder,
     TakePlayerFactory? liseur,
     bool lecon = false,
+    List<String> Function(TakeRecord)? firstsOf,
   }) async {
     t = 0;
     await tester.pumpWidget(
@@ -62,6 +63,7 @@ void main() {
           onResult: onResult,
           historyKey: 'passage:suivi',
           onTakeRecorded: garder,
+          firstsOf: firstsOf,
           clock: () => DateTime(2026, 10, 2, 18),
           takePlayerFactory: liseur,
           lesson: lecon,
@@ -341,5 +343,30 @@ void main() {
     await jouer(tester, null, 90);
     await tester.pump(const Duration(milliseconds: 60));
     expect(find.byKey(SessionScreen.detailKey), findsNothing);
+  });
+  testWidgets('les premieres fois passent devant les chiffres', (
+    WidgetTester tester,
+  ) async {
+    await poser(
+      tester,
+      garder: (TakeRecord _) {},
+      firstsOf: (TakeRecord r) => <String>['Tempo +8 depuis lundi.'],
+    );
+    await demarrer(tester);
+    await jouer(tester, null, 5);
+    for (final int m in <int>[62, 64, 66, 67, 69]) {
+      await jouer(tester, m, 26);
+    }
+    await jouer(tester, null, 90);
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(
+      tester.widget<Text>(find.byKey(SessionScreen.premieresKey)).data,
+      'Tempo +8 depuis lundi.',
+    );
+    // Les chiffres sont toujours la, en dessous et en petit.
+    final Text score =
+        tester.widget<Text>(find.byKey(const Key('bilan-score')));
+    expect(score.data, startsWith('Justesse'));
+    expect(score.style?.fontSize, lessThan(16));
   });
 }

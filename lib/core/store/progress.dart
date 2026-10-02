@@ -149,3 +149,35 @@ class DayJournal {
     return aujourdhui;
   }
 }
+
+/// Les jours joues dans le mois de [now] (lot V3).
+///
+/// **Un compteur qui ne redescend jamais.** Pas de serie, pas de remise a
+/// zero : un jour manque ne retire rien, il n'ajoute pas. C'est la seule
+/// regularite compatible avec "une erreur ne remet jamais un compteur a
+/// zero".
+int daysPlayedInMonth(TakeHistory history, DateTime now) {
+  final Set<int> jours = <int>{};
+  for (final TakeRecord t in history.takes) {
+    if (t.at.year == now.year && t.at.month == now.month) {
+      jours.add(t.at.day);
+    }
+  }
+  return jours.length;
+}
+
+/// Le nom du mois de [d], en toutes lettres.
+String monthName(DateTime d) => const <String>[
+      'janvier',
+      'fevrier',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'aout',
+      'septembre',
+      'octobre',
+      'novembre',
+      'decembre',
+    ][d.month - 1];
