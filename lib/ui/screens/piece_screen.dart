@@ -37,12 +37,20 @@ class PieceScreen extends StatefulWidget {
     this.initialFrom,
     this.initialTo,
     this.heat,
+    this.progress,
     super.key,
   });
 
   /// Ou ca coince depuis des semaines (lot H2), si le morceau a deja ete
   /// travaille.
   final MeasureHeat? heat;
+
+  /// Ce qui a le plus progresse (V4) : la carte qu'on montre a l'enfant. La
+  /// chaleur, elle, ne vient qu'en mode lecon.
+  final MeasureProgress? progress;
+
+  static const Key progresKey = Key('carte-des-progres');
+  static const Key progresseesKey = Key('choisir-les-mesures-progressees');
 
   final ImportedPiece piece;
 
@@ -146,6 +154,19 @@ class _PieceScreenState extends State<PieceScreen> {
             if (piece.warnings.isNotEmpty) ...<Widget>[
               const SizedBox(height: 12),
               _Simplifications(warnings: piece.warnings),
+            ],
+            if (widget.progress case final MeasureProgress p
+                when p.progress.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 16),
+              _Progres(
+                progress: p,
+                premiere: _premiere,
+                derniere: _derniere,
+                onChoisir: (int de, int a) => setState(() {
+                  _de = de;
+                  _a = a;
+                }),
+              ),
             ],
             if (widget.heat case final MeasureHeat h
                 when h.heat.isNotEmpty) ...<Widget>[
@@ -308,6 +329,77 @@ class _Chaleur extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// La carte retournee (V4) : une case par mesure, d'autant plus coloree que
+/// la mesure coincait et coince moins. La meme rangee que la chaleur, dans
+/// la couleur de ce qui monte, et une phrase qui nomme ce qui a progresse.
+class _Progres extends StatelessWidget {
+  const _Progres({
+    required this.progress,
+    required this.premiere,
+    required this.derniere,
+    required this.onChoisir,
+  });
+
+  final MeasureProgress progress;
+  final int premiere;
+  final int derniere;
+  final void Function(int de, int a) onChoisir;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final List<int> mieux = progress.mostImproved();
+    return Column(
+      key: PieceScreen.progresKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(
+          height: 14,
+          child: Row(
+            children: <Widget>[
+              for (int m = premiere; m <= derniere; m++)
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                    color: Color.lerp(
+                      theme.colorScheme.surfaceContainerHighest,
+                      theme.colorScheme.primary,
+                      progress.progress[m] ?? 0,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: mieux.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Ce qui a progresse se verra ici, de semaine en semaine.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                )
+              : TextButton(
+                  key: PieceScreen.progresseesKey,
+                  onPressed: () =>
+                      mieux.length == 2 && mieux.last - mieux.first <= 3
+                          ? onChoisir(mieux.first, mieux.last)
+                          : onChoisir(mieux.first, mieux.first),
+                  child: Text(
+                    mieux.length == 1
+                        ? 'Ce qui a le plus progresse : mesure ${mieux.single}'
+                        : 'Ce qui a le plus progresse : mesures '
+                            '${mieux.first} et ${mieux.last}',
+                  ),
+                ),
+        ),
       ],
     );
   }

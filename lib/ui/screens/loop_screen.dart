@@ -33,6 +33,7 @@ class LoopScreen extends StatefulWidget {
     required this.startPulseBpm,
     required this.pitchSourceFactory,
     this.a4 = PitchUtils.defaultA4,
+    this.lesson = false,
     super.key,
   });
 
@@ -44,6 +45,10 @@ class LoopScreen extends StatefulWidget {
   final int startPulseBpm;
   final PitchSourceFactory pitchSourceFactory;
   final double a4;
+
+  /// Le point de rupture (C2) est un outil d'adulte : il sort du chemin de
+  /// l'enfant (V0) et ne se propose qu'en mode lecon.
+  final bool lesson;
 
   static const Key commencerKey = Key('boucle-commencer');
   static const Key ruptureKey = Key('boucle-rupture');
@@ -259,16 +264,17 @@ class _LoopScreenState extends State<LoopScreen> {
                 if (!_enCours) ...<Widget>[
                   Text('Les mesures', style: theme.textTheme.titleSmall),
                   _choixDesMesures(),
-                  SwitchListTile(
-                    key: LoopScreen.ruptureKey,
-                    contentPadding: EdgeInsets.zero,
-                    value: _rupture,
-                    onChanged: (bool v) => setState(() => _rupture = v),
-                    title: const Text('Chercher mon point de rupture'),
-                    subtitle: const Text(
-                      'Le tempo monte jusqu a ce que ca casse, puis redescend',
+                  if (widget.lesson)
+                    SwitchListTile(
+                      key: LoopScreen.ruptureKey,
+                      contentPadding: EdgeInsets.zero,
+                      value: _rupture,
+                      onChanged: (bool v) => setState(() => _rupture = v),
+                      title: const Text('Chercher mon point de rupture'),
+                      subtitle: const Text(
+                        'Le tempo monte jusqu a ce que ca casse, puis redescend',
+                      ),
                     ),
-                  ),
                 ] else ...<Widget>[
                   Text(
                     'Vise ${boucle!.targetPulseBpm} ($_unite)',

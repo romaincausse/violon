@@ -17,6 +17,7 @@ class ProgressScreen extends StatelessWidget {
     required this.history,
     this.clock = DateTime.now,
     this.saver,
+    this.detailed = false,
     super.key,
   });
 
@@ -27,6 +28,10 @@ class ProgressScreen extends StatelessWidget {
   final DocumentSaver? saver;
 
   static const Key semaineKey = Key('ouvrir-ma-semaine');
+
+  /// Les courbes par travail (H4) : il s'en moque, il regarde le morceau.
+  /// Elles sortent de son chemin (V0) et ne s'affichent qu'en mode lecon.
+  final bool detailed;
 
   static const Key journalKey = Key('journal-du-jour');
   static const Key joursKey = Key('jours-joues');
@@ -45,7 +50,7 @@ class ProgressScreen extends StatelessWidget {
             ? Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Les courbes apparaissent apres une premiere prise jouee '
+                  'Ton progres apparaitra apres une premiere prise jouee '
                   'jusqu au bout, quand l application te suit.',
                   style: theme.textTheme.bodyMedium,
                   textAlign: TextAlign.center,
@@ -75,9 +80,11 @@ class ProgressScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     _Main(trouve: f),
                   ],
-                  const SizedBox(height: 16),
-                  for (final String k in travaux)
-                    _Courbe(serie: ProgressSeries.of(history, k)),
+                  if (detailed) ...<Widget>[
+                    const SizedBox(height: 16),
+                    for (final String k in travaux)
+                      _Courbe(serie: ProgressSeries.of(history, k)),
+                  ],
                 ],
               ),
       ),

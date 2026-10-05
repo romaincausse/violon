@@ -67,3 +67,69 @@ class MeasureHeat {
     ]..sort();
   }
 }
+
+/// Ce qui a le plus progresse dans un morceau (lot V4) : la meme donnee que
+/// la chaleur, retournee.
+///
+/// La carte des mesures qui resistent, cumulee sur des semaines, est une
+/// rangee de cases rouges sur son morceau prefere : "voila tout ce que tu as
+/// rate", deguise. A l'enfant on montre l'inverse -- **les mesures qui
+/// coincaient et qui coincent moins** -- et la carte des resistances ne se
+/// montre qu'en mode lecon, ou elle sert a quelqu'un.
+///
+/// Le progres d'une mesure : sa difficulte moyenne d'il y a une a quatre
+/// semaines, moins celle des sept derniers jours, rapportee a la chaleur
+/// pleine. Une mesure jamais vue avant cette semaine n'a pas de progres :
+/// il n'y a rien a quoi la comparer.
+class MeasureProgress {
+  MeasureProgress._(this.progress);
+
+  /// Progres par mesure, entre 0 (rien, ou pire) et 1 (de tres dur a propre).
+  final Map<int, double> progress;
+
+  static const Duration recent = Duration(days: 7);
+  static const Duration horizon = Duration(days: 28);
+
+  /// En dessous, on ne nomme pas : dix points de difficulte.
+  static const double seuil = 10 / MeasureHeat.fullHeat;
+
+  static MeasureProgress of(TakeHistory history, String pieceId, DateTime now) {
+    final Map<int, List<double>> avant = <int, List<double>>{};
+    final Map<int, List<double>> maintenant = <int, List<double>>{};
+    for (final TakeRecord t in history.takes) {
+      if (!t.key.startsWith('piece:$pieceId:')) {
+        continue;
+      }
+      final Duration age = now.difference(t.at);
+      if (age > horizon || age.isNegative) {
+        continue;
+      }
+      final Map<int, List<double>> cible = age <= recent ? maintenant : avant;
+      for (final MeasureTrace m in t.measures) {
+        cible
+            .putIfAbsent(m.measure, () => <double>[])
+            .add(m.difficulty.toDouble());
+      }
+    }
+    double moyenne(List<double> v) =>
+        v.fold<double>(0, (double s, double x) => s + x) / v.length;
+    return MeasureProgress._(<int, double>{
+      for (final int m in maintenant.keys)
+        if (avant[m] case final List<double> a)
+          m: ((moyenne(a) - moyenne(maintenant[m]!)) / MeasureHeat.fullHeat)
+              .clamp(0.0, 1.0),
+    });
+  }
+
+  /// Les mesures qui ont le plus progresse, au plus [count], au-dessus du
+  /// seuil, dans l'ordre du morceau.
+  List<int> mostImproved({int count = 2}) {
+    final List<MapEntry<int, double>> l = <MapEntry<int, double>>[
+      for (final MapEntry<int, double> e in progress.entries)
+        if (e.value >= seuil) e,
+    ]..sort((MapEntry<int, double> a, MapEntry<int, double> b) =>
+        b.value.compareTo(a.value));
+    return <int>[for (final MapEntry<int, double> e in l.take(count)) e.key]
+      ..sort();
+  }
+}
