@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ enum ScoreDisplayMode {
 /// supplementaires, hampes, barres de mesure et ligatures restent des
 /// primitives, parce que ce sont des traits dont la longueur depend de la mise
 /// en page : une police ne peut pas les fournir.
-class ScoreView extends StatelessWidget {
+class ScoreView extends StatefulWidget {
   const ScoreView({
     required this.passage,
     this.colorOf,
@@ -146,15 +147,7 @@ class ScoreView extends StatelessWidget {
   final double zoom;
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final double base = spaceSize ?? _choisirEspace(constraints);
-        final double espace = base * zoom.clamp(minZoom, maxZoom);
-        return _build(context, espace, constraints);
-      },
-    );
-  }
+  State<ScoreView> createState() => _ScoreViewState();
 
   /// Cherche le plus grand interligne qui laisse tout tenir dans la boite.
   ///
@@ -227,6 +220,109 @@ class ScoreView extends StatelessWidget {
             : largeurEspaces,
         maxSystems: mode == ScoreDisplayMode.scrolling ? 1 : maxSystems,
       );
+}
+
+/// L'etat ne sert qu'a une chose : **garder le curseur sous les yeux.**
+///
+/// Tant que la partition tient dans la zone, rien ne defile et le curseur
+/// est toujours visible. Des qu'elle deborde -- zoom, mode defilement,
+/// passage long -- la partition devient une fenetre, et le curseur en sort
+/// pendant que l'eleve joue. On ne peut pas lui demander de pousser du doigt
+/// archet en main : la fenetre suit le curseur, et seulement quand il en
+/// sort, pour ne pas arracher la partition des mains de celui qui la regarde.
+class _ScoreViewState extends State<ScoreView> {
+  final ScrollController _vertical = ScrollController();
+  final ScrollController _horizontal = ScrollController();
+
+  /// Ce que le dernier dessin a calcule : il faut la geometrie pour savoir ou
+  /// est le curseur en pixels.
+  ({ScoreLayout layout, SystemMetrics metrics, double spaceSize})? _geometrie;
+
+  /// Un peu d'avance : quand le curseur sort a droite, on le ramene au quart
+  /// de la fenetre, pour qu'il ait de la ligne devant lui.
+  static const double _partDevant = 0.25;
+
+  @override
+  void didUpdateWidget(ScoreView old) {
+    super.didUpdateWidget(old);
+    if (old.cursorTick != widget.cursorTick ||
+        old.zoom != widget.zoom ||
+        old.mode != widget.mode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _suivreLeCurseur());
+    }
+  }
+
+  @override
+  void dispose() {
+    _vertical.dispose();
+    _horizontal.dispose();
+    super.dispose();
+  }
+
+  void _suivreLeCurseur() {
+    final int? tick = widget.cursorTick;
+    final ({ScoreLayout layout, SystemMetrics metrics, double spaceSize})? g =
+        _geometrie;
+    if (tick == null || g == null || !mounted) {
+      return;
+    }
+    final (int systeme, double x) = g.layout.positionOfTick(tick);
+    if (systeme < 0) {
+      return;
+    }
+    final double s = g.spaceSize;
+    final double milieu = g.metrics.originOfSystem(systeme) * s;
+    // La portee elle-meme, et non toute la reserve du systeme : avec un gros
+    // zoom, la reserve depasse la fenetre, et vouloir la montrer entiere
+    // ferait recentrer a chaque note. Cinq lignes et un peu d'air suffisent
+    // pour lire ou en est le curseur.
+    _amener(
+      _vertical,
+      debut: milieu - 3 * s,
+      fin: milieu + 3 * s,
+      centre: true,
+    );
+    _amener(_horizontal, debut: x * s, fin: x * s, centre: false);
+  }
+
+  /// Fait defiler [c] pour que [debut]..[fin] soit visible, **seulement si ca
+  /// ne l'est pas deja**.
+  void _amener(
+    ScrollController c, {
+    required double debut,
+    required double fin,
+    required bool centre,
+  }) {
+    if (!c.hasClients) {
+      return;
+    }
+    final ScrollPosition p = c.position;
+    final double fenetre = p.viewportDimension;
+    if (debut >= p.pixels && fin <= p.pixels + fenetre) {
+      return;
+    }
+    final double cible = centre
+        ? (debut + fin) / 2 - fenetre / 2
+        : debut - fenetre * _partDevant;
+    unawaited(c.animateTo(
+      cible.clamp(p.minScrollExtent, p.maxScrollExtent),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double base =
+            widget.spaceSize ?? widget._choisirEspace(constraints);
+        final double espace =
+            base * widget.zoom.clamp(ScoreView.minZoom, ScoreView.maxZoom);
+        return _build(context, espace, constraints);
+      },
+    );
+  }
 
   Widget _build(
     BuildContext context,
@@ -235,18 +331,20 @@ class ScoreView extends StatelessWidget {
   ) {
     final double largeurDisponible = constraints.hasBoundedWidth
         ? constraints.maxWidth
-        : ScoreLayout.of(passage, maxWidthSpaces: double.infinity).widthSpaces *
+        : ScoreLayout.of(widget.passage, maxWidthSpaces: double.infinity)
+                .widthSpaces *
             spaceSize;
     // **La justification n'intervient qu'au dessin.** Le choix de
     // l'interligne, lui, se fait sur les largeurs naturelles : sur des lignes
     // deja etirees, "est-ce que ca tient" serait vrai par construction, et la
     // boucle retiendrait toujours la plus grosse taille.
-    final ScoreLayout layout = _layoutPour(
+    final ScoreLayout layout = widget._layoutPour(
       largeurDisponible / spaceSize,
       justify: true,
     );
     final SystemMetrics metrics =
-        SystemMetrics.of(layout, alsoCover: _ghostSteps());
+        SystemMetrics.of(layout, alsoCover: widget._ghostSteps());
+    _geometrie = (layout: layout, metrics: metrics, spaceSize: spaceSize);
     final ColorScheme scheme = Theme.of(context).colorScheme;
 
     final Size size = Size(
@@ -261,6 +359,7 @@ class ScoreView extends StatelessWidget {
     // dans la zone, sans empecher le defilement quand elle n'y tient pas : un
     // `Center` seul collerait le contenu en haut des qu'il deborde.
     return SingleChildScrollView(
+      controller: _vertical,
       scrollDirection: Axis.vertical,
       child: ConstrainedBox(
         // La hauteur minimale centre la partition quand elle tient dans la
@@ -271,22 +370,24 @@ class ScoreView extends StatelessWidget {
         ),
         child: Center(
           child: SingleChildScrollView(
+            controller: _horizontal,
             scrollDirection: Axis.horizontal,
             child: CustomPaint(
               // Cle explicite : les barres de defilement peignent elles aussi,
               // et un test qui prendrait "le dernier CustomPaint" mesurerait
               // l'une d'elles sans s'en apercevoir.
-              key: canvasKey,
+              key: ScoreView.canvasKey,
               size: size,
               painter: _ScorePainter(
                 layout: layout,
                 metrics: metrics,
                 spaceSize: spaceSize,
                 inkColor: scheme.onSurface,
-                cursorColor: cursorUncertain ? scheme.outline : scheme.primary,
-                cursorTick: cursorTick,
-                colorOf: colorOf,
-                ghostMidiOf: ghostMidiOf,
+                cursorColor:
+                    widget.cursorUncertain ? scheme.outline : scheme.primary,
+                cursorTick: widget.cursorTick,
+                colorOf: widget.colorOf,
+                ghostMidiOf: widget.ghostMidiOf,
               ),
             ),
           ),
