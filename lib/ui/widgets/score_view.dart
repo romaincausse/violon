@@ -11,6 +11,7 @@ import '../../core/score/score_layout.dart';
 import '../../core/score/smufl.dart';
 import '../../core/score/staff_geometry.dart';
 import '../../core/score/staff_layout.dart';
+import '../../core/score/dynamic_marks.dart';
 import '../../core/score/fingering_marks.dart';
 import '../../core/score/stems_and_beams.dart';
 
@@ -533,6 +534,41 @@ class _ScorePainter extends CustomPainter {
     FingeringMarks.place(staff).forEach((int i, double y) {
       _paintFingering(canvas, staff.notes[i], y);
     });
+    DynamicMarks.place(staff).forEach((int i, double y) {
+      _paintDynamic(canvas, staff.notes[i], y);
+    });
+  }
+
+  /// La nuance ecrite (K9), sous la tete : les lettres de la police
+  /// musicale, comme sur le papier ; "cresc." et "dim." en italique.
+  void _paintDynamic(Canvas canvas, PlacedNote note, double ySpaces) {
+    final String? lettres = Smufl.dynamicFor(note.note.dynamicMark ?? '');
+    if (lettres != null) {
+      _drawGlyph(
+        canvas,
+        _glyph(lettres, inkColor),
+        note.xSpaces - 0.5,
+        ySpaces + 0.5,
+      );
+      return;
+    }
+    final TextPainter tp = TextPainter(
+      text: TextSpan(
+        text: DynamicMarks.textFor(note),
+        style: TextStyle(
+          color: inkColor,
+          fontSize: spaceSize * DynamicMarks.heightSpaces,
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(
+      canvas,
+      Offset(_x(note.xSpaces) - spaceSize * 0.5, _y(ySpaces) - tp.height / 2),
+    );
   }
 
   /// Le doigte ecrit (K2), centre au-dessus de la tete.

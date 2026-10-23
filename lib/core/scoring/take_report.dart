@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../music/passage.dart';
 import '../music/score_note.dart';
+import 'dynamics_judge.dart';
 import 'live_tuning.dart';
 import 'measure_scores.dart';
 import 'rhythm_judge.dart';
@@ -31,6 +32,9 @@ enum Weakness {
 
   /// Une liaison s'y casse (K8).
   slurs,
+
+  /// Une nuance ne s'y entend pas (K9).
+  dynamics,
 }
 
 /// Tout ce qu'une prise dit d'une mesure (lot N5).
@@ -61,6 +65,9 @@ class MeasureReport {
   /// Les notes liees ou l'archet a change (K8), dans l'ordre.
   final List<ScoreNote> brokenSlurs = <ScoreNote>[];
 
+  /// Les nuances qui commencent ici et ne s'entendent pas (K9).
+  final List<DynamicsFinding> missedDynamics = <DynamicsFinding>[];
+
   /// Tempo local rapporte au tempo tenu (C1) : 0,8 y ralentit de 20 %.
   double? tempoRatio;
 
@@ -71,6 +78,11 @@ class MeasureReport {
   /// hesitation. Le son d'une phrase compte, mais une mesure qui fait peur
   /// passe avant.
   static const double slurWeight = 15;
+
+  /// Ce que pese une nuance qui ne s'entend pas : juste assez pour faire une
+  /// tache quand le reste tient -- un piano qu'on n'entend pas, un
+  /// professeur le ferait reprendre --, moins qu'un arret ou une reprise.
+  static const double dynamicsWeight = 21;
 
   /// Combien cette mesure demande encore de travail, sans unite : sert a
   /// choisir, jamais a afficher.
@@ -97,6 +109,7 @@ class MeasureReport {
       d += (100 - ju) * 0.4;
     }
     d += brokenSlurs.length * slurWeight;
+    d += missedDynamics.length * dynamicsWeight;
     return d;
   }
 
@@ -114,6 +127,7 @@ class MeasureReport {
       Weakness.rhythm: rhythmScore == null ? 0 : (100 - rhythmScore!) * 0.4,
       Weakness.tuning: tuningScore == null ? 0 : (100 - tuningScore!) * 0.4,
       Weakness.slurs: brokenSlurs.length * slurWeight,
+      Weakness.dynamics: missedDynamics.length * dynamicsWeight,
     };
     Weakness? pire;
     double max = 0;
@@ -156,6 +170,7 @@ class TakeReport {
     RhythmJudge rhythm,
     LiveTuning tuning, {
     List<ScoreNote> brokenSlurs = const <ScoreNote>[],
+    List<DynamicsFinding> dynamics = const <DynamicsFinding>[],
   }) {
     final Map<int, MeasureReport> parMesure = <int, MeasureReport>{};
     for (final ScoreNote n in passage.notes) {
@@ -219,6 +234,11 @@ class TakeReport {
     }
     for (final ScoreNote n in brokenSlurs) {
       parMesure[n.measure]?.brokenSlurs.add(n);
+    }
+    for (final DynamicsFinding d in dynamics) {
+      if (!d.heard) {
+        parMesure[d.at.measure]?.missedDynamics.add(d);
+      }
     }
 
     // N3 et C1 : rythme et tempo local, mesure par mesure.

@@ -17,6 +17,7 @@ import '../../core/music/passage.dart';
 import '../../core/play/count_in.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
+import '../../core/scoring/dynamics_judge.dart';
 import '../../core/scoring/finger_diagnosis.dart';
 import '../../core/scoring/live_tuning.dart';
 import '../../core/scoring/note_ladder.dart';
@@ -1035,6 +1036,7 @@ class _SessionScreenState extends State<SessionScreen>
           'tu y ralentis de ${(100 * (1 - m.tempoRatio!)).round()} %',
         Weakness.rhythm => 'le rythme',
         Weakness.tuning => _resonance(m.measure) ?? 'la justesse',
+        Weakness.dynamics => _nuance(m.missedDynamics.first),
         Weakness.slurs =>
           'la liaison se casse sur le ${PitchUtils.noteName(m.brokenSlurs.first.midi)}',
         null => null,
@@ -1049,6 +1051,14 @@ class _SessionScreenState extends State<SessionScreen>
     );
     return s == null ? null : resonanceReason(s);
   }
+
+  /// Une nuance qui ne s'entend pas, dite par son nom (K9).
+  static String _nuance(DynamicsFinding d) => switch (d.mark) {
+        'cresc' => 'le crescendo ne monte pas',
+        'dim' => 'le diminuendo ne descend pas',
+        final String n => 'le $n ne s entend pas : '
+            '${d.louder ? 'plus fort' : 'plus doux'} qu avant',
+      };
 
   void _changerDeMode() {
     setState(() {
