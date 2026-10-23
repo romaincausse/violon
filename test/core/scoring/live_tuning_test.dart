@@ -156,6 +156,23 @@ void main() {
     });
   });
 
+  group('LiveTuning, le glissando d un demanche (K5)', () {
+    test('le debut d une arrivee ne compte pas, celui d une autre note si', () {
+      final LiveTuning t = LiveTuning(glides: <String>{'n1'});
+      final LiveTuning sans = LiveTuning();
+      for (final LiveTuning j in <LiveTuning>[t, sans]) {
+        // A 120 ms, le doigt glisse encore : 60 cents sous la note.
+        j.observe(la4, joue(69, -60), sinceNoteStartMs: 120);
+        j.observe(la4, joue(69, -60), sinceNoteStartMs: 160);
+      }
+      expect(t.sampleCountFor('n1'), 0);
+      expect(sans.sampleCountFor('n1'), 2);
+      t.observe(la4, joue(69, 2), sinceNoteStartMs: LiveTuning.glideMs);
+      t.observe(la4, joue(69, 2), sinceNoteStartMs: LiveTuning.glideMs + 40);
+      expect(t.verdictFor('n1'), TuningVerdict.inTune);
+    });
+  });
+
   group('LiveTuning, exclusion de l attaque', () {
     test('sans information de temps, tout est retenu', () {
       // Les appelants qui ne savent pas ou en est la note gardent l'ancien

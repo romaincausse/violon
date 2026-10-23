@@ -47,6 +47,14 @@ class MethodSource {
     apport: 'Motifs de doigts, combinatoire systematique',
   );
 
+  /// Les changements de position (K5), le cahier qui suit l'op. 1.
+  static const MethodSource sevcikOp8 = MethodSource(
+    id: 'sevcik-op-8',
+    auteur: 'Sevcik',
+    titre: 'op. 8',
+    apport: 'Changements de position, le doigt qui glisse',
+  );
+
   static const MethodSource schradieck = MethodSource(
     id: 'schradieck',
     auteur: 'Schradieck',
@@ -71,6 +79,7 @@ class MethodSource {
   /// l'import (lot H6), qui lira le vrai texte.
   static const List<MethodSource> all = <MethodSource>[
     sevcik,
+    sevcikOp8,
     schradieck,
     hrimaly,
   ];

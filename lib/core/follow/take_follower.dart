@@ -51,7 +51,7 @@ class TakeFollower {
     this.endSilenceMs = defaultEndSilenceMs,
   })  : _suiveur = OnlineFollower(passage, slurredInto: slurredInto),
         tempo = TempoTracker(passage),
-        tuning = LiveTuning(a4: a4, tonality: LiveTuning.tonalityOf(passage));
+        tuning = LiveTuning.forPassage(passage, a4: a4);
 
   /// Le tempo qu'il tient, deduit de ses attaques (lot D3).
   final TempoTracker tempo;
@@ -235,8 +235,7 @@ class TakeFollower {
   /// mesure 19 avant de comprendre qu'on etait revenu a la 15, il la rend a
   /// la 15. Les couleurs de fin de prise sont celles-la.
   LiveTuning rescore() {
-    final LiveTuning juste =
-        LiveTuning(a4: a4, tonality: LiveTuning.tonalityOf(passage));
+    final LiveTuning juste = LiveTuning.forPassage(passage, a4: a4);
     if (_trames.isEmpty) {
       tuning = juste;
       return juste;

@@ -92,6 +92,12 @@ class ExerciseCatalog {
       intention: 'La main monte d une tierce : les memes doigts, d autres '
           'notes',
     ),
+    Palier(
+      numero: 8,
+      titre: 'Les demanches',
+      intention: 'De la premiere a la troisieme et retour : le doigt glisse, '
+          'la note d arrivee compte',
+    ),
   ];
 
   /// Tous les exercices, **dans l'ordre de difficulte**. Cet ordre est le
@@ -372,6 +378,39 @@ class ExerciseCatalog {
       tonicMidi: 74,
       octaves: 1,
       position: 3,
+    ),
+
+    // --- Palier 8 : les demanches (K5) ----------------------------------
+    // Le meme doigt glisse de la premiere a la troisieme et revient, sur
+    // chaque corde : le glissando est un geste, seule l'arrivee se juge.
+    ShiftExercise(
+      id: 'demanche-la',
+      titre: 'Le doigt glisse, sur la corde de la',
+      source: MethodSource.sevcikOp8,
+      palier: 8,
+      tempoVise: 60,
+      stringMidi: 69,
+      keyFifths: 2,
+      conseil: 'Le doigt ne quitte pas la corde : il glisse, leger, et le '
+          'pouce suit la main.',
+    ),
+    ShiftExercise(
+      id: 'demanche-re',
+      titre: 'Le doigt glisse, sur la corde de re',
+      source: MethodSource.sevcikOp8,
+      palier: 8,
+      tempoVise: 60,
+      stringMidi: 62,
+      keyFifths: 1,
+    ),
+    ShiftExercise(
+      id: 'demanche-mi',
+      titre: 'Le doigt glisse, sur la corde de mi',
+      source: MethodSource.sevcikOp8,
+      palier: 8,
+      tempoVise: 60,
+      stringMidi: 76,
+      keyFifths: 3,
     ),
   ];
 

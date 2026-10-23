@@ -11,7 +11,8 @@ import 'method_source.dart';
 enum ExerciseKind {
   motifDeDoigts('Motif de doigts'),
   gamme('Gamme'),
-  arpege('Arpege');
+  arpege('Arpege'),
+  demanche('Demanche');
 
   const ExerciseKind(this.label);
 
@@ -252,6 +253,82 @@ final class MotifExercise extends Exercise {
 
   @override
   String get detail => '${pattern.label} - ${motif.label}';
+}
+
+/// Un demanche (lot K5) : chaque doigt glisse de la premiere a la troisieme
+/// position et revient, sur une corde. D'apres Sevcik op. 8.
+///
+/// **Le meme doigt part et arrive** : c'est le premier demanche qu'on
+/// apprend, celui ou le doigt garde le contact de la corde et sert de guide.
+/// Le glissando qu'on entend entre les deux n'est pas une faute -- c'est un
+/// geste, pas une note : le juge ne regarde que la note d'arrivee, une fois
+/// le doigt pose ([LiveTuning.glides]).
+final class ShiftExercise extends Exercise {
+  const ShiftExercise({
+    required super.id,
+    required super.titre,
+    required super.source,
+    required super.palier,
+    required super.tempoVise,
+    required this.stringMidi,
+    required this.keyFifths,
+    super.conseil,
+  });
+
+  /// La corde a vide ou la main glisse.
+  final int stringMidi;
+
+  /// L'armure : la tonalite que font les doigts sur cette corde.
+  final int keyFifths;
+
+  /// Demi-tons au-dessus de la corde, doigts 1 a 4 : la main du majeur en
+  /// premiere position, puis la meme une tierce plus haut.
+  static const List<int> premiere = <int>[2, 4, 5, 7];
+  static const List<int> troisieme = <int>[5, 7, 9, 10];
+
+  /// Chaque doigt fait deux allers-retours.
+  static const int allersRetours = 2;
+
+  List<(int, int)> get _notes => <(int, int)>[
+        for (int d = 1; d <= 4; d++)
+          for (int k = 0; k < allersRetours; k++) ...<(int, int)>[
+            (stringMidi + premiere[d - 1], d),
+            (stringMidi + troisieme[d - 1], d),
+          ],
+      ];
+
+  @override
+  ExerciseKind get genre => ExerciseKind.demanche;
+
+  @override
+  int get position => 3;
+
+  @override
+  List<int> get midis => <int>[for (final (int, int) n in _notes) n.$1];
+
+  @override
+  List<String?>? get fingerings =>
+      <String?>[for (final (int, int) n in _notes) '${n.$2}'];
+
+  @override
+  int? get tonicPitchClass => null;
+
+  @override
+  String get detail => 'Le meme doigt, de la 1re a la 3e position';
+
+  @override
+  Passage toPassage({int? tempoBpm}) {
+    final Passage p = super.toPassage(tempoBpm: tempoBpm);
+    return Passage(
+      title: p.title,
+      notes: p.notes,
+      ticksPerBeat: p.ticksPerBeat,
+      writtenTempoBpm: p.writtenTempoBpm,
+      meter: p.meter,
+      keyFifths: keyFifths,
+      bars: p.bars,
+    );
+  }
 }
 
 /// Grave une suite de hauteurs en croches, la derniere note completant la

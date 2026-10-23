@@ -13,6 +13,7 @@ class BowedNote {
     this.attack = true,
     this.vibratoCents = 0,
     this.amplitude = 0.3,
+    this.glide = Duration.zero,
   });
 
   final Duration start;
@@ -31,6 +32,11 @@ class BowedNote {
 
   /// Amplitude de crete, de 0 a 1.
   final double amplitude;
+
+  /// Un demanche (K5) : la note commence sur la hauteur de la precedente et
+  /// glisse jusqu'a la sienne pendant cette duree, archet pose. Le doigt
+  /// voyage sur la corde, et l'oreille l'entend.
+  final Duration glide;
 
   Duration get end => start + duration;
 }
@@ -121,7 +127,11 @@ class ViolinSynth {
         final double reste = (fin - k) / sampleRate;
 
         double midi = note.midi;
-        if (lieeAvant && t < _glideSeconds) {
+        final double glisse = note.glide.inMicroseconds / 1e6;
+        if (avant != null && glisse > 0 && t < glisse) {
+          final double x = t / glisse;
+          midi = avant.midi + (note.midi - avant.midi) * x * x * (3 - 2 * x);
+        } else if (lieeAvant && t < _glideSeconds) {
           final double x = t / _glideSeconds;
           midi = avant.midi + (note.midi - avant.midi) * x * x * (3 - 2 * x);
         }

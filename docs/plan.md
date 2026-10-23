@@ -2381,7 +2381,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K2~~ | ~~Les doigtes du fichier~~ | | ★★ | fait |
 | ~~K3~~ | ~~La main en troisieme position~~ | **Must** | ★★★ | fait |
 | ~~K4~~ | ~~Le catalogue en troisieme position~~ | **Must** | ★★★ | fait |
-| K5 | Les demanches | | ★★ | 2 |
+| ~~K5~~ | ~~Les demanches~~ | | ★★ | fait |
 | K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
 | ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
 | K8 | Les liaisons respectees | | ★★ | 2 |
@@ -2476,6 +2476,17 @@ morceaux ecrits, ils viendront par l'import.
 d'une corde a l'autre, d'apres Sevcik op. 8. On juge **la note d'arrivee**,
 et le glissando entre les deux n'est pas une faute : c'est un geste, pas une
 note. Le suiveur doit le tolerer comme il tolere le vibrato.
+
+**Fait** (palier 8, `ShiftExercise`, `LiveTuning.glides`). Sur les cordes de
+re, la et mi, chaque doigt glisse deux fois de la premiere a la troisieme et
+revient, d'apres Sevcik op. 8 -- le meme doigt part et arrive, celui qu'on
+apprend en premier. Chaque note porte son doigt ; une note dont la voisine
+d'avant etait doigtee dans l'autre position est une **arrivee**
+(`HandPositions.shiftArrivals`), et le juge n'en regarde rien avant 200 ms,
+le temps du glissando d'un eleve. Valide sur une synthese passee par la
+vraie chaine, chaque arrivee glissant 200 ms a 72 : le suiveur va au bout,
+les seize notes sont entendues, aucune n'est a retravailler. Le demanche
+d'une corde a l'autre, et celui ou le doigt change, viendront avec K6.
 
 **K6 - Gammes et arpeges sur trois octaves.** Sol majeur d'abord, qui monte
 en cinquieme position sur la corde de mi. Apres K4 et K5 seulement : c'est la
