@@ -2384,7 +2384,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K5~~ | ~~Les demanches~~ | | ★★ | fait |
 | K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
 | ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
-| K8 | Les liaisons respectees | | ★★ | 2 |
+| ~~K8~~ | ~~Les liaisons respectees~~ | | ★★ | fait |
 | K9 | Les nuances | | ★ | 3 |
 | ~~K10~~ | ~~La resonance~~ | **Must** | ★★★ | fait |
 | ~~K11~~ | ~~Le travail lent, d'office~~ | **Must** | ★★★ | fait |
@@ -2521,6 +2521,24 @@ P4, une attaque du flux spectral -- est une liaison cassee ; une note
 detachee entendue liee, l'inverse. Une tache, pas une liste : *"Mesure 7, la
 liaison se casse sur le fa#."* A valider d'abord sur la prise 02, la gamme
 liee du banc.
+
+**Fait** (`SlurJudge`). **Un changement d'archet est un creux d'energie, pas
+une attaque** : sous une liaison, changer de note fait aussi une attaque du
+flux spectral, et c'est ce qui rendait la premiere mesure inutilisable (2
+attaques sur 9 notes liees de la prise 02, 13 sur 18 dans la meme gamme
+jouee detachee). Les creux, eux, se separent par leur profondeur : 3,6 et
+4,4 dB sous les liaisons de la 02, 6 a 11 dB entre les notes detachees de la
+01. Chaque trame porte donc la profondeur de son creux (`bowDipDb`), et une
+note liee dont le debut aligne tombe a 120 ms d'un creux de 6 dB ou plus est
+une liaison cassee ; un changement de corde sous la liaison ne se juge pas.
+Sur le banc, avec le vrai alignement et les liaisons de la gamme liee : **0
+liaison cassee sur 9 dans la 02, 6 sur 9 dans la 01**. La liaison cassee
+pese dans la mesure comme une hesitation, et la raison de la tache devient
+*"la liaison se casse sur le Fa#4"*. L'inverse -- une note detachee entendue
+liee -- n'est pas juge : il faudrait prouver l'absence d'un creux, et le
+detecteur en manque un sur quatre. **En passant** : la liaison vit
+desormais sur la note (`ScoreNote.slurred`), lue a l'import et rangee avec
+le morceau, et le suivi de l'application la recoit, comme celui du banc.
 
 **K9 - Les nuances.** Lire `<dynamics>` et les soufflets (`<wedge>`) dans le
 MusicXML, et comparer les passages **entre eux** : un micro a soixante-dix

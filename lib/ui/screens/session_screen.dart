@@ -1035,6 +1035,8 @@ class _SessionScreenState extends State<SessionScreen>
           'tu y ralentis de ${(100 * (1 - m.tempoRatio!)).round()} %',
         Weakness.rhythm => 'le rythme',
         Weakness.tuning => _resonance(m.measure) ?? 'la justesse',
+        Weakness.slurs =>
+          'la liaison se casse sur le ${PitchUtils.noteName(m.brokenSlurs.first.midi)}',
         null => null,
       };
 

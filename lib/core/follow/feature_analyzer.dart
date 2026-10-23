@@ -117,13 +117,14 @@ class IsolateFeatureAnalyzer implements FeatureAnalyzer {
   }
 
   static List<FeatureFrame> _relire(Float64List plat) => <FeatureFrame>[
-        for (int i = 0; i + 4 < plat.length; i += 5)
+        for (int i = 0; i + 5 < plat.length; i += 6)
           FeatureFrame(
             timeMs: plat[i].toInt(),
             midi: plat[i + 1].isNaN ? null : plat[i + 1],
             rms: plat[i + 2],
             onset: plat[i + 3] != 0,
             analysed: plat[i + 4] != 0,
+            bowDipDb: plat[i + 5].isNaN ? null : plat[i + 5],
           ),
       ];
 
@@ -162,14 +163,15 @@ void _pointDEntree(List<Object> demarrage) {
         (m[2]! as TransferableTypedData).materialize().asFloat32List();
     final List<FeatureFrame> trames =
         extracteur.addSamples(samples, analysePitch: m[3]! as bool);
-    final Float64List plat = Float64List(trames.length * 5);
+    final Float64List plat = Float64List(trames.length * 6);
     for (int i = 0; i < trames.length; i++) {
       final FeatureFrame t = trames[i];
-      plat[5 * i] = t.timeMs.toDouble();
-      plat[5 * i + 1] = t.midi ?? double.nan;
-      plat[5 * i + 2] = t.rms;
-      plat[5 * i + 3] = t.onset ? 1 : 0;
-      plat[5 * i + 4] = t.analysed ? 1 : 0;
+      plat[6 * i] = t.timeMs.toDouble();
+      plat[6 * i + 1] = t.midi ?? double.nan;
+      plat[6 * i + 2] = t.rms;
+      plat[6 * i + 3] = t.onset ? 1 : 0;
+      plat[6 * i + 4] = t.analysed ? 1 : 0;
+      plat[6 * i + 5] = t.bowDipDb ?? double.nan;
     }
     reponses.send(<Object?>[
       id,

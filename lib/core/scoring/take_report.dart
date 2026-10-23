@@ -28,6 +28,9 @@ enum Weakness {
 
   /// La justesse n'y est pas (N1).
   tuning,
+
+  /// Une liaison s'y casse (K8).
+  slurs,
 }
 
 /// Tout ce qu'une prise dit d'une mesure (lot N5).
@@ -55,11 +58,19 @@ class MeasureReport {
   /// Notes sautees ou ecourtees (B3), par index dans le passage.
   final List<int> avoided = <int>[];
 
+  /// Les notes liees ou l'archet a change (K8), dans l'ordre.
+  final List<ScoreNote> brokenSlurs = <ScoreNote>[];
+
   /// Tempo local rapporte au tempo tenu (C1) : 0,8 y ralentit de 20 %.
   double? tempoRatio;
 
   /// Au moins une note de la mesure a ete jouee.
   bool heard = false;
+
+  /// Ce que pese une liaison cassee : moins qu'un arret, autant qu'une
+  /// hesitation. Le son d'une phrase compte, mais une mesure qui fait peur
+  /// passe avant.
+  static const double slurWeight = 15;
 
   /// Combien cette mesure demande encore de travail, sans unite : sert a
   /// choisir, jamais a afficher.
@@ -85,6 +96,7 @@ class MeasureReport {
     if (ju != null) {
       d += (100 - ju) * 0.4;
     }
+    d += brokenSlurs.length * slurWeight;
     return d;
   }
 
@@ -101,6 +113,7 @@ class MeasureReport {
               : 0,
       Weakness.rhythm: rhythmScore == null ? 0 : (100 - rhythmScore!) * 0.4,
       Weakness.tuning: tuningScore == null ? 0 : (100 - tuningScore!) * 0.4,
+      Weakness.slurs: brokenSlurs.length * slurWeight,
     };
     Weakness? pire;
     double max = 0;
@@ -141,8 +154,9 @@ class TakeReport {
   static TakeReport of(
     Passage passage,
     RhythmJudge rhythm,
-    LiveTuning tuning,
-  ) {
+    LiveTuning tuning, {
+    List<ScoreNote> brokenSlurs = const <ScoreNote>[],
+  }) {
     final Map<int, MeasureReport> parMesure = <int, MeasureReport>{};
     for (final ScoreNote n in passage.notes) {
       parMesure.putIfAbsent(
@@ -202,6 +216,9 @@ class TakeReport {
 
     for (final ScoreNote n in rhythm.hesitations) {
       parMesure[n.measure]!.hesitations++;
+    }
+    for (final ScoreNote n in brokenSlurs) {
+      parMesure[n.measure]?.brokenSlurs.add(n);
     }
 
     // N3 et C1 : rythme et tempo local, mesure par mesure.

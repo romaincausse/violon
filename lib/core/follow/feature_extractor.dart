@@ -79,6 +79,10 @@ class FeatureExtractor {
   /// Attaques connues et pas encore rattachees a une trame.
   final List<Onset> _attaquesEnAttente = <Onset>[];
 
+  /// Les creux seuls, pour leur profondeur (K8) : la fusion des attaques
+  /// en efface certains, la liaison a besoin de tous.
+  final List<Onset> _creuxEnAttente = <Onset>[];
+
   /// Ajoute un paquet d'echantillons qui suit exactement le precedent, et
   /// rend les trames qu'il complete.
   ///
@@ -90,7 +94,9 @@ class FeatureExtractor {
   }) {
     _attaquesEnAttente.addAll(_attaques.addSamples(samples));
     if (bowChanges) {
-      _attaquesEnAttente.addAll(_creux.addSamples(samples));
+      final List<Onset> creux = _creux.addSamples(samples);
+      _attaquesEnAttente.addAll(creux);
+      _creuxEnAttente.addAll(creux);
       // Les deux detecteurs ne tranchent pas au meme rythme : un creux se
       // confirme apres une attaque plus recente du flux spectral.
       _attaquesEnAttente
@@ -127,6 +133,12 @@ class FeatureExtractor {
       for (int i = 0; i < frameSize; i++) {
         fenetre[i] = _tampon[decalage + i];
       }
+      double? creux;
+      while (_creuxEnAttente.isNotEmpty &&
+          _creuxEnAttente.first.timestampMs <= timeMs) {
+        final double db = _creuxEnAttente.removeAt(0).strength * 20;
+        creux = creux == null || db > creux ? db : creux;
+      }
       final double rms = _efficace(fenetre);
       double? midi;
       if (analysePitch && rms >= PerformanceFeatures.silenceRms) {
@@ -142,6 +154,7 @@ class FeatureExtractor {
           rms: rms,
           onset: onset,
           analysed: analysePitch,
+          bowDipDb: creux,
         ),
       );
       _prochaine += hopSize;
@@ -173,6 +186,7 @@ class FeatureExtractor {
     _debutTampon = 0;
     _prochaine = 0;
     _attaquesEnAttente.clear();
+    _creuxEnAttente.clear();
   }
 
   static double _efficace(Float32List fenetre) {

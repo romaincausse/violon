@@ -418,6 +418,7 @@ class MusicXmlReader {
           measure: grave.measure,
           fingering: _doigte(note),
           bowing: grave.bowing,
+          slurred: grave.slurred,
         );
       }
       return apres;
@@ -478,6 +479,8 @@ class MusicXmlReader {
   void _lireLiaisons(XmlElement note, String? id) {
     if (id != null && _liaisonsOuvertes.isNotEmpty) {
       _liees.add(id);
+      // La note le sait elle-meme : elle garde sa liaison dans un extrait.
+      _notes[_notes.length - 1] = _notes.last.copyWith(slurred: true);
     }
     for (final XmlElement notations in note.childrenNamed('notations')) {
       for (final XmlElement l in notations.childrenNamed('slur')) {
