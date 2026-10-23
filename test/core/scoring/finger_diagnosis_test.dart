@@ -65,4 +65,30 @@ void main() {
     ]));
     expect(FingerDiagnosis.of(h).main, isNull);
   });
+  test('une corde ou la main est basse se nomme, sur plus d une prise', () {
+    final TakeHistory h = TakeHistory.vide
+        .withTake(prise(0, <NoteTrace>[
+          for (int k = 1; k <= 4; k++) n(76 + k, -18), // corde de mi, bas
+          n(64, 2), n(66, -3), // corde de re, juste
+        ]))
+        .withTake(prise(10, <NoteTrace>[
+          for (int k = 1; k <= 4; k++) n(76 + k, -15),
+          n(64, 0),
+          n(66, 4),
+        ]));
+    final FingerDiagnosis d = FingerDiagnosis.of(h);
+    expect(d.mainString, isNotNull);
+    expect(d.mainString!.string, ViolinString.e);
+    expect(d.mainString!.flat, isTrue);
+    expect(d.mainString!.medianCents, closeTo(-15, 3));
+    expect(d.strings.map((StringFinding s) => s.string),
+        isNot(contains(ViolinString.d)));
+  });
+
+  test('une seule prise ne fait pas une corde', () {
+    final TakeHistory h = TakeHistory.vide.withTake(prise(0, <NoteTrace>[
+      for (int k = 1; k <= 8; k++) n(76 + (k % 4) + 1, -20),
+    ]));
+    expect(FingerDiagnosis.of(h).mainString, isNull);
+  });
 }

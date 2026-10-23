@@ -12,6 +12,7 @@ import '../../core/import/musicxml_reader.dart';
 import '../../core/import/piece_importer.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
+import '../../core/music/score_note.dart';
 import '../../core/audio/bench_recorder.dart';
 import '../../core/audio/take_player.dart';
 import '../../core/play/accompaniment.dart';
@@ -42,6 +43,7 @@ import 'piece_screen.dart';
 import 'progress_screen.dart';
 import 'session_screen.dart';
 import 'concert_screen.dart';
+import 'reading_screen.dart';
 import 'tuner_screen.dart';
 
 /// La coquille de navigation.
@@ -91,6 +93,7 @@ class HomeShell extends StatefulWidget {
   final TakeSharer? takeSharer;
 
   static const Key concertKey = Key('ouvrir-le-concert');
+  static const Key lectureKey = Key('ouvrir-la-lecture');
 
   /// La seance du jour (V1) : la lancer, et la mener.
   static const Key seanceKey = Key('ma-seance');
@@ -1016,6 +1019,22 @@ class _HomeShellState extends State<HomeShell> {
                   ),
                 ),
               ),
+              // Le solfege sur le violon (L1) : lire une note, la jouer.
+              ListTile(
+                key: HomeShell.lectureKey,
+                leading: const Icon(Icons.menu_book_outlined),
+                title: const Text('Lire les notes'),
+                subtitle: const Text('Une note sur la portee, tu la joues'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => ReadingScreen(
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    pool: _notesALire,
+                    keyFifths: widget.passage.keyFifths,
+                    a4: widget.a4,
+                  ),
+                ),
+              ),
               ListTile(
                 key: HomeShell.bourdonKey,
                 leading: const Icon(Icons.blur_on),
@@ -1114,6 +1133,20 @@ class _HomeShellState extends State<HomeShell> {
         ),
       ),
     );
+  }
+
+  /// Les notes a lire : celles du morceau du moment, ou, s'il en a trop peu,
+  /// la premiere position en sol majeur.
+  List<int> get _notesALire {
+    final List<int> du = widget.passage.notes
+        .map((ScoreNote n) => n.midi)
+        .toSet()
+        .toList()
+      ..sort();
+    if (du.length >= 4) {
+      return du;
+    }
+    return const <int>[55, 57, 59, 60, 62, 64, 66, 67, 69, 71, 72, 74, 76, 78];
   }
 
   /// Referme le tiroir, puis ouvre l'ecran : sans quoi il resterait derriere.
