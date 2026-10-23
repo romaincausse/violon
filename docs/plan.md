@@ -48,7 +48,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 ---
 
-## Les quatorze jalons
+## Les quinze jalons
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
@@ -66,8 +66,9 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 12 | L'envie | 8 | 0 | On a envie d'y revenir |
 | 13 | Le solfege sur le violon | 3 | 0 | Lire et entendre, archet en main |
 | 14 | Les jeux | 3 | 0 | Un record a battre, au violon |
+| 15 | Le regard du professeur | 14 | 24 | Au niveau de l'eleve, et attentive au son |
 
-**90 lots au 23 octobre 2026.** Le verdict du jalon 5 est tombe : **non
+**104 lots au 23 octobre 2026, dont 14 a faire au jalon 15.** Le verdict du jalon 5 est tombe : **non
 tenu** (ADR-019). Le lot P4 l'a rapproche du critere -- 92 % des notes dans
 la bonne mesure, 76 % sur la bonne note, pour 95 et 90 exiges. Restent P5,
 la note ajoutee ; les prises 09 a 12, a enregistrer avec l'enfant ; et le
@@ -2353,6 +2354,152 @@ et la part d'irregularite. Record : le meilleur score.
 **Ecartes** : tout ce qui se joue au doigt sur l'ecran plutot qu'a l'archet,
 les defis entre enfants (aucun compte, aucun serveur), et les etoiles ou
 medailles.
+
+---
+
+
+## Jalon 15 - Le regard du professeur
+
+Ne le 23 octobre 2026 d'une revue de l'application faite **comme le ferait un
+professeur de violon**, a la demande de l'utilisateur. Le verdict : la
+pedagogie est la bonne -- l'eleve joue sur son papier, une tache a la fois,
+un tempo lent n'est pas une faute, le diagnostic par doigt parle la langue du
+professeur -- mais **le niveau est celui d'un eleve de deuxieme annee**, et
+**le son, moitie du metier, n'est jamais regarde**. Sans les trois premiers
+groupes ci-dessous, l'application reste un tres bon outil de justesse et de
+rythme pour un eleve plus jeune que celui pour qui elle est faite.
+
+Ce qui ne change pas : elle emet ou elle ecoute, jamais les deux (ADR-008) ;
+un retour est une tache, pas une liste ; un record ne redescend pas ; ce
+qu'elle ne sait pas mesurer -- la posture, la tenue d'archet, le phrase --,
+elle ne pretend pas le juger. Tout lot qui **juge** quelque chose de nouveau
+passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
+
+| ID | Lot | Must | ROI | Est. |
+|----|-----|------|-----|------|
+| K1 | Le niveau de depart | | ★★★ | 1 |
+| K2 | Les doigtes du fichier | | ★★ | 1 |
+| K3 | La main en troisieme position | **Must** | ★★★ | 2 |
+| K4 | Le catalogue en troisieme position | **Must** | ★★★ | 2 |
+| K5 | Les demanches | | ★★ | 2 |
+| K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
+| K7 | Le son file | **Must** | ★★★ | 1 |
+| K8 | Les liaisons respectees | | ★★ | 2 |
+| K9 | Les nuances | | ★ | 3 |
+| K10 | La resonance | **Must** | ★★★ | 2 |
+| K11 | Le travail lent, d'office | **Must** | ★★★ | 1 |
+| K12 | Le modele avant l'essai | | ★★ | 1 |
+| K13 | Le vibrato | | ★★ | 2 |
+| K14 | La consigne en vue | | ★★★ | 1 |
+
+### L'ordre : quatre vagues
+
+1. **Ce qui se fait vite et change la seance des ce soir** : K11, K14, K7,
+   K1. Quatre soirees, aucune dependance.
+2. **Le niveau et la justesse** : K10, K2, K3, K4. La resonance d'abord,
+   parce qu'elle sert toutes les positions ; puis les doigtes du fichier,
+   dont depend la troisieme position.
+3. **Ce qui demande la troisieme position ou le violon refait** : K5, K13,
+   K8, K12 -- ce dernier apres J8, le violon de l'accompagnement.
+4. **Le plus cher, le moins sur** : K6, K9.
+
+P5, la note ajoutee, reste devant tout cela : ce qui juge s'appuie sur ce que
+le suiveur place.
+
+### Le niveau
+
+**K1 - Le niveau de depart.** Le catalogue commence a Sevcik, "la main se
+pose", et l'eleve de quatrieme annee s'y ennuierait des le premier soir. A la
+premiere ouverture, une question -- *depuis combien d'annees joues-tu ?* -- ou
+un choix du professeur ouvre les paliers deja acquis. Rien n'est verrouille
+pour autant (ADR-011) : on change seulement ce qui est propose en premier.
+
+**K2 - Les doigtes du fichier.** `ScoreNote` a un champ `fingering` que
+l'import MusicXML ne remplit pas : lire `<fingering>`, le garder avec le
+morceau, et le montrer -- un chiffre au-dessus de la tete, ce que l'ADR-007
+permet sans faire du rendu un graveur general. C'est aussi ce qui dit dans
+quelle position l'eleve joue un passage.
+
+**K3 - La main en troisieme position.** Le diagnostic par doigt (H3) suppose
+la premiere position : une erreur en troisieme est attribuee au mauvais
+doigt. La position se deduit du doigte ecrit (K2), sinon du contexte -- une
+note au-dessus de ce que la premiere position atteint, les voisines d'un
+passage aigu. Faute de pouvoir trancher, la note ne compte pas : mieux vaut un
+diagnostic de moins qu'un doigt accuse a tort.
+
+**K4 - Le catalogue en troisieme position.** Les memes familles que la
+premiere -- doigts en ligne, gammes d'une octave sur la et mi, arpeges --,
+placees en troisieme, tirees de methodes du domaine public (Sevcik, Schradieck,
+Wohlfahrt). Un palier de plus apres le mineur.
+
+**K5 - Les demanches.** De la premiere a la troisieme sur une corde, puis
+d'une corde a l'autre, d'apres Sevcik op. 8. On juge **la note d'arrivee**,
+et le glissando entre les deux n'est pas une faute : c'est un geste, pas une
+note. Le suiveur doit le tolerer comme il tolere le vibrato.
+
+**K6 - Gammes et arpeges sur trois octaves.** Sol majeur d'abord, qui monte
+en cinquieme position sur la corde de mi. Apres K4 et K5 seulement : c'est la
+synthese, pas un exercice de plus.
+
+### Le son
+
+**K7 - Le son file.** "Tiens la note" (G2) mesure la justesse ; il mesure
+aussi **la regularite du son** -- l'energie de l'archet, deja calculee a
+chaque trame, ne doit pas varier de plus de quelques decibels sur un archet
+entier. Une variante sur cordes a vide, ou seul le son compte, ouvre la
+seance du jour (V1) : une minute avant la gamme, comme en cours.
+
+**K8 - Les liaisons respectees.** L'import lit deja les liaisons. Un
+changement d'archet entendu au milieu d'une liaison -- le creux d'energie de
+P4, une attaque du flux spectral -- est une liaison cassee ; une note
+detachee entendue liee, l'inverse. Une tache, pas une liste : *"Mesure 7, la
+liaison se casse sur le fa#."* A valider d'abord sur la prise 02, la gamme
+liee du banc.
+
+**K9 - Les nuances.** Lire `<dynamics>` et les soufflets (`<wedge>`) dans le
+MusicXML, et comparer les passages **entre eux** : un micro a soixante-dix
+centimetres ne donne pas de decibels absolus, mais il dit si le forte de la
+mesure 9 est plus fort que le piano de la mesure 5. Le plus fragile du jalon :
+en dernier.
+
+### La justesse
+
+**K10 - La resonance.** Les notes qui sonnent avec une corde a vide -- sol,
+re, la, mi et leurs octaves -- se jugent plus serre que les autres : quand
+elles sont justes, la corde a vide vibre et le violon sonne. Un retour qui
+porte ce nom : *"Ton re ne fait pas vibrer la corde de re."* C'est ainsi qu'un
+professeur apprend a ecouter sa justesse, plutot que de la regarder sur un
+ecran.
+
+### Le travail
+
+**K11 - Le travail lent, d'office.** La boucle demarre aujourd'hui au tempo
+affiche. Elle demarrera a **70 % du tempo vise**, arrondi aux crans du
+metronome, et montera de six apres deux reussites, comme R3 le fait deja --
+sauf si l'historique montre le passage deja tenu plus vite, auquel cas deux
+crans sous ce record.
+
+**K12 - Le modele avant l'essai.** *"Ecouter d'abord"* dans la boucle : les
+mesures choisies, au tempo de l'essai, jouees proprement, puis le micro
+s'ouvre. Au piano tant que le violon enregistre n'est pas refait (J8).
+
+**K13 - Le vibrato.** Le vibrato qui demarre se travaille au rythme : deux,
+trois, quatre oscillations par temps, sur un pouls visuel. On mesure sa
+vitesse et son amplitude sur une note longue -- le detecteur sait deja le
+reconnaitre -- et sa regularite d'une oscillation a l'autre. Record : la
+plus longue note vibree regulierement.
+
+### Le professeur
+
+**K14 - La consigne en vue.** Le mot du devoir -- *"attention au 3e doigt"* --
+est range avec le devoir (T1) mais ne se lit que dans le repertoire. Il
+s'affiche au-dessus de la partition quand le passage en cours est celui du
+devoir, et dans l'etape de travail de la seance du jour.
+
+**Ecarte** : juger la posture ou la tenue d'archet (il faudrait la camera,
+et le professeur le fait mieux) ; noter le phrase ; des doigtes et coups
+d'archet saisis dans l'application plutot que dans le fichier -- ce serait un
+editeur de partition.
 
 ---
 

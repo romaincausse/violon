@@ -279,6 +279,27 @@ qu'avancer de cinq), et tout terme qui le noie fait plus de mal que de bien.
 A reessayer seulement avec les etiquettes corrigees du banc, qui diront qui
 avait raison.
 
+## L'avis du professeur
+
+Le 23 octobre 2026, l'utilisateur a demande une revue de l'application faite
+comme le ferait un professeur de violon. Elle confirme ce que le projet a
+voulu -- l'eleve sur son papier, une tache a la fois, le travail lent qui
+n'est pas une faute, le diagnostic par doigt -- et nomme deux angles morts.
+
+**Le niveau.** Tout le catalogue est en premiere position, deux octaves au
+plus. Le profil de l'eleve, plus haut, dit troisieme position et vibrato qui
+demarre : le catalogue a ete construit pour un eleve plus jeune que lui, et
+le diagnostic par doigt ne sait pas qu'on peut demancher.
+
+**Le son.** L'application mesure la hauteur et le temps, rien d'autre. Le
+projet l'avait ecrit (hors perimetre : "la sonorite, le phrase") ; la revue
+fait une distinction que le plan n'avait pas faite. **Juger la beaute d'un
+son reste hors de portee ; mesurer sa regularite, le respect d'une liaison ou
+l'ecart entre un piano et un forte ne l'est pas.** Ce sont des faits, comme la
+justesse, et l'energie de chaque trame est deja calculee.
+
+Jalon 15.
+
 ## Tensions ouvertes, a trancher un jour
 
 Notees ici plutot que tranchees dans l'urgence, parce que chacune oppose deux
