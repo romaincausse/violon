@@ -2383,7 +2383,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | K4 | Le catalogue en troisieme position | **Must** | ★★★ | 2 |
 | K5 | Les demanches | | ★★ | 2 |
 | K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
-| K7 | Le son file | **Must** | ★★★ | 1 |
+| ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
 | K8 | Les liaisons respectees | | ★★ | 2 |
 | K9 | Les nuances | | ★ | 3 |
 | K10 | La resonance | **Must** | ★★★ | 2 |
@@ -2448,6 +2448,21 @@ aussi **la regularite du son** -- l'energie de l'archet, deja calculee a
 chaque trame, ne doit pas varier de plus de quelques decibels sur un archet
 entier. Une variante sur cordes a vide, ou seul le son compte, ouvre la
 seance du jour (V1) : une minute avant la gamme, comme en cours.
+
+**Fait** (`EvenBow`). Un archet se termine sur un silence ou sur une attaque
+-- le creux d'un changement d'archet en est une. On juge son corps, sans les
+150 premieres ni les 100 dernieres millisecondes : du dixieme au neuvieme
+decile, l'energie ne doit pas s'ecarter de plus de 5 dB. Au-dela, une phrase
+de professeur : le son s'eteint a la fin, il grossit en route, ou il bouge.
+Le record est **le plus long archet egal**. Seuil regle sur les quarante
+archets de plus d'une seconde des prises 01 a 08 (1,7 a 17 dB, mediane 5,9) :
+la moitie passe, donc un premier record des le premier soir. Sur une synthese
+passee par la vraie chaine, deux archets vibres sont egaux et le meme archet
+qui perd 10 dB s'eteint. **Reste a valider sur une prise de son file** (13,
+au protocole du banc) : celles du banc ne depassent pas deux secondes. La
+seance du jour ouvre l'echauffement par une minute de cordes a vide ; les
+trois minutes de la gamme partent du retour. Les jeux ont une carte "Cordes
+a vide".
 
 **K8 - Les liaisons respectees.** L'import lit deja les liaisons. Un
 changement d'archet entendu au milieu d'une liaison -- le creux d'energie de

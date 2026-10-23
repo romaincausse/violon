@@ -153,7 +153,8 @@ void main() {
   group('GameRecords', () {
     test('un record ne baisse jamais, et se relit', () {
       const GameRecords r = GameRecords(echoBest: 5, pulseBest: 80);
-      final GameRecords m = r.merge(echo: 3, longToneMs: 4200, pulse: 85);
+      final GameRecords m =
+          r.merge(echo: 3, longToneMs: 4200, pulse: 85, evenBowMs: 6100);
       expect(m.echoBest, 5);
       expect(m.longToneBestMs, 4200);
       expect(m.pulseBest, 85);
@@ -161,6 +162,8 @@ void main() {
       expect(lu.echoBest, 5);
       expect(lu.longToneBestMs, 4200);
       expect(lu.pulseBest, 85);
+      expect(lu.evenBowBestMs, 6100);
+      expect(lu.merge(evenBowMs: 3000).evenBowBestMs, 6100);
       expect(GameRecords.decode('pas du json').echoBest, 0);
       expect(GameRecords.decode(null).pulseBest, 0);
     });
