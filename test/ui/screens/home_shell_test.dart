@@ -633,9 +633,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('1/3 - Mesures'), findsOneWidget);
       // "Passer" saute le travail : la gamme arrive.
+      await tester.tap(find.byKey(HomeShell.seanceMenuKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(HomeShell.seanceEtapeFaiteKey));
       await tester.pumpAndSettle();
       expect(find.text('Gamme de sol majeur'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceMenuKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(HomeShell.seanceArreterKey));
       await tester.pumpAndSettle();
       expect(find.text('Demo - mesures 12 a 13'), findsOneWidget);
@@ -653,6 +657,8 @@ void main() {
       await tester.pump(const Duration(minutes: 3, seconds: 1));
       await tester.pumpAndSettle();
       expect(find.textContaining('2/3'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceMenuKey));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(HomeShell.seanceArreterKey));
       await tester.pumpAndSettle();
     });
