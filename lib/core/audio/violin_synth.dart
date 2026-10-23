@@ -12,6 +12,7 @@ class BowedNote {
     required this.midi,
     this.attack = true,
     this.vibratoCents = 0,
+    this.vibratoHz = 5.5,
     this.amplitude = 0.3,
     this.glide = Duration.zero,
   });
@@ -29,6 +30,10 @@ class BowedNote {
 
   /// Amplitude du vibrato, en cents de part et d'autre de [midi].
   final double vibratoCents;
+
+  /// Vitesse du vibrato : 5,5 par seconde pour un violoniste, deux a quatre
+  /// pour un eleve qui l'apprend au metronome (K13).
+  final double vibratoHz;
 
   /// Amplitude de crete, de 0 a 1.
   final double amplitude;
@@ -91,8 +96,6 @@ class ViolinSynth {
   /// saute pas instantanement d'une frequence a l'autre.
   static const double _glideSeconds = 0.025;
 
-  static const double _vibratoHz = 5.5;
-
   /// Le vibrato ne commence pas avec la note : un violoniste pose le son,
   /// puis le fait vivre.
   static const double _vibratoDelaySeconds = 0.15;
@@ -143,7 +146,7 @@ class ViolinSynth {
           midi += note.vibratoCents /
               100 *
               entree *
-              math.sin(2 * math.pi * _vibratoHz * t);
+              math.sin(2 * math.pi * note.vibratoHz * t);
         }
 
         double enveloppe = 1;

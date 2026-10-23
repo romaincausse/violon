@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/audio/fake_pitch_source.dart';
@@ -12,6 +14,7 @@ import 'package:violon/ui/screens/echo_screen.dart';
 import 'package:violon/ui/screens/games_screen.dart';
 import 'package:violon/ui/screens/long_tone_screen.dart';
 import 'package:violon/ui/screens/pulse_screen.dart';
+import 'package:violon/ui/screens/vibrato_screen.dart';
 
 const List<int> pool = <int>[60, 62, 64, 65, 67, 69, 71, 72];
 
@@ -47,6 +50,9 @@ void main() {
         evenBowBestMs: 5300,
       ));
       moteur = FakeAudioEngine();
+      // Cinq cartes : toutes a l'ecran.
+      await tester.binding.setSurfaceSize(const Size(400, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(MaterialApp(
         home: GamesScreen(
           passage: buildDemoPassage(),
@@ -59,7 +65,8 @@ void main() {
       expect(find.text('Record : 4 notes'), findsOneWidget);
       expect(find.text('Record : 70 sur 100'), findsOneWidget);
       expect(find.text('Record : 5.3 s'), findsOneWidget);
-      expect(find.text('Pas encore de record'), findsOneWidget);
+      // La note tenue et le vibrato n'ont pas encore de record.
+      expect(find.text('Pas encore de record'), findsNWidgets(2));
 
       // Une note tenue : le record se range des qu'il monte.
       await tester.tap(find.byKey(GamesScreen.tenueKey));
@@ -213,6 +220,47 @@ void main() {
       expect(find.text('La minute est faite.'), findsOneWidget);
       expect(find.text('Passer a la gamme'), findsOneWidget);
       expect(micro.disposed, isTrue);
+    });
+  });
+
+  group('VibratoScreen', () {
+    testWidgets('la vitesse par temps, la largeur, et le record (K13)',
+        (WidgetTester tester) async {
+      int? record;
+      await tester.pumpWidget(MaterialApp(
+        home: VibratoScreen(
+          pitchSourceFactory: nouveauMicro,
+          onBest: (int ms) => record = ms,
+        ),
+      ));
+      await tester.tap(find.byKey(VibratoScreen.cibleKey(3)));
+      await tester.pump();
+      await tester.tap(find.byKey(VibratoScreen.commencerKey));
+      await tester.pump();
+      await tester.pump();
+      // Trois oscillations par seconde, a 60 : trois par temps.
+      for (int t = 0; t < 4000; t += 23) {
+        micro.emitFeature(FeatureFrame(
+          timeMs: t,
+          midi: 69 + 0.25 * math.sin(2 * math.pi * 3 * t / 1000),
+          rms: 0.05,
+          onset: t == 0,
+        ));
+        await tester.pump(const Duration(milliseconds: 23));
+      }
+      expect(
+        tester.widget<Text>(find.byKey(VibratoScreen.vitesseKey)).data,
+        startsWith('3.'),
+      );
+      expect(find.text('Pile'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(VibratoScreen.largeurKey)).data,
+        endsWith('regulier'),
+      );
+      expect(record, greaterThan(2500));
+      await tester.tap(find.byKey(VibratoScreen.commencerKey));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Record : '), findsOneWidget);
     });
   });
 

@@ -2389,7 +2389,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K10~~ | ~~La resonance~~ | **Must** | ★★★ | fait |
 | ~~K11~~ | ~~Le travail lent, d'office~~ | **Must** | ★★★ | fait |
 | ~~K12~~ | ~~Le modele avant l'essai~~ | | ★★ | fait |
-| K13 | Le vibrato | | ★★ | 2 |
+| ~~K13~~ | ~~Le vibrato~~ | | ★★ | fait |
 | ~~K14~~ | ~~La consigne en vue~~ | | ★★★ | fait |
 
 ### L'ordre : quatre vagues
@@ -2583,6 +2583,19 @@ trois, quatre oscillations par temps, sur un pouls visuel. On mesure sa
 vitesse et son amplitude sur une note longue -- le detecteur sait deja le
 reconnaitre -- et sa regularite d'une oscillation a l'autre. Record : la
 plus longue note vibree regulierement.
+
+**Fait** (`VibratoMeter`, jeu "Le vibrato"). Sur les trames du suiveur, une
+toutes les 23 ms -- le lissage, qui en voit deux fois moins, sait seulement
+dire "ca oscille" : la vitesse par les passages de part et d'autre de la
+hauteur de la derniere seconde, la largeur par l'ecart de chaque
+demi-oscillation, la regularite par la duree de chaque oscillation, a un
+quart de la mediane des dernieres. Deux, trois ou quatre par temps sur un
+pouls visuel (aucun son : ADR-008), ou libre. Sur une synthese passee par la
+vraie chaine, 2, 3, 4 et 6 oscillations par seconde se mesurent a 10 % pres.
+**Sur le banc**, cinq minutes sans vibrato voulu : une hauteur qui ondule fait
+deux series d'une seconde, deux oscillations a 1,9 par seconde ; le record
+demande donc trois oscillations, et le banc n'en donne plus aucun. La prise
+10, au vibrato, reste a enregistrer.
 
 ### Le professeur
 
