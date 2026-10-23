@@ -650,5 +650,80 @@ void main() {
           .reduce(math.min);
       expect(plusPale, closeTo(0.3, 0.01));
     });
+
+    group('la fenetre suit le curseur', () {
+      // Trente-deux noires : huit mesures, qui debordent en hauteur comme en
+      // largeur dans une petite boite a interligne fixe.
+      Passage long() => passageDe(<(int, NoteValue)>[
+            for (int i = 0; i < 32; i++) (67 + i % 5, NoteValue.quarter),
+          ]);
+
+      Future<void> poserLong(
+        WidgetTester tester, {
+        required int? tick,
+        required ScoreDisplayMode mode,
+      }) =>
+          tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: SizedBox(
+                  width: 240,
+                  height: 140,
+                  child: ScoreView(
+                    passage: long(),
+                    spaceSize: 12,
+                    cursorTick: tick,
+                    mode: mode,
+                  ),
+                ),
+              ),
+            ),
+          );
+
+      double pixels(WidgetTester tester, Axis axe) => tester
+          .stateList<ScrollableState>(find.byType(Scrollable))
+          .firstWhere((ScrollableState s) => s.position.axis == axe)
+          .position
+          .pixels;
+
+      testWidgets('vers le bas, quand le curseur passe sur un systeme cache',
+          (WidgetTester tester) async {
+        await poserLong(tester, tick: null, mode: ScoreDisplayMode.systems);
+        expect(pixels(tester, Axis.vertical), 0);
+        final int dernier = long().notes.last.onsetTicks;
+        await poserLong(tester, tick: dernier, mode: ScoreDisplayMode.systems);
+        await tester.pumpAndSettle();
+        expect(pixels(tester, Axis.vertical), greaterThan(0));
+      });
+
+      testWidgets(
+          'vers la droite, en defilement, le curseur garde de la '
+          'ligne devant lui', (WidgetTester tester) async {
+        await poserLong(tester, tick: 0, mode: ScoreDisplayMode.scrolling);
+        await tester.pumpAndSettle();
+        expect(pixels(tester, Axis.horizontal), 0,
+            reason: 'visible : on ne bouge pas');
+        final int dernier = long().notes.last.onsetTicks;
+        await poserLong(tester,
+            tick: dernier, mode: ScoreDisplayMode.scrolling);
+        await tester.pumpAndSettle();
+        final double decalage = pixels(tester, Axis.horizontal);
+        expect(decalage, greaterThan(0));
+        // Le curseur est dans la fenetre, pas au bord.
+        final Size canvas = tester.getSize(find.byKey(ScoreView.canvasKey));
+        expect(decalage, lessThan(canvas.width));
+      });
+
+      testWidgets('rien ne bouge tant que le curseur est visible',
+          (WidgetTester tester) async {
+        await poserLong(tester, tick: 0, mode: ScoreDisplayMode.systems);
+        await tester.pumpAndSettle();
+        final int deuxieme = long().notes[1].onsetTicks;
+        await poserLong(tester, tick: deuxieme, mode: ScoreDisplayMode.systems);
+        await tester.pumpAndSettle();
+        expect(pixels(tester, Axis.vertical), 0);
+        expect(pixels(tester, Axis.horizontal), 0);
+      });
+    });
   });
 }
