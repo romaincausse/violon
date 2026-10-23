@@ -2377,7 +2377,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
-| K1 | Le niveau de depart | | ★★★ | 1 |
+| ~~K1~~ | ~~Le niveau de depart~~ | | ★★★ | fait |
 | K2 | Les doigtes du fichier | | ★★ | 1 |
 | K3 | La main en troisieme position | **Must** | ★★★ | 2 |
 | K4 | Le catalogue en troisieme position | **Must** | ★★★ | 2 |
@@ -2413,6 +2413,16 @@ pose", et l'eleve de quatrieme annee s'y ennuierait des le premier soir. A la
 premiere ouverture, une question -- *depuis combien d'annees joues-tu ?* -- ou
 un choix du professeur ouvre les paliers deja acquis. Rien n'est verrouille
 pour autant (ADR-011) : on change seulement ce qui est propose en premier.
+
+**Fait** (`StartingLevel`, `ExerciseProgress.startPalier`). La question se
+pose en tete de "Gammes et exercices" tant qu'elle n'a pas de reponse :
+*je commence*, *2 ans* (palier 3, une octave), *3 ans* (4, deux octaves),
+*4 ans ou plus* (5, les arpeges). Les paliers d'en dessous sont ouverts, la
+prochaine tache part du sien, et ce qui reste en dessous ne s'affiche plus
+comme un manque. La reponse se range et se change d'un bouton ("Niveau :
+...") ; changer de niveau change la tache, jamais les records. A partir de
+trois ans, l'echauffement de la seance passe a la gamme de deux octaves,
+quand la tonalite du morceau en a une.
 
 **K2 - Les doigtes du fichier.** `ScoreNote` a un champ `fingering` que
 l'import MusicXML ne remplit pas : lire `<fingering>`, le garder avec le

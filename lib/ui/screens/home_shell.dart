@@ -76,6 +76,8 @@ class HomeShell extends StatefulWidget {
     required this.documentPicker,
     required this.pieceImporter,
     this.initialBests = const <ExerciseBest>[],
+    this.startPalier,
+    this.onStartPalierChanged,
     this.initialExercise,
     this.initialPieces = PieceLibrary.vide,
     this.initialExcerpt,
@@ -176,6 +178,11 @@ class HomeShell extends StatefulWidget {
   /// La progression relue, s'il y en avait une.
   final List<ExerciseBest> initialBests;
 
+  /// Le niveau de depart (K1), ou `null` tant que la question n'a pas ete
+  /// posee : l'ecran des exercices la pose alors.
+  final int? startPalier;
+  final ValueChanged<int>? onStartPalierChanged;
+
   /// L'exercice travaille en dernier, s'il y en avait un.
   final Exercise? initialExercise;
 
@@ -229,8 +236,9 @@ class _HomeShellState extends State<HomeShell> {
   /// progression vit le temps d'une seance. C'est assez pour que l'application
   /// designe la prochaine tache pendant qu'on travaille, et c'est ce qui
   /// compte ce soir.
-  late final ExerciseProgress _progres = ExerciseProgress()
-    ..restore(widget.initialBests);
+  late final ExerciseProgress _progres =
+      ExerciseProgress(startPalier: widget.startPalier ?? 1)
+        ..restore(widget.initialBests);
 
   /// Le moteur de son, cree une fois et partage.
   ///
@@ -304,6 +312,7 @@ class _HomeShellState extends State<HomeShell> {
       workKey: _cleDuTravail,
       history: _historique,
       homework: _devoirs,
+      startPalier: _progres.startPalier,
     );
     final (WorkChoice, bool)? choix =
         await showModalBottomSheet<(WorkChoice, bool)>(
@@ -1036,10 +1045,21 @@ class _HomeShellState extends State<HomeShell> {
     final ExerciseChoice? choix =
         await Navigator.of(context).push<ExerciseChoice>(
       MaterialPageRoute<ExerciseChoice>(
-        builder: (BuildContext context) => ExercisesScreen(progress: _progres),
+        builder: (BuildContext context) => ExercisesScreen(
+          progress: _progres,
+          levelAsked: widget.startPalier != null,
+          onStartPalier: (int p) {
+            _progres.startPalier = p;
+            widget.onStartPalierChanged?.call(p);
+          },
+        ),
       ),
     );
     if (choix == null) {
+      // Le niveau de depart a pu changer la prochaine tache.
+      if (mounted) {
+        setState(() {});
+      }
       return;
     }
     if (choix.mode == ExerciseMode.noteANote) {

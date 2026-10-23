@@ -112,9 +112,17 @@ class ExerciseProgress {
   ExerciseProgress({
     this.catalogue = ExerciseCatalog.all,
     this.scorePropre = 90,
+    this.startPalier = 1,
   }) : assert(scorePropre > 0 && scorePropre <= 100, 'un seuil va de 1 a 100');
 
   final List<Exercise> catalogue;
+
+  /// Le niveau de depart (K1) : les paliers en dessous sont tenus pour
+  /// acquis, et la prochaine tache se cherche a partir de lui.
+  ///
+  /// Il ouvre, il ne ferme rien : un palier plus bas reste jouable, et ce
+  /// qui y a ete acquis reste acquis.
+  int startPalier;
 
   /// A partir de quel score une prise est dite propre.
   ///
@@ -194,6 +202,10 @@ class ExerciseProgress {
   int get palierOuvert {
     int ouvert = 1;
     for (final Palier palier in ExerciseCatalog.paliers) {
+      if (palier.numero < startPalier) {
+        ouvert = palier.numero + 1;
+        continue;
+      }
       final List<Exercise> duPalier = catalogue
           .where((Exercise e) => e.palier == palier.numero)
           .toList(growable: false);
@@ -241,10 +253,20 @@ class ExerciseProgress {
   /// donc le premier exercice non acquis dans l'ordre du catalogue, borne au
   /// palier ouvert. `null` quand tout est acquis -- et ce jour-la, le
   /// catalogue a fait son travail.
+  ///
+  /// Elle se cherche d'abord a partir du niveau de depart ; les paliers d'en
+  /// dessous ne reviennent que si tout le reste est acquis.
   Exercise? get prochaineTache {
     final int limite = palierOuvert;
     for (final Exercise exercise in catalogue) {
-      if (exercise.palier <= limite && !estAcquis(exercise)) {
+      if (exercise.palier >= startPalier &&
+          exercise.palier <= limite &&
+          !estAcquis(exercise)) {
+        return exercise;
+      }
+    }
+    for (final Exercise exercise in catalogue) {
+      if (exercise.palier < startPalier && !estAcquis(exercise)) {
         return exercise;
       }
     }

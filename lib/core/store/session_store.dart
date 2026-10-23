@@ -17,7 +17,12 @@ class RememberedSession {
     this.excerpt,
     this.bests = const <ExerciseBest>[],
     this.latencyMs,
+    this.startPalier,
   });
+
+  /// Le niveau de depart choisi (K1), ou `null` si la question n'a pas encore
+  /// ete posee.
+  final int? startPalier;
 
   /// Latence aller-retour mesuree par la calibration (J2), ou `null`.
   final int? latencyMs;
@@ -39,7 +44,11 @@ class RememberedSession {
   static const RememberedSession vide = RememberedSession();
 
   bool get isEmpty =>
-      a4 == null && exerciseId == null && excerpt == null && bests.isEmpty;
+      a4 == null &&
+      exerciseId == null &&
+      excerpt == null &&
+      bests.isEmpty &&
+      startPalier == null;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'version': _version,
@@ -48,6 +57,7 @@ class RememberedSession {
         if (tempoBpm != null) 'tempo': tempoBpm,
         if (excerpt != null) 'morceau': excerpt!.toJson(),
         if (latencyMs != null) 'latence': latencyMs,
+        if (startPalier != null) 'depart': startPalier,
         'records': <Map<String, Object?>>[
           for (final ExerciseBest best in bests) best.toJson(),
         ],
@@ -91,6 +101,11 @@ class RememberedSession {
                 (json['latence'] as int) >= 0 &&
                 (json['latence'] as int) < 1000
             ? json['latence'] as int
+            : null,
+        startPalier: json['depart'] is int &&
+                (json['depart'] as int) >= 1 &&
+                (json['depart'] as int) <= 20
+            ? json['depart'] as int
             : null,
         bests: records is List<Object?>
             ? <ExerciseBest>[
