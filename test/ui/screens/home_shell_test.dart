@@ -22,6 +22,8 @@ import 'package:violon/ui/screens/exercises_screen.dart';
 import 'package:violon/ui/screens/free_play_screen.dart';
 import 'package:violon/ui/screens/concert_screen.dart';
 import 'package:violon/ui/screens/accompaniment_screen.dart';
+import 'package:violon/ui/screens/reading_screen.dart';
+import 'package:violon/ui/screens/dictation_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
 import 'package:violon/ui/screens/progress_screen.dart';
@@ -74,6 +76,14 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
 Future<void> ouvrirLesOutils(WidgetTester tester) async {
   await tester.tap(find.byKey(HomeShell.outilsKey));
   await tester.pumpAndSettle();
+}
+
+/// Touche un outil du tiroir. Le tiroir defile : l'outil peut etre sous le
+/// pli du telephone de test, et un appui hors de l'ecran ne touche rien.
+Future<void> toucherLOutil(WidgetTester tester, Finder outil) async {
+  await tester.ensureVisible(outil);
+  await tester.pumpAndSettle();
+  await tester.tap(outil);
 }
 
 void main() {
@@ -243,7 +253,7 @@ void main() {
     testWidgets('le tiroir mene a l accordeur', (WidgetTester tester) async {
       await poser(tester);
       await ouvrirLesOutils(tester);
-      await tester.tap(find.text('Accorder'));
+      await toucherLOutil(tester, find.text('Accorder'));
       await tester.pumpAndSettle();
       expect(find.byType(TunerScreen), findsOneWidget);
     });
@@ -251,7 +261,7 @@ void main() {
     testWidgets('le tiroir mene au mode libre', (WidgetTester tester) async {
       await poser(tester);
       await ouvrirLesOutils(tester);
-      await tester.tap(find.text('Jouer librement'));
+      await toucherLOutil(tester, find.text('Jouer librement'));
       await tester.pumpAndSettle();
       expect(find.byType(FreePlayScreen), findsOneWidget);
       expect(find.text('Rien n est note ici.'), findsOneWidget);
@@ -288,7 +298,7 @@ void main() {
     testWidgets('le tiroir mene au bourdon', (WidgetTester tester) async {
       await poser(tester);
       await ouvrirLesOutils(tester);
-      await tester.tap(find.text('Bourdon'));
+      await toucherLOutil(tester, find.text('Bourdon'));
       await tester.pumpAndSettle();
       expect(find.byType(DroneScreen), findsOneWidget);
       // Rien ne sonne tant qu'on ne l'a pas demande : ouvrir l'ecran n'ouvre
@@ -301,7 +311,7 @@ void main() {
     ) async {
       await poser(tester);
       await ouvrirLesOutils(tester);
-      await tester.tap(find.text('Metronome'));
+      await toucherLOutil(tester, find.text('Metronome'));
       await tester.pumpAndSettle();
       expect(find.byType(MetronomeScreen), findsOneWidget);
       expect(sonFactice.clicks, isEmpty);
@@ -559,7 +569,7 @@ void main() {
     testWidgets('les outils menent au concert', (WidgetTester tester) async {
       await poser(tester);
       await ouvrirLesOutils(tester);
-      await tester.tap(find.byKey(HomeShell.concertKey));
+      await toucherLOutil(tester, find.byKey(HomeShell.concertKey));
       await tester.pumpAndSettle();
       expect(find.text('Concert'), findsWidgets);
       expect(find.byKey(ConcertScreen.jouerKey), findsOneWidget);
@@ -645,6 +655,25 @@ void main() {
       expect(find.textContaining('2/3'), findsOneWidget);
       await tester.tap(find.byKey(HomeShell.seanceArreterKey));
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('les outils menent a la lecture et a la dictee',
+        (WidgetTester tester) async {
+      await poser(tester);
+      await ouvrirLesOutils(tester);
+      await toucherLOutil(tester, find.byKey(HomeShell.lectureKey));
+      // L'ecran de lecture tient un chronometre qui tourne : on avance par
+      // pas fixes, rien ne s'y pose jamais tout a fait.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(ReadingScreen), findsOneWidget);
+      await tester.pageBack();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await ouvrirLesOutils(tester);
+      await toucherLOutil(tester, find.byKey(HomeShell.dicteeKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(DictationScreen), findsOneWidget);
     });
   });
 }

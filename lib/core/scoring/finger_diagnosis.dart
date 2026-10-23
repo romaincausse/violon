@@ -74,6 +74,25 @@ class FingerFinding {
   bool get flat => medianCents < 0;
 }
 
+/// Ce que la main fait systematiquement sur une corde (lot L3).
+///
+/// Un doigt peut tomber juste partout sauf sur la corde de mi, ou la main
+/// tourne : la lecture par corde dit cela, que la lecture par doigt ne voit
+/// pas. Les cordes a vide sont ecartees ici aussi.
+class StringFinding {
+  const StringFinding({
+    required this.string,
+    required this.medianCents,
+    required this.samples,
+  });
+
+  final ViolinString string;
+  final double medianCents;
+  final int samples;
+
+  bool get flat => medianCents < 0;
+}
+
 /// Les erreurs systematiques de la main gauche (lot H3).
 ///
 /// **Le differenciateur.** Un score par note dit "ce fa# est bas". Le
@@ -87,10 +106,17 @@ class FingerFinding {
 /// accident. Les cordes a vide sont ecartees : elles disent l'accord de
 /// l'instrument, pas la main.
 class FingerDiagnosis {
-  FingerDiagnosis._(this.findings);
+  FingerDiagnosis._(this.findings, this.strings);
 
   /// Les doigts qui derivent, du plus net au moins net.
   final List<FingerFinding> findings;
+
+  /// Les cordes ou la main est decalee, de la plus nette a la moins nette
+  /// (lot L3).
+  final List<StringFinding> strings;
+
+  /// La corde la plus nette, ou `null`.
+  StringFinding? get mainString => strings.isEmpty ? null : strings.first;
 
   /// Il faut au moins ces notes pour parler d'un doigt.
   static const int minSamples = 6;
@@ -111,6 +137,10 @@ class FingerDiagnosis {
     final Map<FingerPlace, Set<ViolinString>> cordes =
         <FingerPlace, Set<ViolinString>>{};
     final Map<FingerPlace, Set<int>> prises = <FingerPlace, Set<int>>{};
+    final Map<ViolinString, List<double>> parCorde =
+        <ViolinString, List<double>>{};
+    final Map<ViolinString, Set<int>> prisesParCorde =
+        <ViolinString, Set<int>>{};
     for (final TakeRecord t in recentes) {
       for (final NoteTrace n in t.notes) {
         final (ViolinString, FingerPlace)? f = fingeringOf(n.midi);
@@ -120,8 +150,30 @@ class FingerDiagnosis {
         ecarts.putIfAbsent(f.$2, () => <double>[]).add(n.cents);
         cordes.putIfAbsent(f.$2, () => <ViolinString>{}).add(f.$1);
         prises.putIfAbsent(f.$2, () => <int>{}).add(t.atMs);
+        parCorde.putIfAbsent(f.$1, () => <double>[]).add(n.cents);
+        prisesParCorde.putIfAbsent(f.$1, () => <int>{}).add(t.atMs);
       }
     }
+    // Par corde : meme exigence de nombre et d'ecart, et plus d'une prise,
+    // pour parler de la main et pas d'un soir.
+    final List<StringFinding> parCordes = <StringFinding>[];
+    for (final MapEntry<ViolinString, List<double>> e in parCorde.entries) {
+      final List<double> v = List<double>.of(e.value)..sort();
+      if (v.length < minSamples || prisesParCorde[e.key]!.length < 2) {
+        continue;
+      }
+      final double mediane = v[v.length ~/ 2];
+      if (mediane.abs() < minCents) {
+        continue;
+      }
+      parCordes.add(StringFinding(
+        string: e.key,
+        medianCents: mediane,
+        samples: v.length,
+      ));
+    }
+    parCordes.sort((StringFinding a, StringFinding b) =>
+        b.medianCents.abs().compareTo(a.medianCents.abs()));
     final List<FingerFinding> trouves = <FingerFinding>[];
     for (final MapEntry<FingerPlace, List<double>> e in ecarts.entries) {
       final List<double> v = List<double>.of(e.value)..sort();
@@ -146,6 +198,6 @@ class FingerDiagnosis {
     }
     trouves.sort((FingerFinding a, FingerFinding b) =>
         b.medianCents.abs().compareTo(a.medianCents.abs()));
-    return FingerDiagnosis._(trouves);
+    return FingerDiagnosis._(trouves, parCordes);
   }
 }

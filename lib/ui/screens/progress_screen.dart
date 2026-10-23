@@ -36,6 +36,7 @@ class ProgressScreen extends StatelessWidget {
   static const Key journalKey = Key('journal-du-jour');
   static const Key joursKey = Key('jours-joues');
   static const Key mainKey = Key('diagnostic-de-la-main');
+  static const Key cordeKey = Key('diagnostic-de-la-corde');
   static Key courbeKey(String key) => Key('courbe-$key');
 
   @override
@@ -75,10 +76,10 @@ class ProgressScreen extends StatelessWidget {
                     icon: const Icon(Icons.school_outlined),
                     label: const Text('Ma semaine, pour le professeur'),
                   ),
-                  if (FingerDiagnosis.of(history).main
-                      case final FingerFinding f) ...<Widget>[
+                  if (FingerDiagnosis.of(history) case final FingerDiagnosis d
+                      when d.main != null || d.mainString != null) ...<Widget>[
                     const SizedBox(height: 16),
-                    _Main(trouve: f),
+                    _Main(trouve: d.main, corde: d.mainString),
                   ],
                   if (detailed) ...<Widget>[
                     const SizedBox(height: 16),
@@ -263,21 +264,18 @@ class _Trace extends CustomPainter {
 /// **Un seul doigt a la fois**, le plus net : *voila ta prochaine tache*, pas
 /// la liste de tout ce qui derive.
 class _Main extends StatelessWidget {
-  const _Main({required this.trouve});
+  const _Main({required this.trouve, required this.corde});
 
-  final FingerFinding trouve;
+  final FingerFinding? trouve;
+
+  /// La corde ou la main est decalee (L3), s'il y en a une.
+  final StringFinding? corde;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final List<String> cordes = <String>[
-      for (final ViolinString c in ViolinString.values)
-        if (trouve.strings.contains(c)) c.name,
-    ];
-    final String ou = cordes.length == 1
-        ? 'sur la corde de ${cordes.single}'
-        : 'sur les cordes de ${cordes.sublist(0, cordes.length - 1).join(', ')}'
-            ' et ${cordes.last}';
+    final FingerFinding? t = trouve;
+    final StringFinding? c = corde;
     return Card(
       key: ProgressScreen.mainKey,
       child: Padding(
@@ -286,16 +284,39 @@ class _Main extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text('Ta main gauche', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Ton ${trouve.place.label} tombe ${trouve.flat ? 'bas' : 'haut'}, '
-              '$ou. ${trouve.flat ? 'Avance-le' : 'Recule-le'} un peu vers '
-              '${trouve.flat ? 'le chevalet' : 'la volute'}.',
-              style: theme.textTheme.bodyMedium,
-            ),
+            if (t != null) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                'Ton ${t.place.label} tombe ${t.flat ? 'bas' : 'haut'}, '
+                '${_ou(t)}. ${t.flat ? 'Avance-le' : 'Recule-le'} un peu vers '
+                '${t.flat ? 'le chevalet' : 'la volute'}.',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+            if (c != null) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                'Sur la corde de ${c.string.name}, tu es '
+                '${c.flat ? 'bas' : 'haut'} de '
+                '${c.medianCents.abs().round()} cents en general.',
+                key: ProgressScreen.cordeKey,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  static String _ou(FingerFinding t) {
+    final List<String> cordes = <String>[
+      for (final ViolinString c in ViolinString.values)
+        if (t.strings.contains(c)) c.name,
+    ];
+    return cordes.length == 1
+        ? 'sur la corde de ${cordes.single}'
+        : 'sur les cordes de ${cordes.sublist(0, cordes.length - 1).join(', ')}'
+            ' et ${cordes.last}';
   }
 }

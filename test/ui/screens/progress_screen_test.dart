@@ -93,4 +93,24 @@ void main() {
     );
     expect(find.textContaining('cordes de sol, re et la'), findsOneWidget);
   });
+  testWidgets('une corde ou la main est decalee est nommee', (
+    WidgetTester tester,
+  ) async {
+    NoteTrace n(int midi, double c) =>
+        NoteTrace(midi: midi, measure: 1, cents: c);
+    await poser(
+      tester,
+      TakeHistory.vide
+          .withTake(prise(30, notes: <NoteTrace>[
+            for (int k = 1; k <= 4; k++) n(76 + k, 16),
+          ]))
+          .withTake(prise(5, notes: <NoteTrace>[
+            for (int k = 1; k <= 4; k++) n(76 + k, 14),
+          ])),
+    );
+    expect(
+      tester.widget<Text>(find.byKey(ProgressScreen.cordeKey)).data,
+      'Sur la corde de mi, tu es haut de 16 cents en general.',
+    );
+  });
 }
