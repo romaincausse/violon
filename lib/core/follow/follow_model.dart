@@ -43,7 +43,12 @@ class FollowModel {
       }
       _mesureDe.add(_debutsDeMesure.length - 1);
     }
-    _sauts = _poidsDesSauts(_debutsDeMesure.length);
+    _sauts = _poidsDesSauts(_debutsDeMesure.length, recul: 0.6, avance: 0.5);
+    _sautsSansArret = _poidsDesSauts(
+      _debutsDeMesure.length,
+      recul: _reculSansArret,
+      avance: _avanceSansArret,
+    );
   }
 
   final Passage passage;
@@ -61,6 +66,10 @@ class FollowModel {
   /// `_sauts[k][j]` : log-probabilite relative de repartir du debut de la
   /// mesure `j` quand on est dans la mesure `k`.
   late final List<Float64List> _sauts;
+
+  /// La meme chose pour une reprise **en plein jeu**, sans s'etre arrete :
+  /// un enfant revient en arriere apres s'etre arrete, rarement en jouant.
+  late final List<Float64List> _sautsSansArret;
 
   /// Etats : `0..n-1` jouer la note i ; `n..2n-1` silence apres la note i ;
   /// `2n` silence avant d'avoir rien joue.
@@ -161,7 +170,13 @@ class FollowModel {
     FeatureFrame trame, {
     Int32List? retour,
     int base = 0,
+    bool afterStop = true,
   }) {
+    // Un silence n'est un arret que s'il a dure : le creux d'un changement
+    // d'archet passe par l'etat de silence le temps d'une trame, et ne doit
+    // pas ouvrir les reprises lointaines qu'un archet leve autorise.
+    final List<Float64List> sautsApresSilence =
+        afterStop ? _sauts : _sautsSansArret;
     final int nEtats = stateCount;
     final int avantTout = 2 * _n;
     courant.fillRange(0, nEtats, double.negativeInfinity);
@@ -197,7 +212,7 @@ class FollowModel {
         }
         pousser(i, _n + i, tr.lArrete);
         for (int j = 0; j < _debutsDeMesure.length; j++) {
-          pousser(i, _debutsDeMesure[j], tr.lReprend + _sauts[k][j]);
+          pousser(i, _debutsDeMesure[j], tr.lReprend + _sautsSansArret[k][j]);
         }
       }
       final int silence = _n + i;
@@ -208,8 +223,8 @@ class FollowModel {
         }
         pousser(silence, i, tr.lSilenceRejoue);
         for (int j = 0; j < _debutsDeMesure.length; j++) {
-          pousser(
-              silence, _debutsDeMesure[j], tr.lSilenceReprend + _sauts[k][j]);
+          pousser(silence, _debutsDeMesure[j],
+              tr.lSilenceReprend + sautsApresSilence[k][j]);
         }
       }
     }
@@ -252,7 +267,26 @@ class FollowModel {
   /// La reprise la plus probable est celle de la mesure en cours, puis des
   /// precedentes, de moins en moins a mesure qu'on remonte. Sauter en avant
   /// arrive, mais rarement.
-  static List<Float64List> _poidsDesSauts(int m) {
+  /// En plein jeu, sans arret, chaque mesure de plus en arriere divise la
+  /// vraisemblance d'une reprise par ce facteur (0,6 apres un silence). Le
+  /// banc (ADR-019) a montre un aligneur qui reculait de quatre mesures sans
+  /// que l'enfant s'arrete, pour expliquer une note ajoutee vingt secondes
+  /// plus loin ; apres un silence, la meme reprise reste le cas nominal.
+  static const double _reculSansArret = 0.35;
+
+  /// De meme vers l'avant, au-dela de la mesure suivante (0,5 apres un
+  /// silence).
+  static const double _avanceSansArret = 0.3;
+
+  /// Un archet leve : au moins ce temps de calme avant une reprise pour
+  /// qu'elle compte comme apres un arret.
+  static const int minStopMs = 250;
+
+  static List<Float64List> _poidsDesSauts(
+    int m, {
+    required double recul,
+    required double avance,
+  }) {
     return <Float64List>[
       for (int k = 0; k < m; k++)
         () {
@@ -261,11 +295,11 @@ class FollowModel {
             if (j == k) {
               poids[j] = 1;
             } else if (j < k) {
-              poids[j] = 0.6 * math.pow(0.6, k - j - 1).toDouble();
+              poids[j] = 0.6 * math.pow(recul, k - j - 1).toDouble();
             } else if (j == k + 1) {
               poids[j] = 0.3;
             } else {
-              poids[j] = 0.05 * math.pow(0.5, j - k - 2).toDouble();
+              poids[j] = 0.05 * math.pow(avance, j - k - 2).toDouble();
             }
           }
           final double somme =

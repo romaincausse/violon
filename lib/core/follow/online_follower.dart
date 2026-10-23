@@ -95,6 +95,10 @@ class OnlineFollower {
   /// Trames vues depuis le dernier [reset].
   int get framesSeen => _vues;
 
+  /// Depuis quand c'est calme, ou `null` si la derniere trame sonnait : une
+  /// reprise ne suit un arret que si le calme a dure (FollowModel.minStopMs).
+  int? _calmeDepuisMs;
+
   /// Ajoute une trame et rend la position de la trame d'il y a [lagFrames]
   /// trames -- ou `null` pendant les toutes premieres.
   FollowPosition? add(FeatureFrame frame) {
@@ -105,11 +109,20 @@ class OnlineFollower {
     } else {
       final Int32List? retour =
           lagFrames == 0 ? null : _retours[_vues % lagFrames];
-      _modele.step(scores, _suivants, frame, retour: retour);
+      final int? depuis = _calmeDepuisMs;
+      _modele.step(scores, _suivants, frame,
+          retour: retour,
+          afterStop:
+              depuis != null && frame.timeMs - depuis >= FollowModel.minStopMs);
       _scores = _suivants;
       _suivants = scores;
     }
     _normaliser(_scores!);
+    if (frame.rms < PerformanceFeatures.silenceRms) {
+      _calmeDepuisMs ??= frame.timeMs;
+    } else {
+      _calmeDepuisMs = null;
+    }
     _vues++;
     if (_vues <= lagFrames) {
       return null;
@@ -119,6 +132,7 @@ class OnlineFollower {
 
   /// Oublie la prise : la suivante repart d'avant la premiere note.
   void reset() {
+    _calmeDepuisMs = null;
     _scores = null;
     _vues = 0;
   }
