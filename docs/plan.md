@@ -48,7 +48,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 ---
 
-## Les douze jalons
+## Les treize jalons
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
@@ -64,8 +64,9 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 10 | Le professeur | 4 | 0 | La semaine cesse d'etre invisible |
 | 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
 | 12 | L'envie | 8 | 0 | On a envie d'y revenir |
+| 13 | Le solfege sur le violon | 3 | 0 | Lire et entendre, archet en main |
 
-**84 lots au 2 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
+**87 lots au 23 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
 corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
 attendent les ecoutes du parent -- et le violon et le violoncelle de
 l'accompagnement (J8). Le jalon 12, ne le 2 octobre d'une question posee a
@@ -2192,6 +2193,44 @@ des sept derniers jours, s'il y en a eu d'autres. Rien joue, rien dit.
 **V6 - Couvert.** L'ADR-015 garde deja les parties du MusicXML que l'import
 jetait : quand le fichier porte un piano, c'est lui que l'accompagnement
 joue, devant les accords deduits.
+
+---
+
+
+## Jalon 13 - Le solfege sur le violon
+
+Ne le 23 octobre 2026 d'un examen du marche rapporte par l'utilisateur :
+aucune application ne combine l'ecoute en temps reel et un solfege
+contextualise sur l'instrument. Ici le solfege se fait **archet en main** --
+on repond en jouant, pas en tapant -- et sur **le morceau du moment**, pas
+sur un exercice abstrait.
+
+| ID | Lot | Must | ROI | Est. |
+|----|-----|------|-----|------|
+| ~~L1~~ | ~~Lire les notes, en les jouant~~ | | ★★ | fait |
+| ~~L2~~ | ~~La dictee d'une mesure~~ | | ★★ | fait |
+| ~~L3~~ | ~~La main par corde~~ | | ★★ | fait |
+
+**L1 - Fait** (`ReadingDrill`, `ReadingScreen`, dans les Outils). Une note
+gravee, dans la tonalite du morceau ; il la joue ; elle est lue quand elle
+est tenue un quart de seconde a un demi-ton pres, et la suivante vient. Deux
+minutes, et un chiffre qui monte : les notes lues. Une mauvaise note ne
+compte pas contre lui, elle ne fait pas avancer. Les notes sont celles du
+morceau du moment, ou la premiere position en sol majeur s'il en a trop peu.
+La suite est deterministe, par graine. Rien n'est garde d'une fois a
+l'autre : a faire si l'usage le reclame.
+
+**L2 - Fait** (`DictationDrill`, `DictationScreen`, dans les Outils). Elle
+joue une mesure du morceau au violon enregistre, puis ouvre le micro ; il la
+rejoue d'oreille ; le suiveur l'aligne, et la mesure est entendue si elle va
+au bout a 80 de justesse. Mesure apres mesure, dans l'ordre, et on revient
+au debut. Emettre puis ecouter, jamais les deux (ADR-008). Le rythme n'est
+pas juge : une dictee de hauteurs se rejoue a son tempo.
+
+**L3 - Fait** (`StringFinding` dans `FingerDiagnosis`). La main lue par
+corde, en plus du doigt : *"Sur la corde de mi, tu es bas de 15 cents en
+general."*, dans la carte de la main de *Progres*, aux memes conditions --
+six notes au moins, douze cents au moins, plus d'une prise.
 
 ---
 

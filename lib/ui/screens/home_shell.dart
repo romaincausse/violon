@@ -43,6 +43,7 @@ import 'piece_screen.dart';
 import 'progress_screen.dart';
 import 'session_screen.dart';
 import 'concert_screen.dart';
+import 'dictation_screen.dart';
 import 'reading_screen.dart';
 import 'tuner_screen.dart';
 
@@ -94,6 +95,7 @@ class HomeShell extends StatefulWidget {
 
   static const Key concertKey = Key('ouvrir-le-concert');
   static const Key lectureKey = Key('ouvrir-la-lecture');
+  static const Key dicteeKey = Key('ouvrir-la-dictee');
 
   /// La seance du jour (V1) : la lancer, et la mener.
   static const Key seanceKey = Key('ma-seance');
@@ -1031,6 +1033,22 @@ class _HomeShellState extends State<HomeShell> {
                     pitchSourceFactory: widget.pitchSourceFactory,
                     pool: _notesALire,
                     keyFifths: widget.passage.keyFifths,
+                    a4: widget.a4,
+                  ),
+                ),
+              ),
+              // La dictee d'une mesure (L2) : elle joue, il rejoue d'oreille.
+              ListTile(
+                key: HomeShell.dicteeKey,
+                leading: const Icon(Icons.hearing),
+                title: const Text('Dictee'),
+                subtitle: const Text('Elle joue une mesure, tu la rejoues'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => DictationScreen(
+                    passage: widget.passage,
+                    engine: _son,
+                    pitchSourceFactory: widget.pitchSourceFactory,
                     a4: widget.a4,
                   ),
                 ),
