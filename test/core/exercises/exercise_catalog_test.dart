@@ -52,8 +52,11 @@ void main() {
         expect(exercise.lowestMidi,
             greaterThanOrEqualTo(ExerciseCatalog.plusGraveJouable),
             reason: '${exercise.id} descend sous la corde de sol');
-        expect(exercise.highestMidi,
-            lessThanOrEqualTo(ExerciseCatalog.plusAiguEnPremierePosition),
+        expect(
+            exercise.highestMidi,
+            lessThanOrEqualTo(exercise.position == 1
+                ? ExerciseCatalog.plusAiguEnPremierePosition
+                : ExerciseCatalog.plusAiguEnTroisiemePosition),
             reason: '${exercise.id} demande de demancher');
       }
     });

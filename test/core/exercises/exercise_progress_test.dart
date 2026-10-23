@@ -39,8 +39,9 @@ void main() {
     });
 
     test('tout acquis au-dessus : les paliers d en dessous reviennent', () {
-      final ExerciseProgress progres = ExerciseProgress(startPalier: 6);
-      _acquerir(progres, 6);
+      final int dernier = ExerciseCatalog.paliers.last.numero;
+      final ExerciseProgress progres = ExerciseProgress(startPalier: dernier);
+      _acquerir(progres, dernier);
       expect(progres.prochaineTache?.palier, 1);
     });
 
