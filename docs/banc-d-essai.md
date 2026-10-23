@@ -143,6 +143,16 @@ Les prises 5, 6 et 7 remplissent l'exigence des trois prises avec reprise.
 d'un arret vrai. Si possible, en capter deux ou trois pendant des seances
 ordinaires, et garder les meilleures.
 
+**Les juges du jalon 15** demandent leurs propres prises, mesurees a part du
+critere du suiveur :
+
+| # | Partition | Consigne | Juge | Critere |
+|---|---|---|---|---|
+| 13 | Cordes a vide | Deux archets entiers et lents par corde, le plus egal possible, puis un archet qui s'eteint expres | Son file (K7) | a part |
+
+La 13 manque : le seuil du son file a ete regle sur les archets des prises 01
+a 08, qui ne depassent pas deux secondes.
+
 ---
 
 ## Avec l'enfant

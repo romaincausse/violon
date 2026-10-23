@@ -8,7 +8,8 @@ import 'exercise_catalog.dart';
 
 /// Les trois etapes d'une seance (lot V1).
 enum SessionStep {
-  /// Une gamme dans la tonalite du morceau, trois minutes au plus.
+  /// Une minute de cordes a vide (K7), puis une gamme dans la tonalite du
+  /// morceau, trois minutes au plus.
   warmup,
 
   /// Les mesures designees, en boucle.
@@ -187,11 +188,26 @@ class DailySession {
   /// une seance de vingt minutes ne commence pas par dix minutes de gamme.
   static const Duration warmupBudget = Duration(minutes: 3);
 
+  /// Les cordes a vide avant la gamme, comme en cours : le son d'abord, sans
+  /// la main gauche (K7).
+  static const Duration openStringsBudget = Duration(minutes: 1);
+
   /// Le travail aussi a une fin : six essais, puis on termine sur une
   /// reussite (R4) et on passe a la musique.
   static const int workAttempts = 6;
 
   final Set<SessionStep> _faites = <SessionStep>{};
+
+  DateTime? _gammeDepuis;
+
+  /// Les cordes a vide sont faites, ou passees : la gamme suit.
+  bool get openStringsDone => _gammeDepuis != null;
+
+  /// Depuis quand la gamme court : son budget part de la, pas du debut de la
+  /// seance, sinon la minute de cordes a vide le mangerait.
+  DateTime get scaleSince => _gammeDepuis ?? startedAt;
+
+  void completeOpenStrings(DateTime at) => _gammeDepuis ??= at;
 
   Set<SessionStep> get done => Set<SessionStep>.unmodifiable(_faites);
 

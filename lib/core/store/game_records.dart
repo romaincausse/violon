@@ -7,6 +7,7 @@ class GameRecords {
     this.echoBest = 0,
     this.longToneBestMs = 0,
     this.pulseBest = 0,
+    this.evenBowBestMs = 0,
   });
 
   /// Le plus long motif rejoue a l'echo, en notes.
@@ -18,13 +19,23 @@ class GameRecords {
   /// Le meilleur score au tempo cache, sur cent.
   final int pulseBest;
 
+  /// Le plus long archet a son egal, en millisecondes (K7).
+  final int evenBowBestMs;
+
   static const GameRecords vide = GameRecords();
 
   /// Un record ne baisse jamais : on garde le plus haut des deux.
-  GameRecords merge({int? echo, int? longToneMs, int? pulse}) => GameRecords(
+  GameRecords merge({
+    int? echo,
+    int? longToneMs,
+    int? pulse,
+    int? evenBowMs,
+  }) =>
+      GameRecords(
         echoBest: _max(echoBest, echo),
         longToneBestMs: _max(longToneBestMs, longToneMs),
         pulseBest: _max(pulseBest, pulse),
+        evenBowBestMs: _max(evenBowBestMs, evenBowMs),
       );
 
   static int _max(int a, int? b) => b == null || b < a ? a : b;
@@ -33,6 +44,7 @@ class GameRecords {
         'echo': echoBest,
         'tenue': longToneBestMs,
         'pulsation': pulseBest,
+        'archet': evenBowBestMs,
       });
 
   /// Une memoire abimee se lit comme une memoire vide : un record perdu vaut
@@ -55,6 +67,7 @@ class GameRecords {
         echoBest: lire('echo'),
         longToneBestMs: lire('tenue'),
         pulseBest: lire('pulsation'),
+        evenBowBestMs: lire('archet'),
       );
     } on FormatException {
       return vide;

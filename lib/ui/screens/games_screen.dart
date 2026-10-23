@@ -11,7 +11,7 @@ import 'long_tone_screen.dart';
 import 'pulse_screen.dart';
 import 'session_screen.dart' show PitchSourceFactory;
 
-/// Les jeux (jalon 14) : trois facons de jouer du violon pour le plaisir de
+/// Les jeux (jalon 14) : quatre facons de jouer du violon pour le plaisir de
 /// battre son propre record.
 ///
 /// **Pas de mascotte, pas de confettis** (CLAUDE.md) : un record, un
@@ -40,6 +40,7 @@ class GamesScreen extends StatefulWidget {
   static const Key echoKey = Key('jeu-echo');
   static const Key tenueKey = Key('jeu-note-tenue');
   static const Key pulsationKey = Key('jeu-tempo-cache');
+  static const Key cordesKey = Key('jeu-cordes-a-vide');
 
   @override
   State<GamesScreen> createState() => _GamesScreenState();
@@ -66,10 +67,14 @@ class _GamesScreenState extends State<GamesScreen> {
   }
 
   /// Un record ne baisse jamais : on fusionne, puis on range.
-  void _retenir({int? echo, int? longToneMs, int? pulse}) {
+  void _retenir({int? echo, int? longToneMs, int? pulse, int? evenBowMs}) {
     setState(() {
-      _records =
-          _records.merge(echo: echo, longToneMs: longToneMs, pulse: pulse);
+      _records = _records.merge(
+        echo: echo,
+        longToneMs: longToneMs,
+        pulse: pulse,
+        evenBowMs: evenBowMs,
+      );
     });
     final GameStore? s = widget.store;
     if (s != null) {
@@ -97,6 +102,7 @@ class _GamesScreenState extends State<GamesScreen> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final double tenue = _records.longToneBestMs / 1000;
+    final double archet = _records.evenBowBestMs / 1000;
     return Scaffold(
       appBar: AppBar(title: const Text('Jeux')),
       body: SafeArea(
@@ -144,6 +150,28 @@ class _GamesScreenState extends State<GamesScreen> {
                   a4: widget.a4,
                   bestMs: _records.longToneBestMs,
                   onBest: (int ms) => _retenir(longToneMs: ms),
+                  evenBowBestMs: _records.evenBowBestMs,
+                  onEvenBowBest: (int ms) => _retenir(evenBowMs: ms),
+                ),
+              ),
+            ),
+            _Carte(
+              key: GamesScreen.cordesKey,
+              icone: Icons.graphic_eq,
+              titre: 'Cordes a vide',
+              detail: 'Un archet entier, lent : seul le son compte, egal du '
+                  'debut a la fin.',
+              record: _records.evenBowBestMs == 0
+                  ? 'Pas encore de record'
+                  : 'Record : ${archet.toStringAsFixed(1)} s',
+              onTap: () => _ouvrir(
+                (BuildContext c) => LongToneScreen(
+                  notes: const <int>[],
+                  openStrings: true,
+                  pitchSourceFactory: widget.pitchSourceFactory,
+                  a4: widget.a4,
+                  evenBowBestMs: _records.evenBowBestMs,
+                  onEvenBowBest: (int ms) => _retenir(evenBowMs: ms),
                 ),
               ),
             ),

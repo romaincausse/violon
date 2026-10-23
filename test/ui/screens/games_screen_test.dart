@@ -41,8 +41,11 @@ void main() {
   group('GamesScreen', () {
     testWidgets('les records se lisent, et un nouveau record se range',
         (WidgetTester tester) async {
-      final FakeGameStore store =
-          FakeGameStore(const GameRecords(echoBest: 4, pulseBest: 70));
+      final FakeGameStore store = FakeGameStore(const GameRecords(
+        echoBest: 4,
+        pulseBest: 70,
+        evenBowBestMs: 5300,
+      ));
       moteur = FakeAudioEngine();
       await tester.pumpWidget(MaterialApp(
         home: GamesScreen(
@@ -55,6 +58,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Record : 4 notes'), findsOneWidget);
       expect(find.text('Record : 70 sur 100'), findsOneWidget);
+      expect(find.text('Record : 5.3 s'), findsOneWidget);
       expect(find.text('Pas encore de record'), findsOneWidget);
 
       // Une note tenue : le record se range des qu'il monte.
@@ -156,6 +160,59 @@ void main() {
       await tester.tap(find.byKey(LongToneScreen.commencerKey));
       await tester.pumpAndSettle();
       expect(find.textContaining('Record : 1.'), findsOneWidget);
+    });
+  });
+
+  group('LongToneScreen, cordes a vide', () {
+    /// Un archet de [ms] a niveau constant, puis un silence : le juge du son
+    /// rend son verdict.
+    Future<void> archet(WidgetTester tester, int de, int ms) async {
+      for (int t = de; t < de + ms + 200; t += 23) {
+        final bool sonne = t < de + ms;
+        micro.emitFeature(FeatureFrame(
+          timeMs: t,
+          midi: sonne ? 69 : null,
+          rms: sonne ? 0.05 : 0.001,
+          onset: t == de,
+        ));
+        await tester.pump(const Duration(milliseconds: 23));
+      }
+    }
+
+    testWidgets('seul le son compte, et la minute finit sur la gamme',
+        (WidgetTester tester) async {
+      int? record;
+      await tester.pumpWidget(MaterialApp(
+        home: LongToneScreen(
+          notes: const <int>[71],
+          openStrings: true,
+          budget: const Duration(seconds: 3),
+          pitchSourceFactory: nouveauMicro,
+          onEvenBowBest: (int ms) => record = ms,
+        ),
+      ));
+      // Les quatre cordes, et pas d'ecart en cents : la corde donne l'accord.
+      for (final int m in LongToneScreen.cordes) {
+        expect(find.byKey(LongToneScreen.noteKey(m)), findsOneWidget);
+      }
+      expect(find.byKey(LongToneScreen.ecartKey), findsNothing);
+      await tester.tap(find.byKey(LongToneScreen.commencerKey));
+      await tester.pump();
+      await tester.pump();
+      await archet(tester, 0, 2000);
+      expect(
+        tester.widget<Text>(find.byKey(LongToneScreen.archetKey)).data,
+        startsWith('Archet de 2.0 s, son egal'),
+      );
+      expect(record, greaterThanOrEqualTo(1900));
+      expect(find.textContaining('Archet egal le plus long : 2.0 s'),
+          findsOneWidget);
+      // Le temps joue s'epuise : le micro se ferme, la gamme suit.
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.text('La minute est faite.'), findsOneWidget);
+      expect(find.text('Passer a la gamme'), findsOneWidget);
+      expect(micro.disposed, isTrue);
     });
   });
 

@@ -45,6 +45,7 @@ import 'progress_screen.dart';
 import 'session_screen.dart';
 import 'concert_screen.dart';
 import 'games_screen.dart';
+import 'long_tone_screen.dart';
 import 'dictation_screen.dart';
 import 'reading_screen.dart';
 import 'tuner_screen.dart';
@@ -365,6 +366,52 @@ class _HomeShellState extends State<HomeShell> {
     setState(() {});
   }
 
+  /// Une minute de cordes a vide, le son seul (K7) ; la gamme et ses trois
+  /// minutes ne commencent qu'au retour.
+  Future<void> _cordesAVide(DailySession seance) async {
+    _finDeLEchauffement?.cancel();
+    final GameStore? store = widget.gameStore;
+    GameRecords records = GameRecords.vide;
+    if (store != null) {
+      try {
+        records = await store.load();
+      } on Object {
+        // Un record illisible ne prive pas de l'echauffement.
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (BuildContext ctx) => LongToneScreen(
+          notes: const <int>[],
+          openStrings: true,
+          budget: DailySession.openStringsBudget,
+          pitchSourceFactory: widget.pitchSourceFactory,
+          a4: widget.a4,
+          evenBowBestMs: records.evenBowBestMs,
+          onEvenBowBest: (int ms) {
+            records = records.merge(evenBowMs: ms);
+            if (store != null) {
+              unawaited(store.save(records).catchError((Object _) {}));
+            }
+          },
+        ),
+      ),
+    );
+    if (!mounted || _seance != seance) {
+      return;
+    }
+    seance.completeOpenStrings(widget.clock());
+    _finDeLEchauffement = Timer(DailySession.warmupBudget, () {
+      if (mounted && _seance?.current == SessionStep.warmup) {
+        _etapeFaite(SessionStep.warmup);
+      }
+    });
+    setState(() {});
+  }
+
   void _revenirAuPassage() {
     final ({
       Passage passage,
@@ -409,7 +456,11 @@ class _HomeShellState extends State<HomeShell> {
     }
     switch (seance.current) {
       case SessionStep.warmup:
-        _etapeFaite(SessionStep.warmup);
+        if (seance.openStringsDone) {
+          _etapeFaite(SessionStep.warmup);
+        } else {
+          await _cordesAVide(seance);
+        }
       case SessionStep.work:
         final WorkChoice c = seance.chosen;
         await Navigator.of(context).push<void>(
@@ -527,8 +578,10 @@ class _HomeShellState extends State<HomeShell> {
     final SessionStep? etape = seance.current;
     final WorkChoice c = seance.chosen;
     final String detail = switch (etape) {
+      SessionStep.warmup when !seance.openStringsDone =>
+        'Une minute, puis la gamme',
       SessionStep.warmup => () {
-          final Duration ecoulee = widget.clock().difference(seance.startedAt);
+          final Duration ecoulee = widget.clock().difference(seance.scaleSince);
           final int reste = (DailySession.warmupBudget - ecoulee).inMinutes + 1;
           return '${seance.plan.warmup.titre}, '
               '${reste.clamp(1, DailySession.warmupBudget.inMinutes)} min au '
@@ -542,6 +595,7 @@ class _HomeShellState extends State<HomeShell> {
       null => '',
     };
     final String action = switch (etape) {
+      SessionStep.warmup when !seance.openStringsDone => 'Cordes a vide',
       SessionStep.warmup => 'Fait',
       SessionStep.work => 'Travailler',
       SessionStep.music => 'Jouer avec',
@@ -1733,7 +1787,8 @@ class _FeuilleDeSeanceState extends State<_FeuilleDeSeance> {
             const SizedBox(height: 4),
             Text(
               'Trois etapes, et on finit en musique. '
-              'Echauffement : ${widget.plan.warmup.titre}, trois minutes au '
+              'Echauffement : une minute de cordes a vide, puis la '
+              '${_minuscule(widget.plan.warmup.titre)}, trois minutes au '
               'plus.',
               style: theme.textTheme.bodySmall,
             ),
@@ -1781,3 +1836,7 @@ class _FeuilleDeSeanceState extends State<_FeuilleDeSeance> {
     );
   }
 }
+
+/// "Gamme de sol majeur" au milieu d'une phrase.
+String _minuscule(String titre) =>
+    titre.isEmpty ? titre : titre[0].toLowerCase() + titre.substring(1);

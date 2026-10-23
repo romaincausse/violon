@@ -194,8 +194,22 @@ void main() {
       expect(s.current, SessionStep.music);
     });
 
+    test('les cordes a vide d abord, et la gamme compte a partir de la', () {
+      final DailySession s = seance();
+      expect(s.openStringsDone, isFalse);
+      expect(s.scaleSince, s.startedAt);
+      s.completeOpenStrings(DateTime(2026, 10, 2, 18, 1, 10));
+      expect(s.openStringsDone, isTrue);
+      expect(s.scaleSince, DateTime(2026, 10, 2, 18, 1, 10));
+      s.completeOpenStrings(DateTime(2026, 10, 2, 18, 5));
+      expect(s.scaleSince, DateTime(2026, 10, 2, 18, 1, 10),
+          reason: 'la premiere fois seule compte');
+      expect(s.current, SessionStep.warmup, reason: 'la gamme reste a faire');
+    });
+
     test('les bornes sont celles du plan', () {
       expect(DailySession.warmupBudget, const Duration(minutes: 3));
+      expect(DailySession.openStringsBudget, const Duration(minutes: 1));
       expect(DailySession.workAttempts, 6);
     });
   });

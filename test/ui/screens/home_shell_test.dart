@@ -27,6 +27,7 @@ import 'package:violon/ui/screens/reading_screen.dart';
 import 'package:violon/ui/screens/dictation_screen.dart';
 import 'package:violon/ui/screens/games_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
+import 'package:violon/ui/screens/long_tone_screen.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
 import 'package:violon/ui/screens/progress_screen.dart';
 import 'package:violon/ui/screens/metronome_screen.dart';
@@ -595,6 +596,19 @@ void main() {
       expect(find.text('Echauffement'), findsOneWidget);
       expect(find.textContaining('1/3'), findsOneWidget);
       expect(find.text('Gamme de sol majeur'), findsOneWidget);
+      // Les cordes a vide d'abord (K7) : une minute, le son seul.
+      expect(find.textContaining('Une minute, puis la gamme'), findsOneWidget);
+      expect(find.text('Cordes a vide'), findsOneWidget);
+      await tester.tap(find.byKey(HomeShell.seanceActionKey));
+      await tester.pumpAndSettle();
+      final LongToneScreen cordes =
+          tester.widget<LongToneScreen>(find.byType(LongToneScreen));
+      expect(cordes.openStrings, isTrue);
+      expect(cordes.budget, const Duration(minutes: 1));
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      // Puis la gamme, ses trois minutes comptees a partir de la.
+      expect(find.textContaining('3 min au plus'), findsOneWidget);
       await tester.tap(find.byKey(HomeShell.seanceActionKey));
       await tester.pumpAndSettle();
 
