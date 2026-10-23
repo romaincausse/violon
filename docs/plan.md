@@ -2128,8 +2128,10 @@ la place du passage et se finit sur une gamme allee au bout ou au bout de
 trois minutes ; *Travailler* ouvre la boucle sur les mesures choisies ;
 *Jouer avec* ouvre l'accompagnement du morceau entier. Au retour de chaque
 ecran, l'etape est faite. *Passer* saute une etape, la croix arrete tout et
-rend le passage. **Ce qui manque** : la boucle ne compte pas encore ses six
-essais, le bandeau les annonce seulement.
+rend le passage. La boucle de la seance compte ses six essais : atteints,
+elle termine sur une reussite (tout de suite si l'essai etait bon, sinon une
+derniere fois la ou ca tenait), et s'arrete de toute facon trois essais plus
+loin -- une seance ne se finit pas sur une boucle sans fin.
 
 **V2 - Les premieres fois.** Le bilan dit d'abord ce qui est nouveau,
 calcule sur l'historique : "la mesure 7 tient pour la premiere fois", "tempo
