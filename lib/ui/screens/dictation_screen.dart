@@ -153,9 +153,19 @@ class _DictationScreenState extends State<DictationScreen> {
     });
   }
 
+  /// Passer, meme quand c'est a lui de jouer : un enfant qui ne trouve pas
+  /// doit pouvoir sortir autrement qu'en reecoutant sans fin. Le micro se
+  /// ferme, et la mesure suivante attend qu'il l'ecoute.
   void _passer() {
+    _finDuSon?.cancel();
+    _essai = null;
+    unawaited(_fermerLeMicro());
+    unawaited(widget.engine.stopAll());
     _dictee.skip();
-    setState(() => _message = 'On passe a la mesure ${_dictee.measure}.');
+    setState(() {
+      _etat = _Etat.pret;
+      _message = 'On passe a la mesure ${_dictee.measure}.';
+    });
   }
 
   Future<void> _fermerLeMicro() async {
@@ -228,7 +238,7 @@ class _DictationScreenState extends State<DictationScreen> {
                 const SizedBox(height: 8),
                 TextButton(
                   key: DictationScreen.passerKey,
-                  onPressed: _etat == _Etat.pret ? _passer : null,
+                  onPressed: _etat == _Etat.ecoute ? null : _passer,
                   child: const Text('Passer a la suivante'),
                 ),
               ],

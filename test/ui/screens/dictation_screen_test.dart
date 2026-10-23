@@ -144,4 +144,17 @@ void main() {
     expect(find.text('Mesure 2'), findsOneWidget);
     expect(find.text('0 mesure entendue'), findsOneWidget);
   });
+  testWidgets('a son tour, il peut passer : le micro se ferme', (
+    WidgetTester tester,
+  ) async {
+    await poser(tester);
+    await ecouter(tester);
+    expect(message(tester), 'A toi.');
+    await tester.tap(find.byKey(DictationScreen.passerKey));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Mesure 2'), findsOneWidget);
+    expect(micro.disposed, isTrue);
+    expect(find.text('0 mesure entendue'), findsOneWidget);
+  });
 }
