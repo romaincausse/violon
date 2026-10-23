@@ -105,6 +105,7 @@ class HomeShell extends StatefulWidget {
   static const Key seanceActionKey = Key('seance-action');
   static const Key seanceEtapeFaiteKey = Key('seance-etape-faite');
   static const Key seanceArreterKey = Key('seance-arreter');
+  static const Key seanceMenuKey = Key('seance-menu');
   static const Key seanceBanniereKey = Key('seance-banniere');
   static const Key ceSoirKey = Key('ce-soir');
 
@@ -463,8 +464,19 @@ class _HomeShellState extends State<HomeShell> {
 
   /// Le bandeau de la seance, au-dessus du travail : les trois etapes, celle
   /// en cours, et le geste qui va avec. Sans seance, l'invitation.
+  ///
+  /// **Une seule bande, et basse.** La premiere version prenait deux lignes
+  /// et un gros bouton : en portrait, la partition n'avait plus que quelques
+  /// pixels de haut, coupee en plein milieu de la portee. Le bandeau est un
+  /// guide, la partition est le travail -- c'est elle qui doit garder la
+  /// place.
   Widget _banniereDeSeance(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ButtonStyle compact = FilledButton.styleFrom(
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      minimumSize: const Size(0, 36),
+    );
     final DailySession? seance = _seance;
     if (seance == null) {
       return Material(
@@ -472,15 +484,26 @@ class _HomeShellState extends State<HomeShell> {
         color: theme.colorScheme.surfaceContainerHigh,
         child: SafeArea(
           bottom: false,
-          child: ListTile(
-            dense: true,
-            leading: const Icon(Icons.route_outlined),
-            title: const Text('Ma seance du jour'),
-            subtitle: const Text('Echauffement, travail, musique'),
-            trailing: FilledButton.tonal(
-              key: HomeShell.seanceKey,
-              onPressed: () => unawaited(_commencerLaSeance()),
-              child: const Text('Commencer'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 12, 4),
+            child: Row(
+              children: <Widget>[
+                const Icon(Icons.route_outlined, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Ma seance du jour',
+                    style: theme.textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                FilledButton.tonal(
+                  key: HomeShell.seanceKey,
+                  style: compact,
+                  onPressed: () => unawaited(_commencerLaSeance()),
+                  child: const Text('Commencer'),
+                ),
+              ],
             ),
           ),
         ),
@@ -492,97 +515,104 @@ class _HomeShellState extends State<HomeShell> {
       SessionStep.warmup => () {
           final Duration ecoulee = widget.clock().difference(seance.startedAt);
           final int reste = (DailySession.warmupBudget - ecoulee).inMinutes + 1;
-          return '${seance.plan.warmup.titre}, encore '
-              '${reste.clamp(1, DailySession.warmupBudget.inMinutes)} min au plus';
+          return '${seance.plan.warmup.titre}, '
+              '${reste.clamp(1, DailySession.warmupBudget.inMinutes)} min au '
+              'plus';
         }(),
       SessionStep.work => c.from == c.to
-          ? 'Mesure ${c.from}, ${DailySession.workAttempts} essais puis une reussite'
-          : 'Mesures ${c.from} a ${c.to}, ${DailySession.workAttempts} essais puis une reussite',
-      SessionStep.music => 'Le morceau en entier, avec l accompagnement',
+          ? 'Mesure ${c.from}, ${DailySession.workAttempts} essais'
+          : 'Mesures ${c.from} a ${c.to}, '
+              '${DailySession.workAttempts} essais',
+      SessionStep.music => 'Le morceau entier, accompagne',
       null => '',
     };
     final String action = switch (etape) {
-      SessionStep.warmup => 'Etape faite',
+      SessionStep.warmup => 'Fait',
       SessionStep.work => 'Travailler',
       SessionStep.music => 'Jouer avec',
       null => '',
     };
+    final Color encre = theme.colorScheme.onPrimaryContainer;
     return Material(
       key: HomeShell.seanceBanniereKey,
       color: theme.colorScheme.primaryContainer,
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.fromLTRB(12, 4, 0, 4),
+          child: Row(
             children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // A la ligne si l'ecran est etroit : trois etapes et une
-                  // croix ne tiennent pas toujours sur 400 pixels.
-                  Expanded(
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 2,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    // Trois pastilles, et le nom de l'etape en cours seule :
+                    // les deux autres se lisent a leur tour.
+                    Row(
                       children: <Widget>[
-                        for (final SessionStep s in seance.order)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Icon(
-                                seance.done.contains(s)
-                                    ? Icons.check_circle
-                                    : s == etape
-                                        ? Icons.radio_button_checked
-                                        : Icons.radio_button_unchecked,
-                                size: 18,
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
+                        for (final SessionStep s in seance.order) ...<Widget>[
+                          Icon(
+                            seance.done.contains(s)
+                                ? Icons.check_circle
+                                : s == etape
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                            size: 14,
+                            color: encre,
+                          ),
+                          const SizedBox(width: 3),
+                          if (s == etape) ...<Widget>[
+                            Flexible(
+                              child: Text(
                                 stepLabel(s),
+                                overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight:
-                                      s == etape ? FontWeight.bold : null,
-                                  color: theme.colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                  color: encre,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                        ],
                       ],
                     ),
-                  ),
-                  IconButton(
-                    key: HomeShell.seanceArreterKey,
-                    tooltip: 'Arreter la seance',
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () =>
-                        unawaited(_finirLaSeance(interrompue: true)),
-                  ),
-                ],
-              ),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
+                    Text(
                       '${seance.stepNumber}/3 - $detail',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onPrimaryContainer,
-                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(color: encre),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+              FilledButton(
+                key: HomeShell.seanceActionKey,
+                style: compact,
+                onPressed: () => unawaited(_agirPourLEtape()),
+                child: Text(action),
+              ),
+              // Passer et arreter sont rares : un menu, pour que l'etape en
+              // cours garde la largeur.
+              PopupMenuButton<bool>(
+                key: HomeShell.seanceMenuKey,
+                tooltip: 'Plus',
+                icon: Icon(Icons.more_vert, color: encre),
+                onSelected: (bool arreter) => arreter
+                    ? unawaited(_finirLaSeance(interrompue: true))
+                    : _etapeFaite(etape!),
+                itemBuilder: (BuildContext c) => <PopupMenuEntry<bool>>[
                   if (etape != SessionStep.warmup)
-                    TextButton(
+                    const PopupMenuItem<bool>(
                       key: HomeShell.seanceEtapeFaiteKey,
-                      onPressed: () => _etapeFaite(etape!),
-                      child: const Text('Passer'),
+                      value: false,
+                      child: Text('Passer cette etape'),
                     ),
-                  FilledButton(
-                    key: HomeShell.seanceActionKey,
-                    onPressed: () => unawaited(_agirPourLEtape()),
-                    child: Text(action),
+                  const PopupMenuItem<bool>(
+                    key: HomeShell.seanceArreterKey,
+                    value: true,
+                    child: Text('Arreter la seance'),
                   ),
                 ],
               ),

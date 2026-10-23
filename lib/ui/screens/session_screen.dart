@@ -1249,8 +1249,9 @@ class _SessionScreenState extends State<SessionScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _entete(),
-        const SizedBox(height: 24),
-        const SizedBox(height: 20),
+        // Douze points, pas quarante-quatre : chaque point pris ici l'est a
+        // la partition, seule a s'etirer dans cette colonne.
+        const SizedBox(height: 12),
         // En suivi, pas de metronome : il imposerait un tempo a celui qu'on
         // laisse jouer au sien (ADR-009).
         if (!_suit) _metronome() else _pouls(),
