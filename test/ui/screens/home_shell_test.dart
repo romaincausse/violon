@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/store/game_records.dart';
 import 'package:violon/core/store/take_sharer.dart';
 import 'package:violon/core/store/homework.dart';
 import 'package:violon/core/store/take_history.dart';
@@ -24,6 +25,7 @@ import 'package:violon/ui/screens/concert_screen.dart';
 import 'package:violon/ui/screens/accompaniment_screen.dart';
 import 'package:violon/ui/screens/reading_screen.dart';
 import 'package:violon/ui/screens/dictation_screen.dart';
+import 'package:violon/ui/screens/games_screen.dart';
 import 'package:violon/ui/screens/home_shell.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
 import 'package:violon/ui/screens/progress_screen.dart';
@@ -64,6 +66,7 @@ Future<void> poser(WidgetTester tester, {RememberedSession? memoire}) async {
       homeworkStoreFactory: FakeHomeworkStore.new,
       documentPickerFactory: FakeDocumentPicker.new,
       takeSharerFactory: FakeTakeSharer.new,
+      gameStoreFactory: FakeGameStore.new,
     ),
   );
   // Deux images : l'application attend d'avoir relu la memoire avant de
@@ -680,6 +683,15 @@ void main() {
       await toucherLOutil(tester, find.byKey(HomeShell.dicteeKey));
       await tester.pumpAndSettle();
       expect(find.byType(DictationScreen), findsOneWidget);
+    });
+
+    testWidgets('les outils menent aux jeux', (WidgetTester tester) async {
+      await poser(tester);
+      await ouvrirLesOutils(tester);
+      await toucherLOutil(tester, find.byKey(HomeShell.jeuxKey));
+      await tester.pumpAndSettle();
+      expect(find.byType(GamesScreen), findsOneWidget);
+      expect(find.byKey(GamesScreen.echoKey), findsOneWidget);
     });
   });
 }

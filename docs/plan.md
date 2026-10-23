@@ -48,7 +48,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 
 ---
 
-## Les treize jalons
+## Les quatorze jalons
 
 | # | Jalon | Lots | Soirees restantes | Ce qu'on gagne |
 |---|-------|------|-------------------|----------------|
@@ -65,13 +65,13 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 11 | L'accompagnement | 7 | 2 | On joue avec quelqu'un |
 | 12 | L'envie | 8 | 0 | On a envie d'y revenir |
 | 13 | Le solfege sur le violon | 3 | 0 | Lire et entendre, archet en main |
+| 14 | Les jeux | 3 | 0 | Un record a battre, au violon |
 
-**87 lots au 23 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
-corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
-attendent les ecoutes du parent -- et le violon et le violoncelle de
-l'accompagnement (J8). Le jalon 12, ne le 2 octobre d'une question posee a
-l'application -- qu'est-ce qui ferait qu'un enfant la rouvre tous les
-soirs ? --, a ete livre le jour meme.
+**90 lots au 23 octobre 2026.** Le verdict du jalon 5 est tombe : **non
+tenu** (ADR-019). Le lot P4 l'a rapproche du critere -- 92 % des notes dans
+la bonne mesure, 76 % sur la bonne note, pour 95 et 90 exiges. Restent P5,
+la note ajoutee ; les prises 09 a 12, a enregistrer avec l'enfant ; et le
+violon et le violoncelle de l'accompagnement (J8).
 
 Les jalons 6 a 11 ont ete livres **avant** ce verdict, a la demande de
 l'utilisateur, alors que le plan les faisait dependre de lui. Ce n'est pas
@@ -2281,6 +2281,64 @@ pas juge : une dictee de hauteurs se rejoue a son tempo.
 corde, en plus du doigt : *"Sur la corde de mi, tu es bas de 15 cents en
 general."*, dans la carte de la main de *Progres*, aux memes conditions --
 six notes au moins, douze cents au moins, plus d'une prise.
+
+---
+
+
+## Jalon 14 - Les jeux
+
+Ne le 23 octobre 2026 d'une demande de l'utilisateur : inventer des jeux.
+**Des jeux qui se jouent au violon**, pas sur l'ecran, et qui tiennent les
+regles du projet : un record qui ne redescend jamais, aucune mascotte, aucune
+recompense, une erreur qui ne remet jamais a zero, et un telephone qui emet
+ou ecoute, jamais les deux (ADR-008). Chacun travaille une chose que la
+seance travaille aussi, sous une forme qui donne envie d'y revenir. Dans les
+Outils, *Jeux* ; les records vivent sous leur propre cle (`GameStore`).
+
+| ID | Jeu | Ce qu'il travaille | Est. |
+|----|-----|------|-----|
+| ~~G1~~ | ~~L'echo~~ | L'oreille et la memoire | fait |
+| ~~G2~~ | ~~Tiens la note~~ | Le son file, la justesse | fait |
+| ~~G3~~ | ~~Le tempo cache~~ | La pulsation interieure | fait |
+| G4 | Le fantome | Battre son meilleur tempo, curseur contre curseur | 2 |
+| G5 | Trouve la quinte | L'intervalle juste, d'oreille | 1 |
+| G6 | La course aux mesures | Le passage entier sans arret, de plus en plus vite | 1 |
+
+**G1 - L'echo** (`EchoGame`, `EchoScreen`). L'application joue un motif au
+violon enregistre, il le rejoue d'oreille ; le micro ne s'ouvre qu'une fois
+le son eteint. Reussi, le meme motif s'allonge d'une note ; rate, il
+raccourcit d'une seule, jamais sous deux. Les notes viennent du morceau du
+moment ; deux notes de suite ne sont jamais pareilles, et un intervalle ne
+depasse pas la quinte. Record : le plus long motif.
+
+**G2 - Tiens la note** (`LongToneGame`, `LongToneScreen`). Une note doigtee
+-- pas une corde a vide, qui donne l'accord --, juste a dix cents pres du la
+mesure, le plus longtemps possible. Un ecart de moins d'un cinquieme de
+seconde est pardonne. Sans bourdon : le micro ecoute. Record : la plus
+longue tenue.
+
+**G3 - Le tempo cache** (`PulseGame`, `PulseScreen`). Quatre clics, puis le
+silence ; il continue seul huit temps, une corde a vide suffit. Le micro
+s'ouvre sur le dernier clic. Le juge mesure le tempo tenu et la regularite,
+rien d'autre ; le score sur cent retire deux points par pour cent de derive
+et la part d'irregularite. Record : le meilleur score.
+
+**Proposes, pas construits :**
+
+- **G4 - Le fantome.** Le curseur de sa meilleure prise d'un passage avance a
+  cote du sien : il joue contre lui-meme. Visuel seulement, aucun son. Le
+  tempo par note de la meilleure prise n'est pas garde aujourd'hui : il faut
+  l'ajouter a l'historique.
+- **G5 - Trouve la quinte.** Une note sonne, puis se tait ; il joue la quinte
+  au-dessus, ou la tierce, et l'ecart s'affiche. L'oreille harmonique, la ou
+  la lecture des notes travaille l'oeil.
+- **G6 - La course aux mesures.** Le passage du devoir en entier, sans arret,
+  au tempo vise, puis a +4 : combien de crans d'affilee. C'est la boucle de
+  travail sans la selection de mesures.
+
+**Ecartes** : tout ce qui se joue au doigt sur l'ecran plutot qu'a l'archet,
+les defis entre enfants (aucun compte, aucun serveur), et les etoiles ou
+medailles.
 
 ---
 
