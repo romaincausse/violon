@@ -2086,6 +2086,20 @@ les deux sont verifies sur un micro simule.
 
 ---
 
+**J2 sur le S22, le 23 octobre 2026.** La mesure echouait toujours sur le
+vrai telephone, pour deux raisons, corrigees. Le pont entre l'horloge du
+micro et celle du moteur se prenait pendant le demarrage du moteur, qui dure
+plusieurs secondes : le moteur demarre desormais avant que le micro s'ouvre.
+Et le son met plus longtemps a revenir au micro que l'ecart entre deux clics :
+des clics reguliers se laissaient apparier a l'echo du precedent. Les clics
+sont maintenant inegalement espaces, et la mesure cherche le seul decalage ou
+ils tombent tous juste, ce qui ecarte aussi les voix de la piece. Resultat :
+**environ 125 ms en profil faible latence, 340 a 390 ms en profil classique**,
+six clics sur six a 3 ms pres. Android ne compte **aucune coupure** de son
+dans un profil comme dans l'autre sur quinze secondes d'accompagnement : le
+passage au profil classique (J6) a triple le retard sans qu'on sache qu'il
+evitait un grésillement. A trancher a la reprise des essais.
+
 **J6 - Fait, ne du premier essai sur le haut-parleur du S22.** L'utilisateur
 a trouve le son des instruments horrible : ca gresillait, le timbre etait
 moche, les accords mecaniques. Trois causes, toutes dans la chaine et non

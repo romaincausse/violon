@@ -70,6 +70,15 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     _echantillons = 0;
     _pont = null;
     _attaques.reset();
+    // **Le moteur demarre avant que le micro s'ouvre.** Le pont entre les
+    // deux horloges se prend au premier paquet du micro ; si c'est ce meme
+    // appel qui demarre le moteur, son demarrage -- plusieurs secondes sur le
+    // S22 -- s'ajoute a l'horloge du micro et pas a celle du moteur, et tous
+    // les clics paraissent entendus des secondes trop tard.
+    await widget.engine.now();
+    if (!mounted) {
+      return;
+    }
     try {
       final PitchSource source = await widget.pitchSourceFactory();
       _source = source;
@@ -89,8 +98,8 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     }
     final Duration maintenant = await widget.engine.now();
     final int depart = maintenant.inMilliseconds + 600;
-    for (int k = 0; k < LatencyCalibration.clicks; k++) {
-      final int t = depart + k * LatencyCalibration.intervalMs;
+    for (final int decalage in LatencyCalibration.offsetsMs) {
+      final int t = depart + decalage;
       _clics.add(t);
       await widget.engine.scheduleClickAt(
         at: Duration(milliseconds: t),
@@ -98,10 +107,11 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       );
     }
     await Future<void>.delayed(
-      const Duration(
+      Duration(
         milliseconds: 600 +
-            LatencyCalibration.clicks * LatencyCalibration.intervalMs +
-            LatencyCalibration.maxLatencyMs,
+            LatencyCalibration.spanMs +
+            LatencyCalibration.maxLatencyMs +
+            200,
       ),
     );
     final LatencyEstimate? e = LatencyCalibration.estimate(
