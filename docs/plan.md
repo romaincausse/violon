@@ -67,12 +67,11 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 13 | Le solfege sur le violon | 3 | 0 | Lire et entendre, archet en main |
 | 14 | Les jeux | 3 | 0 | Un record a battre, au violon |
 
-**90 lots au 23 octobre 2026.** Restent la fin du jalon 5 -- les etiquettes
-corrigees du banc (P1), puis le verdict chiffre et son ADR (P3), qui
-attendent les ecoutes du parent -- et le violon et le violoncelle de
-l'accompagnement (J8). Le jalon 12, ne le 2 octobre d'une question posee a
-l'application -- qu'est-ce qui ferait qu'un enfant la rouvre tous les
-soirs ? --, a ete livre le jour meme.
+**90 lots au 23 octobre 2026.** Le verdict du jalon 5 est tombe : **non
+tenu** (ADR-019). Le lot P4 l'a rapproche du critere -- 92 % des notes dans
+la bonne mesure, 76 % sur la bonne note, pour 95 et 90 exiges. Restent P5,
+la note ajoutee ; les prises 09 a 12, a enregistrer avec l'enfant ; et le
+violon et le violoncelle de l'accompagnement (J8).
 
 Les jalons 6 a 11 ont ete livres **avant** ce verdict, a la demande de
 l'utilisateur, alors que le plan les faisait dependre de lui. Ce n'est pas
