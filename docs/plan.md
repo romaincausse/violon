@@ -56,7 +56,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
-| 5 | La preuve | 4 | 3 | On sait si le suiveur tient |
+| 5 | La preuve | 5 | 2 | On sait si le suiveur tient : pas encore (ADR-019) |
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
@@ -1252,9 +1252,10 @@ batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~P0~~ | ~~Violon de synthese : un passage joue avec ses defauts, verite terrain comprise~~ | | ★★★ | fait |
-| P1 | Banc d'essai : vraies prises, annotation proposee par l'aligneur et corrigee a l'oreille | **Must** | ★★ | 2 |
+| ~~P1~~ | ~~Banc d'essai : vraies prises, annotation independante~~ | **Must** | ★★ | fait, 8 prises sur 12 |
 | ~~P2~~ | ~~Alignement hors ligne (hauteurs + attaques)~~ | **Must** | ★★ | fait |
-| P3 | Verdict chiffre et ADR | **Must** | ★★★ | 1 |
+| ~~P3~~ | ~~Verdict chiffre et ADR~~ | **Must** | ★★★ | fait : non tenu (ADR-019) |
+| P4 | Le coup d'archet : compter les notes repetees | **Must** | ★★★ | 2 |
 
 **Critere de sortie :** sur dix prises reelles, dont au moins trois avec arret
 et reprise de mesure, l'alignement place **95 % des notes dans la bonne
@@ -1305,6 +1306,32 @@ toute prise :
 - **Le biais des attaques est constant, une douzaine de millisecondes en
   avance** sur le debut reel : il s'annule entre deux attaques, comme l'ADR-010
   le prevoyait.
+
+### P1, P3 - Le verdict : non tenu
+
+**Fait le 23 octobre 2026, sans le parent, a sa demande.** Detail et
+limites dans l'ADR-019. L'annotation n'est pas l'oreille du parent : c'est
+une reference independante (`tool/reference.py` : pYIN, flux spectral et
+creux d'energie de librosa, calage symbolique), dont chaque desaccord avec
+l'aligneur a ete tranche sur une image du spectre.
+
+Sur huit prises et 481 notes : **73 % dans la bonne mesure, 51 % sur la
+bonne note**, pour 95 et 90 exiges. Les gammes, les liaisons, l'arret, la
+reprise et le saut en arriere tiennent. **Les notes repetees a la meme
+hauteur ne sont pas comptees** : le changement d'archet est trop doux pour le
+flux spectral. Sur Into the Stars, la note rate et la mesure tient ; sur
+Firework, qui repete huit fois la meme croche et trois fois les memes
+mesures, l'aligneur ne sait plus quelle mesure : 46 %.
+
+Les prises 09 a 12 restent a enregistrer avec l'enfant ; elles ne changent
+pas ce verdict.
+
+### P4 - Le coup d'archet
+
+**Le must issu du verdict.** Donner a l'extracteur de traits un second
+indice d'attaque : le creux d'energie sur une fenetre courte, que les images
+du banc montrent a chaque changement d'archet. Puis repasser le banc, en
+rapportant que la reference partage desormais cet indice.
 
 ### P2 - Alignement hors ligne
 
