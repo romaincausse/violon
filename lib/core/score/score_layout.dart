@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../music/meter.dart';
 import '../music/passage.dart';
+import 'fingering_marks.dart';
 import 'staff_geometry.dart';
 import 'staff_layout.dart';
 import 'stems_and_beams.dart';
@@ -222,12 +223,22 @@ class SystemMetrics {
           -2.0 - StemsAndBeams.standardLengthSpaces,
         ) -
         1.5;
+    // Les doigtes (K2) se posent au-dessus de tout : la reserve les couvre.
+    double plusHaut = haut;
+    for (final StaffSystem s in layout.systems) {
+      for (final double y in FingeringMarks.place(s.layout).values) {
+        plusHaut = math.min(
+          plusHaut,
+          y - FingeringMarks.heightSpaces / 2 - FingeringMarks.gapSpaces,
+        );
+      }
+    }
     final double bas = math.max(
           StaffGeometry.yInSpaces(basPas),
           2.0 + StemsAndBeams.standardLengthSpaces,
         ) +
         1.5;
-    return SystemMetrics(topSpaces: haut, bottomSpaces: bas);
+    return SystemMetrics(topSpaces: plusHaut, bottomSpaces: bas);
   }
 
   final double topSpaces;

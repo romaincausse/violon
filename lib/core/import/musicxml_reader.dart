@@ -408,7 +408,17 @@ class MusicXmlReader {
           midi > _notes.last.midi) {
         // La note aigue d'une double corde est la melodie : c'est elle que
         // l'enfant suit des yeux, et c'est elle que YIN entendra le mieux.
-        _notes[_notes.length - 1] = _notes.last.copyWith(midi: midi);
+        // Son doigte la suit : celui de la note grave serait faux.
+        final ScoreNote grave = _notes.last;
+        _notes[_notes.length - 1] = ScoreNote(
+          id: grave.id,
+          midi: midi,
+          onsetTicks: grave.onsetTicks,
+          durationTicks: grave.durationTicks,
+          measure: grave.measure,
+          fingering: _doigte(note),
+          bowing: grave.bowing,
+        );
       }
       return apres;
     }
@@ -438,10 +448,28 @@ class MusicXmlReader {
         onsetTicks: onset,
         durationTicks: ticks,
         measure: numero,
+        fingering: _doigte(note),
       ),
     );
     _lireLiaisons(note, id);
     return apres;
+  }
+
+  /// Le doigte ecrit sur la note (K2), le premier s'il y en a plusieurs.
+  ///
+  /// Le texte est garde tel quel -- "0" pour la corde a vide, "1-2" pour une
+  /// substitution --, borne a trois signes : au-dela, ce n'est plus un doigte
+  /// qu'on lit d'un coup d'oeil au-dessus d'une tete.
+  static String? _doigte(XmlElement note) {
+    for (final XmlElement notations in note.childrenNamed('notations')) {
+      for (final XmlElement technique in notations.childrenNamed('technical')) {
+        final String? d = technique.childText('fingering')?.trim();
+        if (d != null && d.isNotEmpty && d.length <= 3) {
+          return d;
+        }
+      }
+    }
+    return null;
   }
 
   /// Duree en divisions de la derniere note posee, pour placer un accord.

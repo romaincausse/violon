@@ -2378,7 +2378,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ID | Lot | Must | ROI | Est. |
 |----|-----|------|-----|------|
 | ~~K1~~ | ~~Le niveau de depart~~ | | ★★★ | fait |
-| K2 | Les doigtes du fichier | | ★★ | 1 |
+| ~~K2~~ | ~~Les doigtes du fichier~~ | | ★★ | fait |
 | K3 | La main en troisieme position | **Must** | ★★★ | 2 |
 | K4 | Le catalogue en troisieme position | **Must** | ★★★ | 2 |
 | K5 | Les demanches | | ★★ | 2 |
@@ -2429,6 +2429,14 @@ l'import MusicXML ne remplit pas : lire `<fingering>`, le garder avec le
 morceau, et le montrer -- un chiffre au-dessus de la tete, ce que l'ADR-007
 permet sans faire du rendu un graveur general. C'est aussi ce qui dit dans
 quelle position l'eleve joue un passage.
+
+**Fait** (`FingeringMarks`). L'import lit le premier `<fingering>` de chaque
+note -- trois signes au plus, "0" pour la corde a vide, "1-2" pour une
+substitution --, le donne a la note aigue d'une double corde et le garde a
+travers une tenue. Il se range avec le morceau. Le chiffre se grave au-dessus
+de la portee, de la tete et d'une hampe montante ou de sa ligature ; la
+reserve du systeme grandit quand il depasse. Verifie sur l'emulateur avec une
+gamme doigtee de trois octaves.
 
 **K3 - La main en troisieme position.** Le diagnostic par doigt (H3) suppose
 la premiere position : une erreur en troisieme est attribuee au mauvais

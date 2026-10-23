@@ -99,6 +99,39 @@ void main() {
       expect(p.warnings.single, contains('mesure 4'));
     });
 
+    test('le doigte ecrit se lit, suit la note aigue et la tenue (K2)', () {
+      String doigte(String d) => '<technical><fingering>$d</fingering>'
+          '</technical>';
+      final ImportedPiece p = MusicXmlReader.read(
+        partition(
+          '<measure number="1">$sixHuit'
+          '${note('D4', 3, notations: doigte('0'))}'
+          '${note('F#4', 3, notations: '${doigte('2')}<tied type="start"/>')}'
+          '</measure>'
+          '<measure number="2">'
+          '${note('F#4', 3, extra: '<tie type="stop"/>')}'
+          '${note('D4', 3, notations: doigte('0'))}'
+          '${note('B4', 3, extra: '<chord/>', notations: doigte('3'))}'
+          '</measure>'
+          '<measure number="3">'
+          '${note('E4', 3, notations: doigte(' 1-2 '))}'
+          '${note('G4', 3, notations: doigte('pouce'))}'
+          '${note('A4', 6)}</measure>',
+        ),
+      );
+      expect(p.passage.notes.map((ScoreNote n) => n.fingering), <String?>[
+        '0',
+        '2', // la tenue ne fait qu'une note, et garde son doigte
+        '3', // la note aigue de la double corde, avec le sien
+        '1-2',
+        null, // plus qu'un chiffre : ce n'est pas un doigte qu'on lit
+        null,
+      ]);
+      final ImportedPiece relu = ImportedPiece.fromJson(p.toJson())!;
+      expect(relu.passage.notes.map((ScoreNote n) => n.fingering),
+          p.passage.notes.map((ScoreNote n) => n.fingering));
+    });
+
     test('une seconde voix et une petite note sont ignorees, et dites', () {
       final ImportedPiece p = MusicXmlReader.read(
         partition(
