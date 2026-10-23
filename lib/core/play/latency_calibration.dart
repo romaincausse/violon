@@ -42,18 +42,31 @@ class LatencyEstimate {
 class LatencyCalibration {
   const LatencyCalibration._();
 
-  /// Combien de clics : assez pour qu'une mediane ait un sens et qu'un clic
-  /// rate ne fausse rien.
-  static const int clicks = 6;
+  /// Quand sonne chaque clic, depuis le premier.
+  ///
+  /// **Des ecarts inegaux, et c'est voulu.** Sur le S22, le son met plus de
+  /// six cents millisecondes a revenir au micro : avec des clics reguliers
+  /// toutes les 500 ms, chaque clic aurait ete apparie a l'echo du precedent,
+  /// et la mesure aurait rendu un chiffre faux et parfaitement regulier. Des
+  /// ecarts tous differents ne laissent qu'un seul decalage ou tous les clics
+  /// tombent juste.
+  static const List<int> offsetsMs = <int>[0, 600, 1300, 1800, 2700, 3200];
 
-  /// Ecart entre deux clics : assez pour que l'echo du premier se soit eteint.
-  static const int intervalMs = 500;
+  /// Combien de clics.
+  static int get clicks => offsetsMs.length;
 
-  /// Au-dela, un son entendu n'est pas ce clic-la.
-  static const int maxLatencyMs = 400;
+  /// Le dernier clic sonne a cet instant apres le premier.
+  static int get spanMs => offsetsMs.last;
+
+  /// Au-dela, un son entendu n'est pas ce clic-la. Le S22 mesure entre 600 et
+  /// 850 ms selon le profil du moteur : la marge est large.
+  static const int maxLatencyMs = 1500;
 
   /// Il faut au moins ces clics entendus.
   static const int minMatched = 4;
+
+  /// Un clic entendu a moins de ca du decalage retenu lui correspond.
+  static const int toleranceMs = 15;
 
   /// Et pas plus d'ecart que ca entre eux : sinon on a entendu autre chose.
   static const int maxSpreadMs = 30;
@@ -63,28 +76,52 @@ class LatencyCalibration {
   /// [clicksEngineMs] : quand le moteur a joue chaque clic. [onsetsMicMs] :
   /// les attaques entendues, en temps du micro. [micToEngineMs] : ce qu'il
   /// faut ajouter a un temps du micro pour l'avoir en temps du moteur.
+  ///
+  /// **On cherche le decalage qui fait tomber le plus de clics juste**, pas
+  /// la premiere attaque apres chaque clic : dans une piece ou l'on parle,
+  /// la premiere attaque est souvent une voix.
   static LatencyEstimate? estimate({
     required List<int> clicksEngineMs,
     required List<int> onsetsMicMs,
     required int micToEngineMs,
   }) {
-    final List<int> ecarts = <int>[];
     final List<int> entendues = <int>[
       for (final int o in onsetsMicMs) o + micToEngineMs,
     ]..sort();
-    for (final int c in clicksEngineMs) {
-      for (final int o in entendues) {
-        final int e = o - c;
-        if (e >= 0 && e <= maxLatencyMs) {
-          ecarts.add(e);
-          break;
-        }
-      }
-    }
-    if (ecarts.length < minMatched) {
+    if (entendues.isEmpty) {
       return null;
     }
-    ecarts.sort();
+    List<int> ecartsPour(int decalage) {
+      final List<int> e = <int>[];
+      for (final int c in clicksEngineMs) {
+        int? meilleur;
+        for (final int o in entendues) {
+          final int d = o - c - decalage;
+          if (d.abs() <= toleranceMs &&
+              (meilleur == null || d.abs() < (meilleur - decalage).abs())) {
+            meilleur = o - c;
+          }
+        }
+        if (meilleur != null) {
+          e.add(meilleur);
+        }
+      }
+      return e;
+    }
+
+    int meilleurNombre = 0;
+    List<int> retenus = const <int>[];
+    for (int decalage = 0; decalage <= maxLatencyMs; decalage++) {
+      final List<int> e = ecartsPour(decalage);
+      if (e.length > meilleurNombre) {
+        meilleurNombre = e.length;
+        retenus = e;
+      }
+    }
+    if (retenus.length < minMatched) {
+      return null;
+    }
+    final List<int> ecarts = List<int>.of(retenus)..sort();
     final int etendue = ecarts.last - ecarts.first;
     if (etendue > maxSpreadMs) {
       return null;

@@ -59,7 +59,8 @@ void main() {
         c.delay.inMilliseconds - 4900 + 80,
     ];
     micro.emitAudio(signal(100, entendus.last + 400, entendus));
-    await tester.pump(const Duration(seconds: 5));
+    // Le dernier clic, puis la marge de latence maximale.
+    await tester.pump(const Duration(seconds: 6));
     await tester.pump();
     // Le detecteur d'attaques date un son au debut de la fenetre ou il le
     // voit : jusqu'a une fenetre (23 ms) trop tot, toujours pareil. La
