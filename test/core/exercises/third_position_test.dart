@@ -11,9 +11,12 @@ void main() {
   final List<Exercise> enTroisieme = ExerciseCatalog.ofPalier(7);
 
   test('un palier de plus apres le mineur, toutes familles', () {
-    expect(ExerciseCatalog.paliers.last.titre, 'La troisieme position');
-    expect(enTroisieme.map((Exercise e) => e.genre).toSet(),
-        ExerciseKind.values.toSet());
+    expect(ExerciseCatalog.palier(7).titre, 'La troisieme position');
+    expect(enTroisieme.map((Exercise e) => e.genre).toSet(), <ExerciseKind>{
+      ExerciseKind.motifDeDoigts,
+      ExerciseKind.gamme,
+      ExerciseKind.arpege,
+    });
     expect(enTroisieme.every((Exercise e) => e.position == 3), isTrue);
   });
 

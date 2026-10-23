@@ -87,4 +87,16 @@ void main() {
     expect(lire(passage(<(int, String?)>[(74, '4'), (76, '0')])),
         <String>['?', '76/1/0']);
   });
+
+  test('les arrivees de demanche : la note d avant etait dans l autre position',
+      () {
+    final Passage p = passage(<(int, String?)>[
+      (71, '1'), // si4, premiere
+      (74, '1'), // re5, troisieme : arrivee
+      (76, null), // mi5 a vide : pas une arrivee
+      (78, '3'), // fa#5 en troisieme, apres une corde a vide
+      (73, '2'), // do#5, premiere : arrivee
+    ]);
+    expect(HandPositions.shiftArrivals(p), <String>{'n1', 'n4'});
+  });
 }

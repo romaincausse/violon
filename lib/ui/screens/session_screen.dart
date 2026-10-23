@@ -439,9 +439,9 @@ class _SessionScreenState extends State<SessionScreen>
   Duration get _elapsed =>
       _enDecompte ? Duration.zero : _depuisLeDepart - _decompte.duration;
 
-  late LiveTuning _tuning = LiveTuning(
+  late LiveTuning _tuning = LiveTuning.forPassage(
+    widget.passage,
     a4: widget.a4,
-    tonality: LiveTuning.tonalityOf(widget.passage),
   );
   ScoreDisplayMode _mode = ScoreDisplayMode.systems;
   double _zoom = 1;
@@ -811,9 +811,9 @@ class _SessionScreenState extends State<SessionScreen>
       // (`n1`, `n2`...) : garder les mesures de l'ancien ferait noter le
       // nouveau avec ce qu'on a entendu ailleurs.
       setState(() {
-        _tuning = LiveTuning(
+        _tuning = LiveTuning.forPassage(
+          widget.passage,
           a4: widget.a4,
-          tonality: LiveTuning.tonalityOf(widget.passage),
         );
         _trace.reset();
       });
@@ -827,9 +827,9 @@ class _SessionScreenState extends State<SessionScreen>
     // affichees ont ete calculees contre l'ancien.
     if (widget.a4 != oldWidget.a4) {
       setState(() {
-        _tuning = LiveTuning(
+        _tuning = LiveTuning.forPassage(
+          widget.passage,
           a4: widget.a4,
-          tonality: LiveTuning.tonalityOf(widget.passage),
         );
         // On vient d'accorder : ce qui precede ne decrit plus l'instrument,
         // et le trace a ete mesure contre l'ancienne reference.

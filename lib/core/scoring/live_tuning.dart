@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import '../audio/pitch_estimate.dart';
+import '../music/hand_positions.dart';
 import '../music/pitch_utils.dart';
 import '../music/passage.dart';
 import '../music/score_note.dart';
@@ -39,6 +42,7 @@ class LiveTuning {
     this.attackMs = 80,
     this.a4 = PitchUtils.defaultA4,
     this.tonality,
+    this.glides = const <String>{},
   })  : assert(toleranceCents > 0, 'une tolerance est strictement positive'),
         assert(minSamples > 0, 'il faut au moins une mesure'),
         assert(attackMs >= 0, 'une duree d attaque n est pas negative');
@@ -80,6 +84,27 @@ class LiveTuning {
   /// La tonalite du passage, quand on la connait : la tonique (classe de
   /// hauteur) et le mode (lot I3). `null` : la marge large pour toutes.
   final ({int tonic, bool minor})? tonality;
+
+  /// Les notes ou la main arrive d'un demanche (K5) : leur debut est un
+  /// glissando, un geste et pas une note. On ne les juge qu'apres
+  /// [glideMs].
+  final Set<String> glides;
+
+  /// Ce qu'un demanche prend, au plus, avant que le doigt soit arrive : le
+  /// glissando d'un eleve dure de 60 a 150 ms, une marge le couvre.
+  static const int glideMs = 200;
+
+  /// Le juge d'un passage : sa tonalite, s'il porte son armure, et ses
+  /// demanches, s'il porte ses doigtes.
+  factory LiveTuning.forPassage(
+    Passage passage, {
+    double a4 = PitchUtils.defaultA4,
+  }) =>
+      LiveTuning(
+        a4: a4,
+        tonality: tonalityOf(passage),
+        glides: HandPositions.shiftArrivals(passage),
+      );
 
   final Map<String, List<double>> _ecarts = <String, List<double>>{};
 
@@ -143,7 +168,11 @@ class LiveTuning {
     if (estimate.confidence < minConfidence) {
       return;
     }
-    if (sinceNoteStartMs != null && sinceNoteStartMs < attackMs) {
+    if (sinceNoteStartMs != null &&
+        sinceNoteStartMs <
+            (glides.contains(note.id)
+                ? math.max(attackMs, glideMs)
+                : attackMs)) {
       return;
     }
     final double attendue = PitchUtils.midiToFrequency(note.midi, a4: a4);

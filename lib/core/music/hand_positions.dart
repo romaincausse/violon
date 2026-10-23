@@ -92,6 +92,27 @@ class HandPositions {
     return places;
   }
 
+  /// Les notes ou la main arrive d'un changement de position (K5) : la note
+  /// d'avant etait doigtee, dans une autre position. Leur debut est un
+  /// glissando.
+  static Set<String> shiftArrivals(Passage passage) {
+    final Map<String, FingerPlacement?> places = of(passage);
+    final Set<String> arrivees = <String>{};
+    FingerPlacement? avant;
+    for (final ScoreNote n in passage.notes) {
+      final FingerPlacement? p = places[n.id];
+      if (p != null &&
+          avant != null &&
+          p.finger > 0 &&
+          avant.finger > 0 &&
+          p.position != avant.position) {
+        arrivees.add(n.id);
+      }
+      avant = p;
+    }
+    return arrivees;
+  }
+
   /// La place de [midi] dans la [position] donnee, doigt pose, sur la corde
   /// la plus grave qui l'atteint : c'est ainsi qu'une gamme en troisieme
   /// reste sur une corde aussi longtemps qu'elle peut. `null` si aucune.
