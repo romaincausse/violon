@@ -220,6 +220,31 @@ Le critere ne change pas : dix prises, dont les trois avec reprise.
 L'annotation de zero, ci-dessous, reste la reference si un doute sur le
 chiffre demande un jour une verification independante.
 
+## L'annotation independante (faite le 23 octobre 2026)
+
+Quand l'oreille du parent n'est pas disponible, `tool/reference.py` produit
+une annotation qui ne reutilise rien de l'application : pYIN pour la
+hauteur, le flux spectral et les creux d'energie de librosa pour les debuts
+de note, un calage symbolique sur la partition qui admet les reprises.
+
+```sh
+# conteneur violon-banc : python:3.12-slim + numpy scipy soundfile librosa matplotlib
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/w -v ~/violon-banc:/banc \
+  -w /w violon-banc python3 tool/reference.py /banc 05-stars-arret-reprise \
+  --images /tmp/images
+#  -> prises/<prise>.ref.txt, et une image par fenetre de desaccord
+```
+
+Chaque desaccord avec l'aligneur se tranche sur l'image : le spectre, la
+hauteur jouee, l'energie, les deux annotations. Le resultat, copie en
+`<prise>.corrige.txt`, passe par `tool/marqueurs.dart valider` comme une
+correction a l'oreille. Ce qu'elle vaut et ce qu'elle ne vaut pas : ADR-019.
+
+**Une consigne n'est pas une prise.** La prise 05 devait porter sur les
+mesures 15 a 22 : elle commence a la mesure 8. La reference aligne donc sur
+toute la partition, la consigne ne servant qu'a choisir entre deux passages
+identiques.
+
 ## L'annotation de zero (reference)
 
 A la main, dans **Audacity** (piste d'etiquettes), le parent qui a une
@@ -343,8 +368,9 @@ le direct que l'ecran montre.
 
 ## Fini quand
 
-- [ ] Le pilote est annote et le protocole corrige en consequence
+- [x] Le pilote est annote et le protocole corrige en consequence
 - [ ] Au moins dix prises au critere, dont trois avec arret et reprise
-- [ ] Chaque prise a son WAV, ses etiquettes et ses metadonnees
+      (huit, dont les trois avec reprise : 09 a 12 restent a enregistrer)
+- [x] Chaque prise enregistree a son WAV, ses etiquettes et ses metadonnees
 - [ ] Chaque partition utilisee est encodee, avec liaisons et tenues
 - [ ] Rien du banc n'est dans le depot (`git status` propre)

@@ -796,3 +796,93 @@ tout le reste, et dit maintenant l'exception.
 - Un WAV de trois minutes pese seize megaoctets : c'est lourd pour une
   messagerie, et c'est le format que l'application sait ecrire sans rien
   ajouter. Un encodage viendra si l'usage le reclame.
+
+## ADR-019 : Le verdict du banc d'essai, et ce qu'il change
+
+**Contexte.** Le jalon 5 devait dire, sur de vraies prises, si le suiveur
+tient : 95 % des notes dans la bonne mesure, 90 % sur la bonne note, sur dix
+prises dont trois avec reprise. Huit prises etaient enregistrees, annotees par
+l'aligneur lui-meme, en attente d'une correction a l'oreille par le parent.
+Le 23 octobre 2026, l'utilisateur a demande que le banc avance sans lui.
+
+**Methode, et ce qu'elle vaut.** L'oreille du parent est remplacee par une
+**reference independante** (`tool/reference.py`), qui ne reutilise rien de
+la chaine de l'application :
+
+- la hauteur vient de pYIN (librosa), pas de YIN ;
+- les debuts de note viennent du flux spectral de librosa **et des creux
+  d'energie** sur des fenetres de 23 ms, un indice que l'application n'a pas ;
+- le calage sur la partition est **symbolique** : la prise est decoupee en
+  notes, puis la suite des notes jouees est alignee sur la suite ecrite, la ou
+  l'application aligne trame par trame.
+
+Chaque desaccord et chaque point douteux (doublon, retour en arriere, note
+hors partition, saut) a ete regarde sur une image : le spectre, la hauteur
+jouee, la courbe d'energie, et les deux annotations. Ce que ces images ont
+montre est consigne plus bas. Trois limites, a garder en tete :
+
+1. **Personne n'a ecoute.** Une image ne dit pas tout ce qu'entend une
+   oreille : un glissando, une note effleuree, une intention.
+2. **Dans une suite de notes identiques, le compte est sur a un coup
+   d'archet pres.** Huit fa# ou neuf, on le voit ; lequel est en trop, non.
+3. **Entre deux mesures identiques, on suppose que l'enfant joue dans
+   l'ordre.** C'est ce que ferait tout annotateur, et c'est ce que les
+   prises montrent : aucune pause, aucune hesitation ne signale une reprise.
+
+**Le chiffre.**
+
+| Prise | Notes | Bonne mesure | Bonne note |
+|---|---|---|---|
+| 01 gamme detachee | 30 | 100 % | 97 % |
+| 02 gamme liee | 15 | 100 % | 100 % |
+| 03 Into the Stars, notes repetees | 47 | 92 % | 32 % |
+| 04 Into the Stars, du debut a la fin | 100 | 97 % | 75 % |
+| 05 Into the Stars, arret et reprise | 44 | 89 % | 89 % |
+| 06 Into the Stars, saut en arriere | 33 | 97 % | 97 % |
+| 07 Firework, vraie seance | 107 | 47 % | 20 % |
+| 08 Firework, tres lent | 105 | 45 % | 16 % |
+| **Ensemble** | **481** | **73 %** | **51 %** |
+| **Les trois avec reprise** | **184** | **66 %** | **50 %** |
+
+**Verdict : le critere n'est pas tenu.** Il manque deux prises sur dix (09 et
+10), mais le verdict n'en depend pas : pour remonter l'ensemble a 95 % de
+bonnes mesures, il faudrait plus de deux mille notes parfaites de plus, et
+les trois prises avec reprise, elles, sont toutes la.
+
+**Ce qui casse, une seule chose.** L'aligneur ne compte pas les **notes
+repetees a la meme hauteur**. Sur cinq re detaches, il en voit un ou deux :
+le changement d'archet est doux, le spectre ne change presque pas, et le
+detecteur d'attaques par flux spectral ne le voit pas. Sur les images, chaque
+coup d'archet est pourtant la, comme une fine bande claire dans le spectre et
+un creux de quatre a dix decibels dans l'energie.
+
+Sur Into the Stars, ou les notes repetees ne durent que trois mesures, c'est
+la **note** qui rate et la mesure qui tient : 95 % des notes dans la bonne
+mesure sur les prises 01 a 06. Sur Firework, qui repete huit fois la meme
+croche et dont les mesures 1 a 4 reviennent a l'identique en 5 a 8 et en 9 a
+11, ne pas compter, c'est ne plus savoir **quelle** mesure : l'aligneur
+revient trois fois a la mesure 2 d'une prise jouee d'un trait. C'est la que
+le chiffre s'effondre.
+
+Le reste tient : les gammes, les liaisons, l'arret et la reprise, le saut en
+arriere. Les notes jouees hors partition -- l'enfant qui cherche, aux secondes
+8 a 11 de la prise 05 -- sont rattachees a des notes de la partition, une
+faute comptee a part.
+
+**Decision.**
+
+1. **Le plan change, comme le jalon 5 l'avait prevu.** Un lot P4, "le coup
+   d'archet", passe devant tout le reste : donner a l'extracteur un second
+   indice d'attaque, le creux d'energie sur une fenetre courte, et repasser le
+   banc.
+2. **Le chiffre apres P4 ne sera plus independant** : la reference et
+   l'application partageront l'indice du creux d'energie. Il sera rapporte
+   comme tel. Ce qui reste independant, c'est la hauteur (pYIN contre YIN) et
+   la facon de caler sur la partition.
+3. **Les prises 09 a 12 restent a enregistrer**, avec l'enfant. Elles ne
+   changent pas ce verdict ; elles diront si P4 tient sur les fausses notes,
+   le vibrato, le bruit et les doubles cordes.
+4. **Ce qui a ete bati sur le suiveur (jalons 6 a 13) reste en place.** Sur
+   les melodies qui changent de hauteur, il tient. Sur une piece a notes
+   repetees comme Firework, la mesure designee a retravailler peut etre
+   fausse : c'est ce que P4 doit corriger.
