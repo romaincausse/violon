@@ -33,7 +33,7 @@ void main() {
   late FakePitchSource micro;
   int t = 0;
 
-  Future<void> poser(WidgetTester tester) async {
+  Future<void> poser(WidgetTester tester, {int? budget}) async {
     t = 0;
     await tester.binding.setSurfaceSize(const Size(420, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -45,6 +45,7 @@ void main() {
           startPulseBpm: 100,
           pitchSourceFactory: () async =>
               micro = FakePitchSource(const <PitchEstimate>[]),
+          attemptBudget: budget,
         ),
       ),
     );
@@ -59,7 +60,8 @@ void main() {
   Future<void> jouer(WidgetTester tester, int? midi, int trames) async {
     for (int i = 0; i < trames; i++) {
       // La boucle a pu se fermer seule, sur une reussite : micro ferme.
-      if (find.byKey(LoopScreen.finirKey).evaluate().isEmpty) {
+      if (micro.disposed ||
+          find.byKey(LoopScreen.finirKey).evaluate().isEmpty) {
         return;
       }
       if (midi != null) {
@@ -129,6 +131,7 @@ void main() {
     expect(message(tester), contains('Une derniere fois'));
     // La derniere fois reussie ferme la boucle.
     await mesure2(tester);
+    await tester.pump();
     expect(find.byKey(LoopScreen.commencerKey), findsOneWidget);
     expect(message(tester), contains('reussite'));
   });
@@ -144,5 +147,32 @@ void main() {
     expect(find.byKey(LoopScreen.selectionKey), findsNothing);
     await tester.tap(find.byKey(LoopScreen.finirKey));
     await tester.pump();
+  });
+  testWidgets('le budget d essais de la seance : un essai bon, et c est fini',
+      (WidgetTester tester) async {
+    await poser(tester, budget: 1);
+    await commencer(tester);
+    await jouer(tester, null, 5);
+    await mesure2(tester);
+    await tester.pump();
+    expect(find.byKey(LoopScreen.commencerKey), findsOneWidget);
+    expect(message(tester), contains('1 essais, c est assez'));
+  });
+
+  testWidgets(
+      'le budget atteint sur un rate : une derniere fois, la ou ca '
+      'tenait', (WidgetTester tester) async {
+    await poser(tester, budget: 1);
+    await commencer(tester);
+    await jouer(tester, null, 5);
+    await jouer(tester, 69, 26);
+    await jouer(tester, 71, 26);
+    await jouer(tester, null, 160);
+    expect(message(tester), contains('une derniere fois'));
+    expect(find.byKey(LoopScreen.finirKey), findsOneWidget);
+    await mesure2(tester);
+    await tester.pump();
+    expect(find.byKey(LoopScreen.commencerKey), findsOneWidget);
+    expect(message(tester), contains('reussite'));
   });
 }

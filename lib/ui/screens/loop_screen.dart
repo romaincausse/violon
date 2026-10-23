@@ -34,6 +34,7 @@ class LoopScreen extends StatefulWidget {
     required this.pitchSourceFactory,
     this.a4 = PitchUtils.defaultA4,
     this.lesson = false,
+    this.attemptBudget,
     super.key,
   });
 
@@ -49,6 +50,11 @@ class LoopScreen extends StatefulWidget {
   /// Le point de rupture (C2) est un outil d'adulte : il sort du chemin de
   /// l'enfant (V0) et ne se propose qu'en mode lecon.
   final bool lesson;
+
+  /// Dans la seance du jour (V1), le travail a une fin : au bout de tant
+  /// d'essais, on termine sur une reussite (R4) et on passe a la musique.
+  /// `null` : la boucle dure tant qu'il veut.
+  final int? attemptBudget;
 
   static const Key commencerKey = Key('boucle-commencer');
   static const Key ruptureKey = Key('boucle-rupture');
@@ -169,14 +175,39 @@ class _LoopScreenState extends State<LoopScreen> {
     );
     final LoopStep suite = boucle.record(tentative);
     final bool derniereReussie = _derniere && tentative.success;
+    // Le budget d'essais de la seance (V1) : atteint, on termine sur une
+    // reussite -- tout de suite si l'essai etait bon, sinon une derniere
+    // fois la ou ca tenait. Et si ca ne vient pas, on s'arrete quand meme
+    // trois essais plus loin : une seance ne se finit pas sur une boucle
+    // sans fin.
+    final int? budget = widget.attemptBudget;
+    final int essais = boucle.attempts.length;
+    bool fini = suite == LoopStep.done || derniereReussie;
+    String? motBudget;
+    if (!fini && budget != null && essais >= budget) {
+      final int? derniere = boucle.finishOnSuccessPulseBpm;
+      if (tentative.success) {
+        fini = true;
+        motBudget = 'Ca tient. $budget essais, c est assez : on passe a la '
+            'suite.';
+      } else if (!_derniere && derniere != null) {
+        _derniere = true;
+        motBudget = '$budget essais : une derniere fois, a $derniere, et on '
+            'termine sur une reussite.';
+      } else if (essais >= budget + 3) {
+        fini = true;
+        motBudget = 'On s arrete la pour ce soir. Ca viendra.';
+      }
+    }
     setState(() {
-      _message = derniereReussie
-          ? 'Ca tient. On s arrete sur une reussite.'
-          : _dire(tentative, suite, boucle);
+      _message = motBudget ??
+          (derniereReussie
+              ? 'Ca tient. On s arrete sur une reussite.'
+              : _dire(tentative, suite, boucle));
       // Le prochain essai repart de zero ; la boucle, elle, se souvient.
       _essai = TakeFollower(extrait, a4: widget.a4);
     });
-    if (suite == LoopStep.done || derniereReussie) {
+    if (fini) {
       unawaited(_fermer());
       setState(() => _boucle = null);
     }
