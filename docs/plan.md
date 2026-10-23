@@ -2379,7 +2379,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 |----|-----|------|-----|------|
 | ~~K1~~ | ~~Le niveau de depart~~ | | ★★★ | fait |
 | ~~K2~~ | ~~Les doigtes du fichier~~ | | ★★ | fait |
-| K3 | La main en troisieme position | **Must** | ★★★ | 2 |
+| ~~K3~~ | ~~La main en troisieme position~~ | **Must** | ★★★ | fait |
 | K4 | Le catalogue en troisieme position | **Must** | ★★★ | 2 |
 | K5 | Les demanches | | ★★ | 2 |
 | K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
@@ -2444,6 +2444,19 @@ doigt. La position se deduit du doigte ecrit (K2), sinon du contexte -- une
 note au-dessus de ce que la premiere position atteint, les voisines d'un
 passage aigu. Faute de pouvoir trancher, la note ne compte pas : mieux vaut un
 diagnostic de moins qu'un doigt accuse a tort.
+
+**Fait** (`HandPositions`). Chaque note recoit une place -- corde, position,
+doigt -- ou rien. Un doigte ecrit dit la position (un "1" sur le re5, la
+troisieme ; un "3", la premiere), et elle dure sur les notes suivantes tant
+qu'elles y tiennent, comme une edition ne doigte que les changements. Sans
+doigte : la premiere position ; au-dessus de ce qu'elle atteint (si5), et a
+deux notes d'une telle note, on ne sait plus, jusqu'a une corde a vide ou une
+note sous le re4. La place se range avec chaque note de la prise ; le
+diagnostic par doigt ecarte les notes sans place, et nomme les doigts de la
+troisieme a part : *"Ton 1er doigt en 3e position tombe bas"*. Les prises
+d'avant K3, sans place, restent jugees en premiere position. **Limite** : un
+extrait qui commence au milieu d'un passage en troisieme, sans doigte dans
+l'extrait, est lu en premiere.
 
 **K4 - Le catalogue en troisieme position.** Les memes familles que la
 premiere -- doigts en ligne, gammes d'une octave sur la et mi, arpeges --,

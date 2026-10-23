@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../music/finger_pattern.dart';
+
 /// Ce qu'on garde d'une mesure apres une prise.
 class MeasureTrace {
   const MeasureTrace({
@@ -52,16 +54,30 @@ class NoteTrace {
     required this.midi,
     required this.measure,
     required this.cents,
+    this.hand,
+    this.unplaced = false,
   });
 
   final int midi;
   final int measure;
   final double cents;
 
+  /// Ou la main l'a jouee, quand le passage le disait (K3).
+  final FingerPlacement? hand;
+
+  /// Vrai quand on n'a pas pu trancher ou etait la main : la note ne compte
+  /// pas pour le diagnostic par doigt. Faux et sans [hand] : une prise
+  /// d'avant K3, jugee comme alors, en premiere position.
+  final bool unplaced;
+
   Map<String, Object?> toJson() => <String, Object?>{
         'n': midi,
         'm': measure,
         'c': (cents * 10).round(),
+        if (hand case final FingerPlacement h)
+          'h': <int>[h.stringMidi, h.position, h.finger]
+        else if (unplaced)
+          'h': <int>[],
       };
 
   static NoteTrace? fromJson(Object? json) {
@@ -74,7 +90,27 @@ class NoteTrace {
     if (n is! int || m is! int || c is! int) {
       return null;
     }
-    return NoteTrace(midi: n, measure: m, cents: c / 10);
+    final Object? h = json['h'];
+    FingerPlacement? main;
+    if (h is List<Object?> &&
+        h.length == 3 &&
+        h.every((Object? x) => x is int) &&
+        (h[2]! as int) >= 0 &&
+        (h[2]! as int) <= 4) {
+      main = FingerPlacement(
+        stringMidi: h[0]! as int,
+        position: h[1]! as int,
+        finger: h[2]! as int,
+        midi: n,
+      );
+    }
+    return NoteTrace(
+      midi: n,
+      measure: m,
+      cents: c / 10,
+      hand: main,
+      unplaced: main == null && h is List<Object?>,
+    );
   }
 }
 
