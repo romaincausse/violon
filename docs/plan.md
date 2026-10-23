@@ -2387,10 +2387,10 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | K8 | Les liaisons respectees | | ★★ | 2 |
 | K9 | Les nuances | | ★ | 3 |
 | K10 | La resonance | **Must** | ★★★ | 2 |
-| K11 | Le travail lent, d'office | **Must** | ★★★ | 1 |
+| ~~K11~~ | ~~Le travail lent, d'office~~ | **Must** | ★★★ | fait |
 | K12 | Le modele avant l'essai | | ★★ | 1 |
 | K13 | Le vibrato | | ★★ | 2 |
-| K14 | La consigne en vue | | ★★★ | 1 |
+| ~~K14~~ | ~~La consigne en vue~~ | | ★★★ | fait |
 
 ### L'ordre : quatre vagues
 
@@ -2479,6 +2479,12 @@ metronome, et montera de six apres deux reussites, comme R3 le fait deja --
 sauf si l'historique montre le passage deja tenu plus vite, auquel cas deux
 crans sous ce record.
 
+**Fait** (`WorkLoop.slowStart`). La boucle de la seance du jour et celle du
+bilan partent de 70 % de l'objectif -- le tempo du devoir s'il y en a un,
+sinon celui du papier --, ou de deux crans sous ce qu'il vient de tenir s'il
+joue deja plus vite, et montent vers cet objectif, plus vers le tempo
+affiche.
+
 **K12 - Le modele avant l'essai.** *"Ecouter d'abord"* dans la boucle : les
 mesures choisies, au tempo de l'essai, jouees proprement, puis le micro
 s'ouvre. Au piano tant que le violon enregistre n'est pas refait (J8).
@@ -2495,6 +2501,10 @@ plus longue note vibree regulierement.
 est range avec le devoir (T1) mais ne se lit que dans le repertoire. Il
 s'affiche au-dessus de la partition quand le passage en cours est celui du
 devoir, et dans l'etape de travail de la seance du jour.
+
+**Fait** (`ConsigneDuProfesseur`). Entre guillemets, sous le titre de l'ecran
+Jouer -- hors prise seulement, pendant la prise la place est a la partition --
+et en tete de la boucle.
 
 **Ecarte** : juger la posture ou la tenue d'archet (il faudrait la camera,
 et le professeur le fait mieux) ; noter le phrase ; des doigtes et coups

@@ -605,6 +605,9 @@ void main() {
       await tester.tap(find.byKey(HomeShell.seanceActionKey));
       await tester.pumpAndSettle();
       expect(find.byType(LoopScreen), findsOneWidget);
+      // Lent d'abord (K11) : 70 % des 92 du passage.
+      expect(
+          tester.widget<LoopScreen>(find.byType(LoopScreen)).startPulseBpm, 64);
       await tester.pageBack();
       await tester.pumpAndSettle();
 

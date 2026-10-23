@@ -176,4 +176,24 @@ void main() {
       expect(e.title, contains('mesures 2 a 3'));
     });
   });
+
+  group('Le travail lent, d office (K11)', () {
+    test('70 % de l objectif, arrondi a un tempo pair', () {
+      expect(WorkLoop.slowStart(target: 92), 64);
+      expect(WorkLoop.slowStart(target: 100), 70);
+      expect(WorkLoop.slowStart(target: 72), 50);
+    });
+
+    test('pas plus lent que deux crans sous ce qu il tient deja', () {
+      expect(WorkLoop.slowStart(target: 92, recentBest: 88), 76);
+      expect(WorkLoop.slowStart(target: 92, recentBest: 70), 64,
+          reason: 'deux crans sous 70, c est plus lent que 70 % de 92');
+    });
+
+    test('jamais au-dessus de l objectif, jamais sous 40', () {
+      expect(WorkLoop.slowStart(target: 92, recentBest: 120), 92);
+      expect(WorkLoop.slowStart(target: 50), 40);
+      expect(WorkLoop.slowStart(target: 36), 36);
+    });
+  });
 }
