@@ -2380,7 +2380,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K1~~ | ~~Le niveau de depart~~ | | ★★★ | fait |
 | ~~K2~~ | ~~Les doigtes du fichier~~ | | ★★ | fait |
 | ~~K3~~ | ~~La main en troisieme position~~ | **Must** | ★★★ | fait |
-| K4 | Le catalogue en troisieme position | **Must** | ★★★ | 2 |
+| ~~K4~~ | ~~Le catalogue en troisieme position~~ | **Must** | ★★★ | fait |
 | K5 | Les demanches | | ★★ | 2 |
 | K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
 | ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
@@ -2462,6 +2462,15 @@ l'extrait, est lu en premiere.
 premiere -- doigts en ligne, gammes d'une octave sur la et mi, arpeges --,
 placees en troisieme, tirees de methodes du domaine public (Sevcik, Schradieck,
 Wohlfahrt). Un palier de plus apres le mineur.
+
+**Fait** (palier 7, `FingerPattern.troisQuatreSerresEnTroisieme`). Six
+exercices : les doigts en ligne (Sevcik) et par tierces (Schradieck) sur re,
+la et mi, la gamme et l'arpege de sol majeur sur re et la, ceux de re majeur
+sur la et mi (Hrimaly) -- une octave, jusqu'au re6 du 4e doigt. **Chaque
+note porte son doigt** : la partition le montre (K2), et le diagnostic sait
+sans deviner que la main est en troisieme (K3). La premiere position, elle,
+n'ecrit toujours pas ses doigts. Pas de Wohlfahrt : ses etudes sont des
+morceaux ecrits, ils viendront par l'import.
 
 **K5 - Les demanches.** De la premiere a la troisieme sur une corde, puis
 d'une corde a l'autre, d'apres Sevcik op. 8. On juge **la note d'arrivee**,

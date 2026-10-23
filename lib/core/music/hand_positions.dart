@@ -92,6 +92,29 @@ class HandPositions {
     return places;
   }
 
+  /// La place de [midi] dans la [position] donnee, doigt pose, sur la corde
+  /// la plus grave qui l'atteint : c'est ainsi qu'une gamme en troisieme
+  /// reste sur une corde aussi longtemps qu'elle peut. `null` si aucune.
+  static FingerPlacement? placeIn(int midi, {required int position}) {
+    final Map<int, List<int>>? doigts = _portee[position];
+    if (doigts == null) {
+      return null;
+    }
+    for (final int c in cordes) {
+      for (int d = 1; d <= 4; d++) {
+        if (doigts[d]!.contains(midi - c)) {
+          return FingerPlacement(
+            stringMidi: c,
+            finger: d,
+            midi: midi,
+            position: position,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
   static FingerPlacement? _aVide(int midi) => cordes.contains(midi)
       ? FingerPlacement(stringMidi: midi, finger: 0, midi: midi)
       : null;

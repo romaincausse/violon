@@ -507,7 +507,7 @@ void main() {
       await tester.tap(find.text('Repertoire'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1/19'), findsOneWidget);
+      expect(find.text('1/${ExerciseCatalog.all.length}'), findsOneWidget);
       expect(
         find.text('A travailler : ${ExerciseCatalog.all[1].titre}'),
         findsOneWidget,

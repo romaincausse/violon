@@ -50,6 +50,11 @@ class ExerciseCatalog {
   /// impressionnant et moins utilisable.
   static const int plusAiguEnPremierePosition = 83;
 
+  /// La meme borne en troisieme position (K4) : le 4e doigt sur mi, re6.
+  /// Le catalogue n'en monte pas plus haut -- trois octaves viendront avec
+  /// les demanches (K6).
+  static const int plusAiguEnTroisiemePosition = 86;
+
   static const List<Palier> paliers = <Palier>[
     Palier(
       numero: 1,
@@ -80,6 +85,12 @@ class ExerciseCatalog {
       numero: 6,
       titre: 'Le mineur',
       intention: 'Harmonique et melodique, la ou les doigts hesitent',
+    ),
+    Palier(
+      numero: 7,
+      titre: 'La troisieme position',
+      intention: 'La main monte d une tierce : les memes doigts, d autres '
+          'notes',
     ),
   ];
 
@@ -288,6 +299,79 @@ class ExerciseCatalog {
       tonicMidi: 55,
       conseil: 'La sixte et la septieme montent en montant, et redescendent '
           'en descendant.',
+    ),
+
+    // --- Palier 7 : la troisieme position (K4) ---------------------------
+    // Les memes familles qu'en premiere, chaque note doigtee : la partition
+    // dit ou poser la main, et le diagnostic sait dans quelle position elle
+    // joue.
+    MotifExercise(
+      id: 'motif-en-ligne-3e',
+      titre: 'Les doigts en ligne, en troisieme',
+      source: MethodSource.sevcik,
+      palier: 7,
+      tempoVise: 60,
+      motif: FingerMotif.enLigne,
+      pattern: FingerPattern.troisQuatreSerresEnTroisieme,
+      strings: <int>[62, 69, 76],
+      conseil: 'Le pouce monte avec la main. Le 1er doigt se pose ou se '
+          'posait le 3e : la corde a vide d a cote le verifie.',
+    ),
+    MotifExercise(
+      id: 'motif-tierces-3e',
+      titre: 'Les doigts par tierces, en troisieme',
+      source: MethodSource.schradieck,
+      palier: 7,
+      tempoVise: 60,
+      motif: FingerMotif.enTierces,
+      pattern: FingerPattern.troisQuatreSerresEnTroisieme,
+      strings: <int>[62, 69, 76],
+    ),
+    ScaleExercise(
+      id: 'gamme-sol-majeur-3e',
+      titre: 'Gamme de sol majeur, en troisieme',
+      source: MethodSource.hrimaly,
+      palier: 7,
+      tempoVise: 72,
+      pattern: ScalePattern.majeur,
+      tonicMidi: 67,
+      octaves: 1,
+      position: 3,
+      conseil: 'Sur les cordes de re et de la, sans corde a vide : le sol du '
+          '4e doigt sonne avec la corde de sol.',
+    ),
+    ScaleExercise(
+      id: 'gamme-re-majeur-3e',
+      titre: 'Gamme de re majeur, en troisieme',
+      source: MethodSource.hrimaly,
+      palier: 7,
+      tempoVise: 72,
+      pattern: ScalePattern.majeur,
+      tonicMidi: 74,
+      octaves: 1,
+      position: 3,
+    ),
+    ScaleExercise(
+      id: 'arpege-sol-majeur-3e',
+      titre: 'Arpege de sol majeur, en troisieme',
+      source: MethodSource.hrimaly,
+      palier: 7,
+      tempoVise: 72,
+      pattern: ScalePattern.arpegeMajeur,
+      tonicMidi: 67,
+      octaves: 1,
+      position: 3,
+    ),
+    ScaleExercise(
+      id: 'arpege-re-majeur-3e',
+      titre: 'Arpege de re majeur, en troisieme',
+      source: MethodSource.hrimaly,
+      palier: 7,
+      tempoVise: 72,
+      pattern: ScalePattern.arpegeMajeur,
+      tonicMidi: 74,
+      octaves: 1,
+      position: 3,
     ),
   ];
 

@@ -14,9 +14,13 @@ class FingerPattern {
     required this.id,
     required this.label,
     required this.semitones,
+    this.position = 1,
   });
 
   final String id;
+
+  /// La position de la main : 1, ou 3 pour la troisieme (K4).
+  final int position;
 
   /// Nom affiche a l'utilisateur, dans le vocabulaire du cours de violon.
   final String label;
@@ -64,6 +68,16 @@ class FingerPattern {
     id: 'doigts-0-1-serres',
     label: '0-1 serres',
     semitones: <int>[0, 1, 3, 5, 7],
+  );
+
+  /// En troisieme position (K4) : la main monte d'une tierce, le 1er doigt
+  /// se pose ou se posait le 3e. 1-2 ton, 2-3 ton, 3-4 demi-ton : sur la
+  /// corde de la, re mi fa# sol -- la main de re majeur.
+  static const FingerPattern troisQuatreSerresEnTroisieme = FingerPattern(
+    id: 'doigts-3-4-serres-3e',
+    label: '3-4 serres, en 3e position',
+    semitones: <int>[0, 5, 7, 9, 10],
+    position: 3,
   );
 
   /// Les quatre ecartements de la premiere position, dans l'ordre ou ils
@@ -164,6 +178,7 @@ class FingerMotif {
             stringMidi: corde,
             finger: doigt,
             midi: pattern.midiFor(stringMidi: corde, finger: doigt),
+            position: pattern.position,
           ),
         );
       }

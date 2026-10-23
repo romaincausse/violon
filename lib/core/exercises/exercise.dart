@@ -1,8 +1,10 @@
 import '../music/finger_pattern.dart';
+import '../music/hand_positions.dart';
 import '../music/note_value.dart';
 import '../music/passage.dart';
 import '../music/passage_builder.dart';
 import '../music/scale_pattern.dart';
+import '../music/score_note.dart';
 import 'method_source.dart';
 
 /// Ce qu'un exercice fait travailler.
@@ -79,6 +81,17 @@ sealed class Exercise {
 
   int get noteCount => midis.length;
 
+  /// La position de la main : 1, ou 3 (K4).
+  int get position;
+
+  /// Le doigte de chaque note, ou `null` en premiere position.
+  ///
+  /// **En troisieme, chaque note porte son doigt** : c'est la que l'eleve
+  /// apprend ou poser la main, la partition le lui montre (K2), et le
+  /// diagnostic par doigt sait sans deviner dans quelle position il joue
+  /// (K3).
+  List<String?>? get fingerings => null;
+
   int get lowestMidi => midis.reduce((int a, int b) => a < b ? a : b);
   int get highestMidi => midis.reduce((int a, int b) => a > b ? a : b);
 
@@ -86,11 +99,29 @@ sealed class Exercise {
   ///
   /// [tempoBpm] est le tempo de travail : en dessous du tempo vise on
   /// s'installe, au tempo vise l'exercice compte. Par defaut, le tempo vise.
-  Passage toPassage({int? tempoBpm}) => gravePar(
-        midis,
-        titre: titre,
-        tempoBpm: tempoBpm ?? tempoVise,
-      );
+  Passage toPassage({int? tempoBpm}) {
+    final Passage p = gravePar(
+      midis,
+      titre: titre,
+      tempoBpm: tempoBpm ?? tempoVise,
+    );
+    final List<String?>? doigts = fingerings;
+    if (doigts == null) {
+      return p;
+    }
+    return Passage(
+      title: p.title,
+      notes: <ScoreNote>[
+        for (int i = 0; i < p.notes.length; i++)
+          p.notes[i].copyWith(fingering: doigts[i]),
+      ],
+      ticksPerBeat: p.ticksPerBeat,
+      writtenTempoBpm: p.writtenTempoBpm,
+      meter: p.meter,
+      keyFifths: p.keyFifths,
+      bars: p.bars,
+    );
+  }
 }
 
 /// Une gamme ou un arpege, decline sur une tonique et un nombre d'octaves.
@@ -104,10 +135,22 @@ final class ScaleExercise extends Exercise {
     required this.pattern,
     required this.tonicMidi,
     this.octaves = 2,
+    this.position = 1,
     super.conseil,
   });
 
   final ScalePattern pattern;
+
+  @override
+  final int position;
+
+  @override
+  List<String?>? get fingerings => position == 1
+      ? null
+      : <String?>[
+          for (final int m in midis)
+            HandPositions.placeIn(m, position: position)?.finger.toString(),
+        ];
 
   /// Tonique de depart, en MIDI. 55 est le sol de la corde grave.
   final int tonicMidi;
@@ -156,9 +199,9 @@ final class ScaleExercise extends Exercise {
   }
 
   @override
-  String get detail => octaves == 1
-      ? '${pattern.label} - une octave'
-      : '${pattern.label} - $octaves octaves';
+  String get detail => '${pattern.label} - '
+      '${octaves == 1 ? 'une octave' : '$octaves octaves'}'
+      '${position == 1 ? '' : ', en ${position}e position'}';
 }
 
 /// Un motif de doigts promene sur plusieurs cordes.
@@ -183,6 +226,16 @@ final class MotifExercise extends Exercise {
 
   @override
   ExerciseKind get genre => ExerciseKind.motifDeDoigts;
+
+  @override
+  int get position => pattern.position;
+
+  @override
+  List<String?>? get fingerings => position == 1
+      ? null
+      : <String?>[
+          for (final FingerPlacement p in placements) '${p.finger}',
+        ];
 
   @override
   List<int> get midis => motif.midis(pattern: pattern, strings: strings);
