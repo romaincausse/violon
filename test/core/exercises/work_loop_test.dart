@@ -3,6 +3,7 @@ import 'package:violon/core/exercises/work_loop.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
+import 'package:violon/core/play/accompaniment_plan.dart';
 import 'package:violon/core/scoring/live_tuning.dart';
 import 'package:violon/core/scoring/rhythm_judge.dart';
 import 'package:violon/core/scoring/take_report.dart';
@@ -194,6 +195,31 @@ void main() {
       expect(WorkLoop.slowStart(target: 92, recentBest: 120), 92);
       expect(WorkLoop.slowStart(target: 50), 40);
       expect(WorkLoop.slowStart(target: 36), 36);
+    });
+  });
+
+  group('le modele avant l essai (K12)', () {
+    test('les notes de l extrait, au tempo de l essai, depuis zero', () {
+      final PassageBuilder b = PassageBuilder();
+      for (final int m in <int>[62, 64, 66, 67, 69, 71]) {
+        b.add(m, NoteValue.quarter);
+      }
+      final Passage p = Passage(
+        title: 'x',
+        notes: b.notes,
+        ticksPerBeat: b.ticksPerBeat,
+        writtenTempoBpm: 120,
+      );
+      final Passage extrait = WorkLoop.excerpt(p, const BarSelection(2, 2))!;
+      final List<TimedNote> a60 = WorkLoop.model(extrait, pulseBpm: 60);
+      expect(a60.map((TimedNote n) => n.midi), <int>[69, 71]);
+      expect(a60.map((TimedNote n) => n.at.inMilliseconds), <int>[0, 1000]);
+      expect(a60.first.duration, const Duration(seconds: 1));
+      expect(
+        WorkLoop.model(extrait, pulseBpm: 120)
+            .map((TimedNote n) => n.at.inMilliseconds),
+        <int>[0, 500],
+      );
     });
   });
 }

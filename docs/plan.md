@@ -2388,7 +2388,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | K9 | Les nuances | | ★ | 3 |
 | ~~K10~~ | ~~La resonance~~ | **Must** | ★★★ | fait |
 | ~~K11~~ | ~~Le travail lent, d'office~~ | **Must** | ★★★ | fait |
-| K12 | Le modele avant l'essai | | ★★ | 1 |
+| ~~K12~~ | ~~Le modele avant l'essai~~ | | ★★ | fait |
 | K13 | Le vibrato | | ★★ | 2 |
 | ~~K14~~ | ~~La consigne en vue~~ | | ★★★ | fait |
 
@@ -2558,6 +2558,14 @@ affiche.
 **K12 - Le modele avant l'essai.** *"Ecouter d'abord"* dans la boucle : les
 mesures choisies, au tempo de l'essai, jouees proprement, puis le micro
 s'ouvre. Au piano tant que le violon enregistre n'est pas refait (J8).
+
+**Fait** (`WorkLoop.model`). "Ecouter d'abord", avant la boucle, fait
+entendre les mesures choisies au tempo de depart de la boucle, puis ouvre le
+micro tout seul ; pendant la boucle, "Reecouter" les rejoue au tempo vise du
+moment. Le micro reste ouvert, mais tout ce qu'il entend pendant le modele et
+une demi-seconde apres est ignore, et l'essai en cours repart de zero : elle
+emet ou elle ecoute (ADR-008). Le son n'a pas ete reecoute : ce sont les
+echantillons de piano de J6, deja passes au banc d'ecoute (J7).
 
 **K13 - Le vibrato.** Le vibrato qui demarre se travaille au rythme : deux,
 trois, quatre oscillations par temps, sur un pouls visuel. On mesure sa

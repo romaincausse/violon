@@ -10,6 +10,8 @@ import '../../core/follow/performance_features.dart';
 import '../../core/follow/take_follower.dart';
 import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
+import '../../core/play/accompaniment_plan.dart';
+import '../../core/play/audio_engine.dart';
 import '../../core/scoring/rhythm_judge.dart';
 import '../../core/scoring/take_report.dart';
 import '../widgets/consigne_du_professeur.dart';
@@ -38,8 +40,27 @@ class LoopScreen extends StatefulWidget {
     this.attemptBudget,
     this.targetPulseBpm,
     this.teacherNote,
+    this.engine,
+    this.instrument = 'piano',
     super.key,
   });
+
+  /// De quoi faire entendre le modele avant l'essai (K12), ou `null` : pas
+  /// de bouton.
+  final AudioEngine? engine;
+
+  /// Le piano tant que le violon enregistre n'est pas refait (J8).
+  final String instrument;
+
+  static const Key ecouterKey = Key('boucle-ecouter');
+
+  /// Avant la premiere note du modele : le temps de charger, et de poser
+  /// l'archet sur la corde.
+  static const Duration marge = Duration(milliseconds: 400);
+
+  /// Apres la derniere : la piece resonne encore, le micro ne doit pas la
+  /// prendre pour le premier essai.
+  static const Duration queue = Duration(milliseconds: 500);
 
   /// Le passage entier, dans lequel la selection se decoupe.
   final Passage passage;
@@ -96,6 +117,12 @@ class _LoopScreenState extends State<LoopScreen> {
   /// ca tenait (R4).
   bool _derniere = false;
 
+  /// Le modele sonne (K12) : le micro reste ouvert, mais ce qu'il entend
+  /// n'est pas l'enfant -- elle emet ou elle ecoute, jamais les deux
+  /// (ADR-008).
+  bool _modele = false;
+  Timer? _finDuModele;
+
   bool get _enCours => _boucle != null;
 
   static const int _abandonMs = 3000;
@@ -107,8 +134,63 @@ class _LoopScreenState extends State<LoopScreen> {
 
   @override
   void dispose() {
+    _finDuModele?.cancel();
+    if (_modele) {
+      unawaited(widget.engine?.stopAll());
+    }
     unawaited(_fermer());
     super.dispose();
+  }
+
+  /// Fait entendre la selection, proprement, au tempo de l'essai (K12) ;
+  /// avant la boucle, le micro s'ouvre ensuite tout seul.
+  Future<void> _ecouter() async {
+    final AudioEngine? moteur = widget.engine;
+    final Passage? extrait = _extrait;
+    if (moteur == null || extrait == null || _modele) {
+      return;
+    }
+    final int pulse = _boucle?.targetPulseBpm ?? widget.startPulseBpm;
+    final List<TimedNote> notes = WorkLoop.model(extrait, pulseBpm: pulse);
+    setState(() {
+      _modele = true;
+      _message = 'Ecoute, a $pulse.';
+    });
+    await moteur.prepareInstrument(widget.instrument);
+    final Duration maintenant = await moteur.now();
+    if (!mounted || !_modele) {
+      return;
+    }
+    final Duration depart = maintenant + LoopScreen.marge;
+    for (final TimedNote n in notes) {
+      await moteur.scheduleNote(
+        instrument: widget.instrument,
+        at: depart + n.at,
+        frequencyHz: PitchUtils.midiToFrequency(n.midi, a4: widget.a4),
+        duration: n.duration,
+        volume: n.velocity,
+      );
+    }
+    final Duration longueur = notes.last.at + notes.last.duration;
+    _finDuModele?.cancel();
+    // Ce minuteur ne declenche aucun son : il rend la main au micro.
+    _finDuModele = Timer(LoopScreen.marge + longueur + LoopScreen.queue, () {
+      if (!mounted) {
+        return;
+      }
+      final bool enBoucle = _enCours;
+      setState(() {
+        _modele = false;
+        _message = 'A toi.';
+        // Ce que le micro a entendu pendant le modele ne compte pas.
+        if (enBoucle) {
+          _essai = TakeFollower(extrait, a4: widget.a4);
+        }
+      });
+      if (!enBoucle) {
+        unawaited(_commencer());
+      }
+    });
   }
 
   Future<void> _commencer() async {
@@ -124,8 +206,10 @@ class _LoopScreenState extends State<LoopScreen> {
         findBreakingPoint: _rupture,
       );
       _essai = TakeFollower(extrait, a4: widget.a4);
-      _message = 'Joue les ${_selection.length == 1 ? 'la mesure' : 'mesures'}'
-          ' quand tu veux.';
+      _message = _message == 'A toi.'
+          ? _message
+          : 'Joue ${_selection.length == 1 ? 'la mesure' : 'les mesures'}'
+              ' quand tu veux.';
       _derniere = false;
     });
     try {
@@ -136,7 +220,9 @@ class _LoopScreenState extends State<LoopScreen> {
       }
       _source = source;
       _hauteurs = source.smoothedPitches.listen((SmoothedPitch h) {
-        _essai?.addPitch(h);
+        if (!_modele) {
+          _essai?.addPitch(h);
+        }
       });
       _trames = source.features.listen(_onTrame);
       await source.start();
@@ -152,7 +238,7 @@ class _LoopScreenState extends State<LoopScreen> {
 
   void _onTrame(FeatureFrame trame) {
     final TakeFollower? essai = _essai;
-    if (essai == null) {
+    if (essai == null || _modele) {
       return;
     }
     essai.addFrame(trame);
@@ -377,6 +463,18 @@ class _LoopScreenState extends State<LoopScreen> {
                       key: LoopScreen.messageKey,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                if (widget.engine != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: OutlinedButton.icon(
+                      key: LoopScreen.ecouterKey,
+                      onPressed: extrait == null || _modele
+                          ? null
+                          : () => unawaited(_ecouter()),
+                      icon: const Icon(Icons.hearing),
+                      label: Text(_enCours ? 'Reecouter' : 'Ecouter d abord'),
                     ),
                   ),
                 if (_enCours)

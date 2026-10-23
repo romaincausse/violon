@@ -489,6 +489,7 @@ class _HomeShellState extends State<HomeShell> {
               a4: widget.a4,
               lesson: _lecon,
               attemptBudget: DailySession.workAttempts,
+              engine: _son,
             ),
           ),
         );
@@ -1403,6 +1404,7 @@ class _HomeShellState extends State<HomeShell> {
                             pitchSourceFactory: widget.pitchSourceFactory,
                             a4: widget.a4,
                             lesson: _lecon,
+                            engine: _son,
                           ),
                         ),
                       ),

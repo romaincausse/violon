@@ -8,6 +8,8 @@ import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
 import 'package:violon/core/music/pitch_utils.dart';
+import 'package:violon/core/play/audio_engine.dart';
+import 'package:violon/core/play/fake_audio_engine.dart';
 import 'package:violon/ui/screens/loop_screen.dart';
 
 /// La boucle de travail (jalon 8), de bout en bout avec un micro scripte.
@@ -34,7 +36,7 @@ void main() {
   int t = 0;
 
   Future<void> poser(WidgetTester tester,
-      {int? budget, String? mot, int? objectif}) async {
+      {int? budget, String? mot, int? objectif, AudioEngine? moteur}) async {
     t = 0;
     await tester.binding.setSurfaceSize(const Size(420, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -49,6 +51,7 @@ void main() {
           attemptBudget: budget,
           teacherNote: mot,
           targetPulseBpm: objectif,
+          engine: moteur,
         ),
       ),
     );
@@ -99,6 +102,61 @@ void main() {
 
   String message(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(LoopScreen.messageKey)).data!;
+
+  group('le modele avant l essai (K12)', () {
+    testWidgets(
+        'ecouter d abord : la selection au piano, au tempo de l essai, puis '
+        'le micro s ouvre', (WidgetTester tester) async {
+      final FakeAudioEngine moteur = FakeAudioEngine()
+        ..clock = const Duration(seconds: 1);
+      await poser(tester, moteur: moteur);
+      await tester.tap(find.byKey(LoopScreen.ecouterKey));
+      await tester.pump();
+      await tester.pump();
+      // Mesure 2, a 100 a la noire : une note toutes les 600 ms.
+      expect(moteur.prepared, contains('piano'));
+      expect(moteur.notes.map((FakeNote n) => n.at.inMilliseconds),
+          <int>[1400, 2000, 2600, 3200]);
+      expect(moteur.notes.first.frequencyHz,
+          closeTo(PitchUtils.midiToFrequency(69), 0.01));
+      expect(find.byKey(LoopScreen.finirKey), findsNothing,
+          reason: 'le micro attend la fin du modele');
+      await tester.pump(const Duration(milliseconds: 400 + 2400 + 500));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(LoopScreen.finirKey), findsOneWidget);
+      expect(message(tester), 'A toi.');
+      await tester.tap(find.byKey(LoopScreen.finirKey));
+      await tester.pump();
+    });
+
+    testWidgets(
+        'pendant la boucle, ce que le micro entend du modele ne compte pas',
+        (WidgetTester tester) async {
+      final FakeAudioEngine moteur = FakeAudioEngine();
+      await poser(tester, moteur: moteur);
+      await commencer(tester);
+      expect(find.text('Reecouter'), findsOneWidget);
+      await tester.tap(find.byKey(LoopScreen.ecouterKey));
+      await tester.pump();
+      await tester.pump();
+      // Le piano rentre dans le micro : ignore.
+      await mesure2(tester);
+      expect(find.textContaining('Reussis : 0'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 400 + 2400 + 500));
+      await tester.pump();
+      expect(message(tester), 'A toi.');
+      await mesure2(tester);
+      expect(find.textContaining('Reussis : 1'), findsOneWidget);
+      await tester.tap(find.byKey(LoopScreen.finirKey));
+      await tester.pump();
+    });
+
+    testWidgets('sans moteur, pas de bouton', (WidgetTester tester) async {
+      await poser(tester);
+      expect(find.byKey(LoopScreen.ecouterKey), findsNothing);
+    });
+  });
 
   testWidgets('deux essais reussis, et le tempo monte d un cran', (
     WidgetTester tester,
