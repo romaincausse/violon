@@ -316,11 +316,13 @@ un mode concert ou l'enfant choisit d'enregistrer une prise pour l'envoyer,
 sans que l'application la garde, vaut l'exception (ADR-018). La regle tient
 pour tout le reste : l'application mesure et jette.
 
-**Doigtes et coups d'archet.** Le profil de l'utilisateur, plus haut, les
+**~~Doigtes~~ et coups d'archet.** Le profil de l'utilisateur, plus haut, les
 reclame. L'ADR-007 limite volontairement le graveur a une ligne monodique et
 interdit d'en faire un graveur general. Les deux ne sont pas incompatibles --
-un doigte est un chiffre au-dessus d'une tete de note -- mais rien n'est au
-backlog. Non tranche.
+un doigte est un chiffre au-dessus d'une tete de note. **Les doigtes sont
+faits** (K2) : lus dans le fichier, graves, et c'est d'eux que la main tire sa
+position (K3). Les coups d'archet (tire, pousse) restent a faire : `ScoreNote`
+a le champ, l'import ne le lit pas.
 
 **~~L'intonation expressive.~~ Tranchee, lot I2.** Le constat etait bon, sa
 formulation exageree : avec 35 cents de tolerance, la couleur n'etait jamais
@@ -336,6 +338,32 @@ cents note donc plus finement que ne different deux reponses correctes.
 Reste ouvert : une quinte ne varie que de deux cents d'un systeme a l'autre et
 merite une marge plus serree qu'une tierce. Cela demande le degre dans la
 tonalite -- lot I3, que l'import MusicXML rendra gratuit.
+
+## Ce que le jalon 15 laisse ouvert
+
+Les quatorze lots sont faits (PR #108 a #120). Chaque juge nouveau a ete
+regle sur le banc, mais **sur peu** : le banc n'a ni son file, ni vibrato
+voulu, ni nuances transcrites, et rien n'a ete joue avec un vrai violon
+devant l'application. Ce qui demande une decision, ou une prise :
+
+- **La couleur des notes de resonance (K10).** Le banc montre l'enfant
+  quinze cents sous ses cordes a vide. Une marge de 20 cents, celle qu'un
+  professeur exigerait, mettrait 43 % de ses sol, re, la et mi au rouge ; on
+  a garde 25. Le jour ou sa main remonte, resserrer.
+- **Les nuances (K9)** se jugent sur deux prises et trois nuances, et pesent
+  assez pour faire une tache. Si elles accusent a tort, baisser le poids
+  sous le seuil de tache (20) les rendrait muettes quand le reste tient.
+- **Le doigte des trois octaves (K6)** est celui de l'application : premiere,
+  troisieme, puis sixieme sur mi -- et non la cinquieme qu'annoncait le plan.
+  Un professeur peut en preferer un autre ; il n'y a pas encore de moyen de
+  le changer sans editer le catalogue.
+- **Un extrait qui commence au milieu d'un passage en troisieme**, sans
+  doigte dans l'extrait, est lu en premiere position (K3).
+- **Le suivi de l'application recoit maintenant les liaisons** (K8), comme
+  celui du banc l'a toujours fait. C'est plus juste, mais c'est un
+  changement du coeur qu'aucune prise de l'application n'a encore vu.
+- **Les prises qui manquent** : 09 a 12 depuis le jalon 5, et 13 (son file)
+  depuis K7. Le vibrato (K13) n'a ete mesure qu'en synthese.
 
 ## Le son, et l'oreille qui manquait
 
