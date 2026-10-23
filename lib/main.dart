@@ -21,6 +21,7 @@ import 'core/store/document_saver.dart';
 import 'core/store/homework.dart';
 import 'core/store/session_store.dart';
 import 'core/store/take_history.dart';
+import 'core/store/game_records.dart';
 import 'core/store/take_sharer.dart';
 import 'platform/audio/default_pitch_source.dart';
 import 'platform/audio/record_bench_recorder.dart';
@@ -28,6 +29,7 @@ import 'platform/audio/soloud_audio_engine.dart';
 import 'platform/audio/soloud_take_player.dart';
 import 'platform/device/wakelock_screen_keeper.dart';
 import 'platform/import/android_document_picker.dart';
+import 'platform/store/prefs_game_store.dart';
 import 'platform/store/prefs_history_store.dart';
 import 'platform/store/prefs_homework_store.dart';
 import 'platform/store/prefs_piece_store.dart';
@@ -48,6 +50,7 @@ typedef DocumentSaverFactory = DocumentSaver Function();
 typedef HomeworkStoreFactory = HomeworkStore Function();
 typedef HeadphoneProbeFactory = HeadphoneProbe Function();
 typedef TakeSharerFactory = TakeSharer Function();
+typedef GameStoreFactory = GameStore Function();
 typedef DocumentPickerFactory = DocumentPicker Function();
 
 class ViolonApp extends StatefulWidget {
@@ -63,6 +66,7 @@ class ViolonApp extends StatefulWidget {
     this.homeworkStoreFactory = defaultHomeworkStore,
     this.headphoneProbeFactory = defaultHeadphoneProbe,
     this.takeSharerFactory = defaultTakeSharer,
+    this.gameStoreFactory = defaultGameStore,
     this.documentPickerFactory = defaultDocumentPicker,
     this.pieceImporter = const PieceImporter(inflate: inflateRaw),
     this.benchRecorderFactory = kDebugMode ? defaultBenchRecorder : null,
@@ -88,6 +92,9 @@ class ViolonApp extends StatefulWidget {
 
   /// Fabrique du partage d'une prise de concert (V7, ADR-018).
   final TakeSharerFactory takeSharerFactory;
+
+  /// Fabrique du magasin des records des jeux (jalon 14).
+  final GameStoreFactory gameStoreFactory;
 
   /// Fabrique du magasin des morceaux, injectable comme la memoire.
   final PieceStoreFactory pieceStoreFactory;
@@ -133,6 +140,7 @@ class _ViolonAppState extends State<ViolonApp> {
   late final HomeworkStore _devoirsStore = widget.homeworkStoreFactory();
   late final HeadphoneProbe _casque = widget.headphoneProbeFactory();
   late final TakeSharer _partage = widget.takeSharerFactory();
+  late final GameStore _jeux = widget.gameStoreFactory();
   HomeworkList _devoirs = HomeworkList.vide;
   TakeHistory _historique = TakeHistory.vide;
   late final DocumentPicker _selecteur = widget.documentPickerFactory();
@@ -281,6 +289,7 @@ class _ViolonAppState extends State<ViolonApp> {
                 homeworkStore: _devoirsStore,
                 headphones: _casque,
                 takeSharer: _partage,
+                gameStore: _jeux,
                 initialHomework: _devoirs,
                 initialHistory: _historique,
                 initialExcerpt: _extrait,

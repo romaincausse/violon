@@ -20,6 +20,7 @@ import '../../core/play/audio_engine.dart';
 import '../../core/play/headphones.dart';
 import '../../core/store/evening_line.dart';
 import '../../core/store/firsts.dart';
+import '../../core/store/game_records.dart';
 import '../../core/store/take_sharer.dart';
 import '../../core/store/piece_store.dart';
 import '../../core/store/document_saver.dart';
@@ -43,6 +44,7 @@ import 'piece_screen.dart';
 import 'progress_screen.dart';
 import 'session_screen.dart';
 import 'concert_screen.dart';
+import 'games_screen.dart';
 import 'dictation_screen.dart';
 import 'reading_screen.dart';
 import 'tuner_screen.dart';
@@ -87,8 +89,14 @@ class HomeShell extends StatefulWidget {
     this.onLatencyChanged,
     this.headphones,
     this.takeSharer,
+    this.gameStore,
     super.key,
   });
+
+  /// Les records des jeux (jalon 14). `null` : ils vivent le temps de l'ecran.
+  final GameStore? gameStore;
+
+  static const Key jeuxKey = Key('ouvrir-les-jeux');
 
   /// Pour envoyer une prise de concert (V7, ADR-018). `null` : pas de bouton.
   final TakeSharer? takeSharer;
@@ -1029,6 +1037,23 @@ class _HomeShellState extends State<HomeShell> {
                   (BuildContext c) => FreePlayScreen(
                     pitchSourceFactory: widget.pitchSourceFactory,
                     takePlayerFactory: widget.takePlayerFactory,
+                    a4: widget.a4,
+                  ),
+                ),
+              ),
+              // Les jeux (jalon 14) : un record a battre, rien d'autre.
+              ListTile(
+                key: HomeShell.jeuxKey,
+                leading: const Icon(Icons.sports_esports_outlined),
+                title: const Text('Jeux'),
+                subtitle: const Text('L echo, la note tenue, le tempo cache'),
+                onTap: () => _ouvrir(
+                  context,
+                  (BuildContext c) => GamesScreen(
+                    passage: widget.passage,
+                    engine: _son,
+                    pitchSourceFactory: widget.pitchSourceFactory,
+                    store: widget.gameStore,
                     a4: widget.a4,
                   ),
                 ),
