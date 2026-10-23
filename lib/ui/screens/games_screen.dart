@@ -9,9 +9,10 @@ import '../../core/store/game_records.dart';
 import 'echo_screen.dart';
 import 'long_tone_screen.dart';
 import 'pulse_screen.dart';
+import 'vibrato_screen.dart';
 import 'session_screen.dart' show PitchSourceFactory;
 
-/// Les jeux (jalon 14) : quatre facons de jouer du violon pour le plaisir de
+/// Les jeux (jalon 14) : cinq facons de jouer du violon pour le plaisir de
 /// battre son propre record.
 ///
 /// **Pas de mascotte, pas de confettis** (CLAUDE.md) : un record, un
@@ -41,6 +42,7 @@ class GamesScreen extends StatefulWidget {
   static const Key tenueKey = Key('jeu-note-tenue');
   static const Key pulsationKey = Key('jeu-tempo-cache');
   static const Key cordesKey = Key('jeu-cordes-a-vide');
+  static const Key vibratoKey = Key('jeu-vibrato');
 
   @override
   State<GamesScreen> createState() => _GamesScreenState();
@@ -67,13 +69,20 @@ class _GamesScreenState extends State<GamesScreen> {
   }
 
   /// Un record ne baisse jamais : on fusionne, puis on range.
-  void _retenir({int? echo, int? longToneMs, int? pulse, int? evenBowMs}) {
+  void _retenir({
+    int? echo,
+    int? longToneMs,
+    int? pulse,
+    int? evenBowMs,
+    int? vibratoMs,
+  }) {
     setState(() {
       _records = _records.merge(
         echo: echo,
         longToneMs: longToneMs,
         pulse: pulse,
         evenBowMs: evenBowMs,
+        vibratoMs: vibratoMs,
       );
     });
     final GameStore? s = widget.store;
@@ -103,6 +112,7 @@ class _GamesScreenState extends State<GamesScreen> {
     final ThemeData theme = Theme.of(context);
     final double tenue = _records.longToneBestMs / 1000;
     final double archet = _records.evenBowBestMs / 1000;
+    final double vibre = _records.vibratoBestMs / 1000;
     return Scaffold(
       appBar: AppBar(title: const Text('Jeux')),
       body: SafeArea(
@@ -172,6 +182,23 @@ class _GamesScreenState extends State<GamesScreen> {
                   a4: widget.a4,
                   evenBowBestMs: _records.evenBowBestMs,
                   onEvenBowBest: (int ms) => _retenir(evenBowMs: ms),
+                ),
+              ),
+            ),
+            _Carte(
+              key: GamesScreen.vibratoKey,
+              icone: Icons.waves,
+              titre: 'Le vibrato',
+              detail: 'Deux, trois, quatre oscillations par temps, sur un '
+                  'pouls qu on voit : la plus longue note vibree regulierement.',
+              record: _records.vibratoBestMs == 0
+                  ? 'Pas encore de record'
+                  : 'Record : ${vibre.toStringAsFixed(1)} s',
+              onTap: () => _ouvrir(
+                (BuildContext c) => VibratoScreen(
+                  pitchSourceFactory: widget.pitchSourceFactory,
+                  bestMs: _records.vibratoBestMs,
+                  onBest: (int ms) => _retenir(vibratoMs: ms),
                 ),
               ),
             ),
