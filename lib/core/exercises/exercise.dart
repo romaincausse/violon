@@ -137,8 +137,14 @@ final class ScaleExercise extends Exercise {
     required this.tonicMidi,
     this.octaves = 2,
     this.position = 1,
+    this.fingers,
     super.conseil,
   });
+
+  /// Le doigte, note par note, quand il est choisi plutot que calcule : une
+  /// gamme de trois octaves change de position, et ou elle le fait est un
+  /// choix (K6).
+  final List<int>? fingers;
 
   final ScalePattern pattern;
 
@@ -146,12 +152,18 @@ final class ScaleExercise extends Exercise {
   final int position;
 
   @override
-  List<String?>? get fingerings => position == 1
-      ? null
-      : <String?>[
-          for (final int m in midis)
-            HandPositions.placeIn(m, position: position)?.finger.toString(),
-        ];
+  List<String?>? get fingerings {
+    final List<int>? choisis = fingers;
+    if (choisis != null) {
+      return <String?>[for (final int d in choisis) '$d'];
+    }
+    return position == 1
+        ? null
+        : <String?>[
+            for (final int m in midis)
+              HandPositions.placeIn(m, position: position)?.finger.toString(),
+          ];
+  }
 
   /// Tonique de depart, en MIDI. 55 est le sol de la corde grave.
   final int tonicMidi;
@@ -202,7 +214,7 @@ final class ScaleExercise extends Exercise {
   @override
   String get detail => '${pattern.label} - '
       '${octaves == 1 ? 'une octave' : '$octaves octaves'}'
-      '${position == 1 ? '' : ', en ${position}e position'}';
+      '${position == 1 ? '' : fingers != null ? ', jusqu en ${position}e position' : ', en ${position}e position'}';
 }
 
 /// Un motif de doigts promene sur plusieurs cordes.

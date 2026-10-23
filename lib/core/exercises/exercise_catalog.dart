@@ -55,6 +55,10 @@ class ExerciseCatalog {
   /// les demanches (K6).
   static const int plusAiguEnTroisiemePosition = 86;
 
+  /// Et en sixieme (K6) : le 4e doigt sur mi, sol6, le haut de la gamme de
+  /// sol de trois octaves.
+  static const int plusAiguEnSixiemePosition = 91;
+
   static const List<Palier> paliers = <Palier>[
     Palier(
       numero: 1,
@@ -97,6 +101,12 @@ class ExerciseCatalog {
       titre: 'Les demanches',
       intention: 'De la premiere a la troisieme et retour : le doigt glisse, '
           'la note d arrivee compte',
+    ),
+    Palier(
+      numero: 9,
+      titre: 'Trois octaves',
+      intention: 'La synthese : la premiere, la troisieme, puis la sixieme '
+          'sur la corde de mi',
     ),
   ];
 
@@ -411,6 +421,52 @@ class ExerciseCatalog {
       tempoVise: 60,
       stringMidi: 76,
       keyFifths: 3,
+    ),
+
+    // --- Palier 9 : trois octaves (K6) -----------------------------------
+    // La synthese des positions et des demanches. Le doigte est celui de
+    // l'application, ecrit note par note : la premiere position jusqu'au
+    // sol5, la troisieme jusqu'au do6, la sixieme jusqu'en haut. Un
+    // professeur peut en preferer un autre.
+    ScaleExercise(
+      id: 'gamme-sol-majeur-3',
+      titre: 'Gamme de sol majeur, trois octaves',
+      source: MethodSource.hrimaly,
+      palier: 9,
+      tempoVise: 66,
+      pattern: ScalePattern.majeur,
+      tonicMidi: 55,
+      octaves: 3,
+      position: 6,
+      fingers: <int>[
+        0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, // premiere
+        1, 2, 3, // troisieme
+        1, 2, 3, 4, // sixieme
+        3, 2, 1, // sixieme
+        3, 2, 1, // troisieme
+        2, 1, 0, 3, 2, 1, 0, 3, 2, 1, 0, 3, 2, 1, 0, // premiere
+      ],
+      conseil: 'Deux demanches en montant : le 2e doigt passe au 1er sur le '
+          'la, le 3e au 1er sur le re. Le pouce part avant la main.',
+    ),
+    ScaleExercise(
+      id: 'arpege-sol-majeur-3',
+      titre: 'Arpege de sol majeur, trois octaves',
+      source: MethodSource.hrimaly,
+      palier: 9,
+      tempoVise: 66,
+      pattern: ScalePattern.arpegeMajeur,
+      tonicMidi: 55,
+      octaves: 3,
+      position: 6,
+      fingers: <int>[
+        0, 2, 0, 3, 1, 3, 2, // premiere
+        2, // troisieme
+        1, 4, // sixieme
+        1, // sixieme
+        2, // troisieme
+        2, 3, 1, 3, 0, 2, 0, // premiere
+      ],
     ),
   ];
 

@@ -2382,7 +2382,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K3~~ | ~~La main en troisieme position~~ | **Must** | ★★★ | fait |
 | ~~K4~~ | ~~Le catalogue en troisieme position~~ | **Must** | ★★★ | fait |
 | ~~K5~~ | ~~Les demanches~~ | | ★★ | fait |
-| K6 | Gammes et arpeges sur trois octaves | | ★★ | 2 |
+| ~~K6~~ | ~~Gammes et arpeges sur trois octaves~~ | | ★★ | fait |
 | ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
 | ~~K8~~ | ~~Les liaisons respectees~~ | | ★★ | fait |
 | K9 | Les nuances | | ★ | 3 |
@@ -2491,6 +2491,16 @@ d'une corde a l'autre, et celui ou le doigt change, viendront avec K6.
 **K6 - Gammes et arpeges sur trois octaves.** Sol majeur d'abord, qui monte
 en cinquieme position sur la corde de mi. Apres K4 et K5 seulement : c'est la
 synthese, pas un exercice de plus.
+
+**Fait** (palier 9). La gamme et l'arpege de sol majeur sur trois octaves,
+**avec un doigte ecrit note par note** : la premiere position jusqu'au sol5,
+la troisieme jusqu'au do6, puis la **sixieme** -- et non la cinquieme, comme
+l'ecrivait ce lot : le re6 au 1er doigt sur la corde de mi est la sixieme --
+jusqu'au sol6 du 4e doigt. Le doigte est celui de l'application, dit comme tel
+dans le conseil : il n'est pas attribue a une methode, un professeur peut en
+preferer un autre. La main (K3) lit la sixieme position ; les demanches de la
+gamme (la5 et re6 en montant, do6 et sol5 en descendant) se jugent a
+l'arrivee (K5).
 
 ### Le son
 

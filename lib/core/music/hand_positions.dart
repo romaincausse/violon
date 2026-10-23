@@ -42,6 +42,14 @@ class HandPositions {
       3: <int>[8, 9],
       4: <int>[10, 11],
     },
+    // La sixieme (K6) : sur la corde de mi, le 1er doigt sur le re6 et le 4e
+    // sur le sol6, le haut d'une gamme de trois octaves.
+    6: <int, List<int>>{
+      1: <int>[9, 10],
+      2: <int>[11, 12],
+      3: <int>[13, 14],
+      4: <int>[14, 15],
+    },
   };
 
   /// La place de chaque note de [passage], par identifiant ; `null` quand on
@@ -74,8 +82,8 @@ class HandPositions {
         if (place == null && n.midi > plusAiguEnPremiere) {
           position = 0;
         }
-      } else if (position == 3) {
-        place = _enTroisieme(n.midi, corde);
+      } else if (position > 1) {
+        place = _enPosition(n.midi, corde, position);
         if (place == null) {
           position = 0;
         }
@@ -143,7 +151,7 @@ class HandPositions {
   /// La place que dit un doigte ecrit : la premiere position si elle
   /// convient, sinon la troisieme.
   static FingerPlacement? _avecDoigt(int midi, int doigt) {
-    for (final int p in <int>[1, 3]) {
+    for (final int p in <int>[1, 3, 6]) {
       for (final int c in cordes) {
         if (_portee[p]![doigt]!.contains(midi - c)) {
           return FingerPlacement(
@@ -174,8 +182,13 @@ class HandPositions {
     return null;
   }
 
-  /// En troisieme position, de preference sur la corde de la note d'avant.
-  static FingerPlacement? _enTroisieme(int midi, int? corde) {
+  /// Dans la [position] tenue, de preference sur la corde de la note
+  /// d'avant.
+  static FingerPlacement? _enPosition(int midi, int? corde, int position) {
+    final Map<int, List<int>>? doigts = _portee[position];
+    if (doigts == null) {
+      return null;
+    }
     final List<int> essais = <int>[
       if (corde != null) corde,
       for (final int c in cordes.reversed)
@@ -183,12 +196,12 @@ class HandPositions {
     ];
     for (final int c in essais) {
       for (int d = 1; d <= 4; d++) {
-        if (_portee[3]![d]!.contains(midi - c)) {
+        if (doigts[d]!.contains(midi - c)) {
           return FingerPlacement(
             stringMidi: c,
             finger: d,
             midi: midi,
-            position: 3,
+            position: position,
           );
         }
       }
