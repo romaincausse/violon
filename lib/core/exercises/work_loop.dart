@@ -1,6 +1,7 @@
 import '../music/meter.dart';
 import '../music/passage.dart';
 import '../music/score_note.dart';
+import '../play/accompaniment_plan.dart';
 import '../scoring/take_report.dart';
 
 /// Les mesures a retravailler, de [from] a [to] incluses.
@@ -245,6 +246,30 @@ class WorkLoop {
       de = avant.measure;
     }
     return BarSelection(de, a);
+  }
+
+  /// Le modele avant l'essai (K12) : les notes de [excerpt], jouees
+  /// proprement au tempo [pulseBpm], depuis sa premiere note.
+  ///
+  /// **Au tempo de l'essai, pas au tempo ecrit** : l'enfant doit entendre ce
+  /// qu'on lui demande de jouer, et a 64 une croche n'a pas le meme geste
+  /// qu'a 92.
+  static List<TimedNote> model(Passage excerpt, {required int pulseBpm}) {
+    final Passage p = excerpt.withPulseBpm(pulseBpm);
+    final int debut = p.notes.first.onsetTicks;
+    Duration duree(int ticks) => Duration(
+          microseconds:
+              ticks * 60 * 1000000 ~/ (p.writtenTempoBpm * p.ticksPerBeat),
+        );
+    return <TimedNote>[
+      for (final ScoreNote n in p.notes)
+        TimedNote(
+          at: duree(n.onsetTicks - debut),
+          duration: duree(n.durationTicks),
+          midi: n.midi,
+          velocity: 0.7,
+        ),
+    ];
   }
 
   /// Le passage de la selection, decoupe dans [passage].
