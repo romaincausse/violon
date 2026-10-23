@@ -11,6 +11,7 @@ import '../../core/score/score_layout.dart';
 import '../../core/score/smufl.dart';
 import '../../core/score/staff_geometry.dart';
 import '../../core/score/staff_layout.dart';
+import '../../core/score/fingering_marks.dart';
 import '../../core/score/stems_and_beams.dart';
 
 /// Couleur d'une note, pour le retour visuel en direct.
@@ -529,6 +530,32 @@ class _ScorePainter extends CustomPainter {
     for (final PlacedNote note in staff.notes) {
       _paintNote(canvas, staff, note);
     }
+    FingeringMarks.place(staff).forEach((int i, double y) {
+      _paintFingering(canvas, staff.notes[i], y);
+    });
+  }
+
+  /// Le doigte ecrit (K2), centre au-dessus de la tete.
+  void _paintFingering(Canvas canvas, PlacedNote note, double ySpaces) {
+    final TextPainter tp = TextPainter(
+      text: TextSpan(
+        text: note.note.fingering,
+        style: TextStyle(
+          color: inkColor,
+          fontSize: spaceSize * FingeringMarks.heightSpaces,
+          fontWeight: FontWeight.w600,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(
+      canvas,
+      Offset(
+        _x(note.xSpaces) - tp.width / 2,
+        _y(ySpaces) - tp.height / 2,
+      ),
+    );
   }
 
   void _paintKeySignature(Canvas canvas, StaffLayout staff) {

@@ -171,6 +171,7 @@ Map<String, Object?> passageToJson(Passage p) => <String, Object?>{
             'onset': n.onsetTicks,
             'duration': n.durationTicks,
             'measure': n.measure,
+            if (n.fingering != null) 'fingering': n.fingering,
           },
       ],
     };
@@ -195,6 +196,7 @@ Passage? passageFromJson(Object? json) {
     final Object? onset = b['onset'];
     final Object? duree = b['duration'];
     final Object? mesure = b['measure'];
+    final Object? doigte = b['fingering'];
     if (id is! String ||
         midi is! int ||
         onset is! int ||
@@ -210,6 +212,7 @@ Passage? passageFromJson(Object? json) {
         onsetTicks: onset,
         durationTicks: duree,
         measure: mesure,
+        fingering: doigte is String ? doigte : null,
       ),
     );
   }
