@@ -172,6 +172,7 @@ Map<String, Object?> passageToJson(Passage p) => <String, Object?>{
             'duration': n.durationTicks,
             'measure': n.measure,
             if (n.fingering != null) 'fingering': n.fingering,
+            if (n.slurred) 'slur': true,
           },
       ],
     };
@@ -213,6 +214,7 @@ Passage? passageFromJson(Object? json) {
         durationTicks: duree,
         measure: mesure,
         fingering: doigte is String ? doigte : null,
+        slurred: b['slur'] == true,
       ),
     );
   }

@@ -84,6 +84,16 @@ void main() {
         ),
       );
       expect(p.slurredInto, <String>{'n3', 'n4'});
+      // La note le sait elle-meme (K8), et le garde dans le magasin.
+      expect(p.passage.notes.map((ScoreNote n) => n.slurred),
+          <bool>[false, false, true, true]);
+      expect(
+        ImportedPiece.fromJson(p.toJson())!
+            .passage
+            .notes
+            .map((ScoreNote n) => n.slurred),
+        <bool>[false, false, true, true],
+      );
     });
 
     test('une double corde garde la note aigue, et le dit', () {

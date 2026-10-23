@@ -6,6 +6,7 @@ import '../music/pitch_utils.dart';
 import '../music/score_note.dart';
 import '../scoring/live_tuning.dart';
 import '../scoring/rhythm_judge.dart';
+import '../scoring/slur_judge.dart';
 import '../scoring/take_report.dart';
 import '../store/take_history.dart';
 import 'offline_aligner.dart';
@@ -46,10 +47,22 @@ class TakeFollower {
   TakeFollower(
     this.passage, {
     this.a4 = PitchUtils.defaultA4,
-    this.slurredInto = const <String>{},
+    Set<String>? slurredInto,
     this.featureA4 = PitchUtils.defaultA4,
     this.endSilenceMs = defaultEndSilenceMs,
-  })  : _suiveur = OnlineFollower(passage, slurredInto: slurredInto),
+  })  : slurredInto = slurredInto ??
+            <String>{
+              for (final ScoreNote n in passage.notes)
+                if (n.slurred) n.id,
+            },
+        _suiveur = OnlineFollower(
+          passage,
+          slurredInto: slurredInto ??
+              <String>{
+                for (final ScoreNote n in passage.notes)
+                  if (n.slurred) n.id,
+              },
+        ),
         tempo = TempoTracker(passage),
         tuning = LiveTuning.forPassage(passage, a4: a4);
 
@@ -225,8 +238,13 @@ class TakeFollower {
   /// Le diagnostic mesure par mesure, une fois [rescore] passe (N5).
   TakeReport? get report {
     final RhythmJudge? r = rhythm;
-    return r == null ? null : TakeReport.of(passage, r, tuning);
+    return r == null
+        ? null
+        : TakeReport.of(passage, r, tuning, brokenSlurs: brokenSlurs);
   }
+
+  /// Les notes liees ou l'archet a change (K8), une fois [rescore] passe.
+  List<ScoreNote> brokenSlurs = const <ScoreNote>[];
 
   /// Reprend toute la prise avec l'aligneur hors ligne, et rend la justesse
   /// qui compte (ADR-010).
@@ -243,8 +261,14 @@ class TakeFollower {
     final Alignment a =
         OfflineAligner(passage, slurredInto: slurredInto).align(_trames);
     // Le meme alignement juge le rythme : un seul alignement, deux lectures
-    // (ADR-010).
+    // (ADR-010). Et les liaisons (K8).
     rhythm = RhythmJudge.judge(passage, a);
+    brokenSlurs = SlurJudge.broken(
+      passage: passage,
+      slurredInto: slurredInto,
+      alignment: a,
+      frames: _trames,
+    );
     final Map<String, ScoreNote> parId = <String, ScoreNote>{
       for (final ScoreNote n in passage.notes) n.id: n,
     };

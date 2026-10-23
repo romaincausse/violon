@@ -104,6 +104,20 @@ void main() {
     expect(r.nextTask!.mainWeakness, Weakness.slowing);
   });
 
+  test('une liaison cassee pese, et se dit par sa note (K8)', () {
+    final List<PlayedEvent> e = <PlayedEvent>[];
+    jouer(e, 0, 15, 0);
+    final TakeReport r = TakeReport.of(
+      p,
+      RhythmJudge.fromEvents(p, e),
+      juste(),
+      brokenSlurs: <ScoreNote>[p.notes[9], p.notes[10]],
+    );
+    expect(r.nextTask!.measure, 3);
+    expect(r.nextTask!.mainWeakness, Weakness.slurs);
+    expect(r.nextTask!.brokenSlurs.first, p.notes[9]);
+  });
+
   test('ce qui n a pas ete joue n est pas une tache', () {
     final List<PlayedEvent> e = <PlayedEvent>[];
     jouer(e, 0, 7, 0);

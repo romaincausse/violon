@@ -12,6 +12,7 @@ class ScoreNote {
     required this.measure,
     this.fingering,
     this.bowing,
+    this.slurred = false,
   });
 
   /// Identifiant stable, aligne sur l'id du glyphe dans le SVG Verovio.
@@ -34,6 +35,9 @@ class ScoreNote {
   /// Coup d'archet, ex. "tire" ou "pousse".
   final String? bowing;
 
+  /// Liee a la precedente : le meme archet, pas d'attaque (K8).
+  final bool slurred;
+
   int get offsetTicks => onsetTicks + durationTicks;
 
   ScoreNote copyWith({
@@ -44,6 +48,7 @@ class ScoreNote {
     int? measure,
     String? fingering,
     String? bowing,
+    bool? slurred,
   }) {
     return ScoreNote(
       id: id ?? this.id,
@@ -53,6 +58,7 @@ class ScoreNote {
       measure: measure ?? this.measure,
       fingering: fingering ?? this.fingering,
       bowing: bowing ?? this.bowing,
+      slurred: slurred ?? this.slurred,
     );
   }
 

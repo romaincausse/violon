@@ -13,6 +13,7 @@ class FeatureFrame {
     required this.rms,
     required this.onset,
     this.analysed = true,
+    this.bowDipDb,
   });
 
   /// Debut de la trame, depuis le debut de la prise.
@@ -35,6 +36,15 @@ class FeatureFrame {
   /// sonnait. L'energie et l'attaque, elles, sont toujours la.
   final bool analysed;
 
+  /// La profondeur du creux d'energie d'un changement d'archet tombe dans
+  /// cette trame (P4), en decibels, ou `null`.
+  ///
+  /// **A part de [onset], et c'est voulu** (K8) : un changement de note sous
+  /// une liaison fait aussi une attaque, mais pas un creux profond. Sur le
+  /// banc, les creux d'une gamme liee font 4 dB, ceux de la meme gamme
+  /// detachee 6 a 11.
+  final double? bowDipDb;
+
   bool get voiced => midi != null;
 
   /// La meme trame, rapportee a un autre accord.
@@ -52,6 +62,7 @@ class FeatureFrame {
       rms: rms,
       onset: onset,
       analysed: analysed,
+      bowDipDb: bowDipDb,
     );
   }
 }
