@@ -33,7 +33,8 @@ void main() {
   late FakePitchSource micro;
   int t = 0;
 
-  Future<void> poser(WidgetTester tester, {int? budget}) async {
+  Future<void> poser(WidgetTester tester,
+      {int? budget, String? mot, int? objectif}) async {
     t = 0;
     await tester.binding.setSurfaceSize(const Size(420, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -46,6 +47,8 @@ void main() {
           pitchSourceFactory: () async =>
               micro = FakePitchSource(const <PitchEstimate>[]),
           attemptBudget: budget,
+          teacherNote: mot,
+          targetPulseBpm: objectif,
         ),
       ),
     );
@@ -174,5 +177,20 @@ void main() {
     await tester.pump();
     expect(find.byKey(LoopScreen.commencerKey), findsOneWidget);
     expect(message(tester), contains('reussite'));
+  });
+
+  testWidgets('la consigne du professeur, et l objectif du devoir', (
+    WidgetTester tester,
+  ) async {
+    await poser(tester, mot: 'Archet leger', objectif: 112);
+    expect(find.byKey(LoopScreen.consigneKey), findsOneWidget);
+    await commencer(tester);
+    // On monte vers l'objectif du devoir, pas vers le tempo du passage.
+    await jouer(tester, null, 5);
+    await mesure2(tester);
+    await mesure2(tester);
+    expect(find.text('Vise 106 (noire)'), findsOneWidget);
+    await tester.tap(find.byKey(LoopScreen.finirKey));
+    await tester.pump();
   });
 }

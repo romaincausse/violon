@@ -1369,6 +1369,26 @@ void main() {
       expect(resultat, isNull);
     });
   });
+
+  testWidgets('le mot du professeur se lit au-dessus de la partition', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SessionScreen(
+          mode: SessionMode.metronome,
+          passage: demo,
+          onChangePassage: () {},
+          onTune: () {},
+          teacherNote: 'Attention au 3e doigt',
+          pitchSourceFactory: () async =>
+              FakePitchSource(const <PitchEstimate>[]),
+        ),
+      ),
+    );
+    expect(find.byKey(SessionScreen.consigneKey), findsOneWidget);
+    expect(find.text('"Attention au 3e doigt"'), findsOneWidget);
+  });
 }
 
 /// Fabrique de micros scriptes.

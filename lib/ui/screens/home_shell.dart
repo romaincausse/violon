@@ -417,7 +417,14 @@ class _HomeShellState extends State<HomeShell> {
             builder: (BuildContext ctx) => LoopScreen(
               passage: widget.passage,
               selection: BarSelection(c.from, c.to),
-              startPulseBpm: widget.passage.pulseBpm,
+              // Lent d'abord (K11) : 70 % du tempo vise, ou deux crans sous
+              // ce qu'il tient deja.
+              startPulseBpm: WorkLoop.slowStart(
+                target: _tempoVise,
+                recentBest: _meilleurTenu,
+              ),
+              targetPulseBpm: _tempoVise,
+              teacherNote: _devoirEnCours?.note,
               pitchSourceFactory: widget.pitchSourceFactory,
               a4: widget.a4,
               lesson: _lecon,
@@ -734,6 +741,33 @@ class _HomeShellState extends State<HomeShell> {
   /// Le tempo ecrit du travail en cours, en temps battus : le tempo vise de
   /// l'exercice, ou celui du morceau. Un passage saisi n'en a pas d'autre que
   /// le sien.
+  /// Le devoir pose sur le travail en cours, s'il y en a un.
+  Homework? get _devoirEnCours {
+    for (final Homework d in _devoirs.items) {
+      if (d.workKey == _cleDuTravail) {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  /// Ce que la boucle vise : le tempo du devoir, sinon celui du papier,
+  /// sinon celui du passage tel qu'il est affiche.
+  int get _tempoVise =>
+      _devoirEnCours?.targetPulseBpm ?? _tempoEcrit ?? widget.passage.pulseBpm;
+
+  /// Le meilleur tempo tenu jusqu'au bout sur ce travail, ou `null`.
+  int? get _meilleurTenu {
+    int? m;
+    for (final TakeRecord t in _historique.forKey(_cleDuTravail)) {
+      final int? h = t.reachedEnd ? t.heldPulseBpm : null;
+      if (h != null && (m == null || h > m)) {
+        m = h;
+      }
+    }
+    return m;
+  }
+
   int? get _tempoEcrit {
     final Exercise? exercice = _exercice;
     if (exercice != null) {
@@ -1274,6 +1308,7 @@ class _HomeShellState extends State<HomeShell> {
                     lesson: _lecon,
                     onTakeRecorded: _garder,
                     firstsOf: (TakeRecord r) => Firsts.of(_historique, r),
+                    teacherNote: _devoirEnCours?.note,
                     clock: widget.clock,
                     onModeChanged: (SessionMode m) =>
                         setState(() => _menee = m),
@@ -1283,7 +1318,14 @@ class _HomeShellState extends State<HomeShell> {
                           builder: (BuildContext c) => LoopScreen(
                             passage: widget.passage,
                             selection: s,
-                            startPulseBpm: pulse,
+                            // Lent d'abord (K11), mais pas plus lent que
+                            // deux crans sous ce qu'il vient de tenir.
+                            startPulseBpm: WorkLoop.slowStart(
+                              target: _tempoVise,
+                              recentBest: pulse,
+                            ),
+                            targetPulseBpm: _tempoVise,
+                            teacherNote: _devoirEnCours?.note,
                             pitchSourceFactory: widget.pitchSourceFactory,
                             a4: widget.a4,
                             lesson: _lecon,

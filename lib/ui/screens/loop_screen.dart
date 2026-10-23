@@ -12,6 +12,7 @@ import '../../core/music/passage.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/scoring/rhythm_judge.dart';
 import '../../core/scoring/take_report.dart';
+import '../widgets/consigne_du_professeur.dart';
 import '../widgets/keep_screen_awake.dart';
 import '../widgets/score_view.dart';
 import 'session_screen.dart' show PitchSourceFactory;
@@ -35,6 +36,8 @@ class LoopScreen extends StatefulWidget {
     this.a4 = PitchUtils.defaultA4,
     this.lesson = false,
     this.attemptBudget,
+    this.targetPulseBpm,
+    this.teacherNote,
     super.key,
   });
 
@@ -50,6 +53,15 @@ class LoopScreen extends StatefulWidget {
   /// Le point de rupture (C2) est un outil d'adulte : il sort du chemin de
   /// l'enfant (V0) et ne se propose qu'en mode lecon.
   final bool lesson;
+
+  /// L'objectif de la boucle : le tempo ecrit, ou celui du devoir. `null` :
+  /// le tempo du passage tel qu'il est affiche.
+  final int? targetPulseBpm;
+
+  /// Le mot du professeur sur ce passage (lot K14), s'il y en a un.
+  final String? teacherNote;
+
+  static const Key consigneKey = Key('boucle-consigne');
 
   /// Dans la seance du jour (V1), le travail a une fin : au bout de tant
   /// d'essais, on termine sur une reussite (R4) et on passe a la musique.
@@ -108,7 +120,7 @@ class _LoopScreenState extends State<LoopScreen> {
       _boucle = WorkLoop(
         selection: _selection,
         startPulseBpm: widget.startPulseBpm,
-        writtenPulseBpm: widget.passage.pulseBpm,
+        writtenPulseBpm: widget.targetPulseBpm ?? widget.passage.pulseBpm,
         findBreakingPoint: _rupture,
       );
       _essai = TakeFollower(extrait, a4: widget.a4);
@@ -292,6 +304,13 @@ class _LoopScreenState extends State<LoopScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                if (widget.teacherNote case final String mot
+                    when mot.trim().isNotEmpty)
+                  Padding(
+                    key: LoopScreen.consigneKey,
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ConsigneDuProfesseur(mot: mot),
+                  ),
                 if (!_enCours) ...<Widget>[
                   Text('Les mesures', style: theme.textTheme.titleSmall),
                   _choixDesMesures(),

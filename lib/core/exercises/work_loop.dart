@@ -127,6 +127,30 @@ class WorkLoop {
   /// La recherche du point de rupture redescend de tant de crans.
   static const int consolidationSteps = 2;
 
+  /// Le travail lent, d'office (lot K11) : on part de cette part du tempo
+  /// vise.
+  static const double slowShare = 0.7;
+
+  /// Le tempo de depart d'une boucle, vers l'objectif [target].
+  ///
+  /// **Lent d'abord, comme en cours** : 70 % de l'objectif, arrondi a un
+  /// tempo pair. Mais s'il tient deja plus vite -- [recentBest], le tempo de
+  /// la prise qu'il vient de jouer ou son record --, repartir de 70 % serait
+  /// une punition : on repart alors deux crans sous ce qu'il tient. Jamais
+  /// au-dessus de l'objectif, jamais sous 40.
+  static int slowStart({required int target, int? recentBest}) {
+    int depart = (target * slowShare).floor();
+    depart -= depart % 2;
+    final int? tenu = recentBest;
+    if (tenu != null && tenu - 2 * step > depart) {
+      depart = tenu - 2 * step;
+    }
+    if (depart > target) {
+      depart = target;
+    }
+    return depart < 40 ? (target < 40 ? target : 40) : depart;
+  }
+
   int _objectif;
   int _serie = 0;
   int _reussites = 0;

@@ -35,6 +35,7 @@ import '../widgets/metronome_bar.dart';
 import '../widgets/tuning_ribbon.dart';
 import '../widgets/score_view.dart';
 import '../widgets/tuning_colors.dart';
+import '../widgets/consigne_du_professeur.dart';
 import '../widgets/keep_screen_awake.dart';
 
 /// Ce que l'ecran montre pendant qu'il joue.
@@ -136,6 +137,7 @@ class SessionScreen extends StatefulWidget {
     this.historyKey,
     this.onTakeRecorded,
     this.firstsOf,
+    this.teacherNote,
     this.clock = DateTime.now,
     this.takePlayerFactory,
     this.lesson = false,
@@ -171,6 +173,12 @@ class SessionScreen extends StatefulWidget {
   final List<String> Function(TakeRecord take)? firstsOf;
 
   static const Key premieresKey = Key('bilan-premieres');
+
+  /// Le mot du professeur sur ce passage (lot K14), s'il y en a un : il se
+  /// lit la ou l'on travaille, pas seulement dans le repertoire.
+  final String? teacherNote;
+
+  static const Key consigneKey = Key('consigne-du-professeur');
 
   /// L'horloge de l'historique, injectable pour les tests.
   final DateTime Function() clock;
@@ -1249,6 +1257,7 @@ class _SessionScreenState extends State<SessionScreen>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _entete(),
+        if (_consigne() case final Widget c) c,
         // Douze points, pas quarante-quatre : chaque point pris ici l'est a
         // la partition, seule a s'etirer dans cette colonne.
         const SizedBox(height: 12),
@@ -1338,6 +1347,7 @@ class _SessionScreenState extends State<SessionScreen>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       _entete(vertical: true),
+                      if (_consigne() case final Widget c) c,
                       const SizedBox(height: 12),
                       if (!_suit) ...<Widget>[
                         _metronome(compact: true),
@@ -1375,6 +1385,20 @@ class _SessionScreenState extends State<SessionScreen>
   }
 
   static const double _largeurDesCommandes = 200;
+
+  /// Le mot du professeur, s'il y en a un, et seulement hors prise : pendant
+  /// qu'il joue, la place est a la partition.
+  Widget? _consigne() {
+    final String? mot = widget.teacherNote;
+    if (mot == null || mot.trim().isEmpty || _running) {
+      return null;
+    }
+    return Padding(
+      key: SessionScreen.consigneKey,
+      padding: const EdgeInsets.only(top: 6),
+      child: ConsigneDuProfesseur(mot: mot),
+    );
+  }
 
   Widget _entete({bool vertical = false}) {
     final ThemeData theme = Theme.of(context);
