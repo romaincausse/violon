@@ -292,7 +292,7 @@ class WeekReport {
       }
       final FingerFinding? f = finger;
       if (f != null) {
-        b.writeln('- ${f.place.label} : ${f.flat ? 'bas' : 'haut'} de '
+        b.writeln('- ${f.label} : ${f.flat ? 'bas' : 'haut'} de '
             '${f.medianCents.abs().round()} cents, sur ${f.strings.length} '
             'corde${f.strings.length > 1 ? 's' : ''}');
       }

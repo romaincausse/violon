@@ -1,3 +1,4 @@
+import '../music/finger_pattern.dart';
 import '../store/take_history.dart';
 
 /// Un doigt de la main gauche, et ou il se pose sur la corde.
@@ -56,13 +57,32 @@ enum ViolinString {
 /// Ce que la main fait systematiquement d'un doigt.
 class FingerFinding {
   const FingerFinding({
-    required this.place,
     required this.medianCents,
     required this.samples,
     required this.strings,
+    this.place,
+    this.position = 1,
+    this.finger,
   });
 
-  final FingerPlace place;
+  /// La place du doigt en premiere position, ou `null` en troisieme.
+  final FingerPlace? place;
+
+  /// La position de la main (K3) : 1 ou 3.
+  final int position;
+
+  /// Le doigt, en troisieme position.
+  final int? finger;
+
+  /// "2e doigt haut", "1er doigt en 3e position".
+  String get label {
+    final FingerPlace? p = place;
+    if (p != null) {
+      return p.label;
+    }
+    final int d = finger ?? 0;
+    return '${d == 1 ? '1er' : '${d}e'} doigt en ${position}e position';
+  }
 
   /// L'ecart median, toutes cordes confondues : negatif, le doigt tombe bas.
   final double medianCents;
@@ -141,9 +161,34 @@ class FingerDiagnosis {
         <ViolinString, List<double>>{};
     final Map<ViolinString, Set<int>> prisesParCorde =
         <ViolinString, Set<int>>{};
+    // En troisieme position (K3), par doigt : les places de la premiere
+    // n'y ont pas de sens.
+    final Map<int, List<double>> enTroisieme = <int, List<double>>{};
+    final Map<int, Set<ViolinString>> cordesEnTroisieme =
+        <int, Set<ViolinString>>{};
+    final Map<int, Set<int>> prisesEnTroisieme = <int, Set<int>>{};
     for (final TakeRecord t in recentes) {
       for (final NoteTrace n in t.notes) {
-        final (ViolinString, FingerPlace)? f = fingeringOf(n.midi);
+        // La main n'a pas pu etre placee : mieux vaut un diagnostic de moins
+        // qu'un doigt accuse a tort.
+        if (n.unplaced) {
+          continue;
+        }
+        final FingerPlacement? h = n.hand;
+        if (h != null && h.position == 3) {
+          final ViolinString corde = ViolinString.values
+              .firstWhere((ViolinString c) => c.openMidi == h.stringMidi);
+          enTroisieme.putIfAbsent(h.finger, () => <double>[]).add(n.cents);
+          cordesEnTroisieme
+              .putIfAbsent(h.finger, () => <ViolinString>{})
+              .add(corde);
+          prisesEnTroisieme.putIfAbsent(h.finger, () => <int>{}).add(t.atMs);
+          parCorde.putIfAbsent(corde, () => <double>[]).add(n.cents);
+          prisesParCorde.putIfAbsent(corde, () => <int>{}).add(t.atMs);
+          continue;
+        }
+        final (ViolinString, FingerPlace)? f =
+            h == null ? fingeringOf(n.midi) : _enPremiere(h);
         if (f == null) {
           continue;
         }
@@ -196,8 +241,43 @@ class FingerDiagnosis {
         ),
       );
     }
+    for (final MapEntry<int, List<double>> e in enTroisieme.entries) {
+      final List<double> v = List<double>.of(e.value)..sort();
+      if (v.length < minSamples ||
+          (cordesEnTroisieme[e.key]!.length < 2 &&
+              prisesEnTroisieme[e.key]!.length < 2)) {
+        continue;
+      }
+      final double mediane = v[v.length ~/ 2];
+      if (mediane.abs() < minCents) {
+        continue;
+      }
+      trouves.add(
+        FingerFinding(
+          position: 3,
+          finger: e.key,
+          medianCents: mediane,
+          samples: v.length,
+          strings: cordesEnTroisieme[e.key]!,
+        ),
+      );
+    }
     trouves.sort((FingerFinding a, FingerFinding b) =>
         b.medianCents.abs().compareTo(a.medianCents.abs()));
     return FingerDiagnosis._(trouves, parCordes);
+  }
+
+  /// La place d'un doigt pose en premiere position, ou `null` pour une
+  /// corde a vide ou un 4e doigt.
+  static (ViolinString, FingerPlace)? _enPremiere(FingerPlacement h) {
+    final int k = h.midi - h.stringMidi;
+    if (h.finger == 0 || k < 1 || k > 6) {
+      return null;
+    }
+    return (
+      ViolinString.values
+          .firstWhere((ViolinString c) => c.openMidi == h.stringMidi),
+      FingerPlace.values.firstWhere((FingerPlace f) => f.semitones == k),
+    );
   }
 }

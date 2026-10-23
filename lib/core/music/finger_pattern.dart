@@ -86,10 +86,14 @@ class FingerPlacement {
     required this.stringMidi,
     required this.finger,
     required this.midi,
+    this.position = 1,
   }) : assert(finger >= 0 && finger <= 4, 'les doigts vont de 0 a 4');
 
   /// La corde a vide, en MIDI. 55 = sol, 62 = re, 69 = la, 76 = mi.
   final int stringMidi;
+
+  /// La position de la main : 1 pour la premiere, 3 pour la troisieme (K3).
+  final int position;
 
   /// Le doigt, de 0 (corde a vide) a 4.
   final int finger;

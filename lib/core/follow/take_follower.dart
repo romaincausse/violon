@@ -1,4 +1,6 @@
 import '../audio/pitch_smoother.dart';
+import '../music/finger_pattern.dart';
+import '../music/hand_positions.dart';
 import '../music/passage.dart';
 import '../music/pitch_utils.dart';
 import '../music/score_note.dart';
@@ -290,6 +292,9 @@ class TakeFollower {
     }
     final RhythmJudge juge = rapport.rhythm;
     final int debut = juge.events.isEmpty ? 0 : juge.events.first.startMs;
+    // Ou la main jouait chaque note (K3) : le diagnostic par doigt en a
+    // besoin, et la prise ne garde pas la partition.
+    final Map<String, FingerPlacement?> mains = HandPositions.of(passage);
     return TakeRecord(
       atMs: atMs,
       key: key,
@@ -316,7 +321,13 @@ class TakeFollower {
       notes: <NoteTrace>[
         for (final ScoreNote n in passage.notes)
           if (tuning.medianCentsFor(n.id) case final double c)
-            NoteTrace(midi: n.midi, measure: n.measure, cents: c),
+            NoteTrace(
+              midi: n.midi,
+              measure: n.measure,
+              cents: c,
+              hand: mains[n.id],
+              unplaced: mains[n.id] == null,
+            ),
       ],
     );
   }

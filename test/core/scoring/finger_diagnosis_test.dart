@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:violon/core/music/finger_pattern.dart';
 import 'package:violon/core/scoring/finger_diagnosis.dart';
 import 'package:violon/core/store/take_history.dart';
 
@@ -90,5 +91,51 @@ void main() {
       for (int k = 1; k <= 8; k++) n(76 + (k % 4) + 1, -20),
     ]));
     expect(FingerDiagnosis.of(h).mainString, isNull);
+  });
+
+  group('la main en troisieme position (K3)', () {
+    NoteTrace en3(int corde, int doigt, int midi, double c) => NoteTrace(
+          midi: midi,
+          measure: 1,
+          cents: c,
+          hand: FingerPlacement(
+            stringMidi: corde,
+            finger: doigt,
+            midi: midi,
+            position: 3,
+          ),
+        );
+
+    test('un doigt en troisieme n est pas pris pour un doigt de premiere', () {
+      // Re5 au 1er doigt en troisieme, bas : en premiere ce serait le 3e
+      // doigt sur la, et on accuserait le mauvais.
+      final TakeHistory h = TakeHistory.vide
+          .withTake(prise(0, <NoteTrace>[
+            for (int i = 0; i < 4; i++) en3(69, 1, 74, -18),
+          ]))
+          .withTake(prise(5, <NoteTrace>[
+            for (int i = 0; i < 4; i++) en3(69, 1, 74, -16),
+          ]));
+      final FingerDiagnosis d = FingerDiagnosis.of(h);
+      expect(d.main!.position, 3);
+      expect(d.main!.label, '1er doigt en 3e position');
+      expect(
+          d.findings.where((FingerFinding f) => f.place == FingerPlace.three),
+          isEmpty);
+    });
+
+    test('une note que la main n a pas pu placer ne compte pas', () {
+      final TakeHistory h = TakeHistory.vide
+          .withTake(prise(0, <NoteTrace>[
+            for (int i = 0; i < 4; i++)
+              const NoteTrace(midi: 74, measure: 1, cents: -20, unplaced: true),
+          ]))
+          .withTake(prise(5, <NoteTrace>[
+            for (int i = 0; i < 4; i++)
+              const NoteTrace(midi: 74, measure: 1, cents: -20, unplaced: true),
+          ]));
+      expect(FingerDiagnosis.of(h).main, isNull);
+      expect(FingerDiagnosis.of(h).mainString, isNull);
+    });
   });
 }

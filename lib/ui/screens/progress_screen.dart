@@ -287,7 +287,7 @@ class _Main extends StatelessWidget {
             if (t != null) ...<Widget>[
               const SizedBox(height: 4),
               Text(
-                'Ton ${t.place.label} tombe ${t.flat ? 'bas' : 'haut'}, '
+                'Ton ${t.label} tombe ${t.flat ? 'bas' : 'haut'}, '
                 '${_ou(t)}. ${t.flat ? 'Avance-le' : 'Recule-le'} un peu vers '
                 '${t.flat ? 'le chevalet' : 'la volute'}.',
                 style: theme.textTheme.bodyMedium,

@@ -88,7 +88,7 @@ class WeekReportScreen extends StatelessWidget {
                   ),
                 if (r.finger case final FingerFinding f)
                   _Ligne(
-                    '${f.place.label} : ${f.flat ? 'bas' : 'haut'} de '
+                    '${f.label} : ${f.flat ? 'bas' : 'haut'} de '
                     '${f.medianCents.abs().round()} cents, sur '
                     '${f.strings.length} corde${f.strings.length > 1 ? 's' : ''}',
                   ),

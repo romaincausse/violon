@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/store/progress.dart';
+import 'package:violon/core/music/finger_pattern.dart';
 import 'package:violon/core/store/take_history.dart';
 
 void main() {
@@ -41,6 +42,43 @@ void main() {
     expect(t.measures.single.tempoRatio, 0.8);
     expect(t.measures.single.stops, 1);
     expect(t.notes.single.cents, closeTo(-18.4, 0.05));
+  });
+
+  test('la place de la main se range ; une prise d avant K3 se relit', () {
+    const TakeRecord avec = TakeRecord(
+      atMs: 0,
+      key: 'k',
+      title: 't',
+      fromMeasure: 1,
+      toMeasure: 1,
+      writtenPulseBpm: 72,
+      durationMs: 1000,
+      notes: <NoteTrace>[
+        NoteTrace(
+          midi: 74,
+          measure: 1,
+          cents: -10,
+          hand: FingerPlacement(
+            stringMidi: 69,
+            finger: 1,
+            midi: 74,
+            position: 3,
+          ),
+        ),
+        NoteTrace(midi: 86, measure: 1, cents: 5, unplaced: true),
+        NoteTrace(midi: 66, measure: 1, cents: 2),
+      ],
+    );
+    final List<NoteTrace> lu = TakeHistory.decode(
+      const TakeHistory(<TakeRecord>[avec]).encode(),
+    ).takes.single.notes;
+    expect(lu[0].hand!.position, 3);
+    expect(lu[0].hand!.finger, 1);
+    expect(lu[0].hand!.stringMidi, 69);
+    expect(lu[1].unplaced, isTrue);
+    expect(lu[1].hand, isNull);
+    expect(lu[2].unplaced, isFalse, reason: 'jugee comme avant K3');
+    expect(lu[2].hand, isNull);
   });
 
   test('un historique abime ne fait pas tomber l application', () {

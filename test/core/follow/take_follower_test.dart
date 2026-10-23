@@ -9,9 +9,13 @@ import 'package:violon/core/audio/violin_synth.dart';
 import 'package:violon/core/follow/performance_features.dart';
 import 'package:violon/core/follow/synthetic_take.dart';
 import 'package:violon/core/follow/take_follower.dart';
+import 'package:violon/core/music/finger_pattern.dart';
+import 'package:violon/core/music/hand_positions.dart';
 import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/pitch_utils.dart';
+import 'package:violon/core/music/score_note.dart';
 import 'package:violon/core/scoring/live_tuning.dart';
+import 'package:violon/core/store/take_history.dart';
 
 import 'scenarios.dart';
 
@@ -64,6 +68,23 @@ void main() {
     // Le juge de rythme passe sur le meme alignement.
     expect(suivi.rhythm!.quarterBpm, closeTo(92, 92 * 0.08));
     expect(suivi.rhythm!.overallScore, greaterThanOrEqualTo(85));
+  });
+
+  test('la prise gardee dit ou la main jouait chaque note (K3)', () {
+    final SyntheticTake prise = (TakeScript(p, seed: 1)..play('n1', 'n22'))
+        .build(tail: const Duration(seconds: 3));
+    final TakeFollower suivi =
+        jouer(p, PerformanceFeatures.extract(prise.render(ViolinSynth())));
+    suivi.rescore();
+    final TakeRecord fiche = suivi.record(atMs: 0, key: 'x')!;
+    final Map<String, FingerPlacement?> attendu = HandPositions.of(p);
+    final ScoreNote premiere = p.notes.first;
+    final NoteTrace trace = fiche.notes.first;
+    expect(trace.midi, premiere.midi);
+    expect(trace.hand?.finger, attendu[premiere.id]?.finger);
+    expect(trace.hand?.stringMidi, attendu[premiere.id]?.stringMidi);
+    expect(fiche.notes.every((NoteTrace n) => n.hand != null || n.unplaced),
+        isTrue);
   });
 
   test('un arret au milieu n est pas une fin', () {
