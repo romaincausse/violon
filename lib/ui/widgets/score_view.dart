@@ -242,6 +242,16 @@ class _ScoreViewState extends State<ScoreView> {
   /// de la fenetre, pour qu'il ait de la ligne devant lui.
   static const double _partDevant = 0.25;
 
+  /// Les defilements deja en route.
+  ///
+  /// **Une animation en cours n'est jamais relancee.** Pendant une prise, le
+  /// curseur bouge a chaque image ; relancer l'animation a chaque image
+  /// l'annulait avant qu'elle ait avance -- une animation ne bouge pas a sa
+  /// premiere image -- et la fenetre restait sur place. Le S22 l'a montre,
+  /// un test qui ne changeait le curseur qu'une image sur deux ne le voyait
+  /// pas.
+  final Set<ScrollController> _enRoute = <ScrollController>{};
+
   @override
   void didUpdateWidget(ScoreView old) {
     super.didUpdateWidget(old);
@@ -293,7 +303,7 @@ class _ScoreViewState extends State<ScoreView> {
     required double fin,
     required bool centre,
   }) {
-    if (!c.hasClients) {
+    if (!c.hasClients || _enRoute.contains(c)) {
       return;
     }
     final ScrollPosition p = c.position;
@@ -304,11 +314,18 @@ class _ScoreViewState extends State<ScoreView> {
     final double cible = centre
         ? (debut + fin) / 2 - fenetre / 2
         : debut - fenetre * _partDevant;
-    unawaited(c.animateTo(
-      cible.clamp(p.minScrollExtent, p.maxScrollExtent),
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-    ));
+    final double borne = cible.clamp(p.minScrollExtent, p.maxScrollExtent);
+    if ((borne - p.pixels).abs() < 1) {
+      return;
+    }
+    _enRoute.add(c);
+    unawaited(c
+        .animateTo(
+          borne,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+        )
+        .whenComplete(() => _enRoute.remove(c)));
   }
 
   @override

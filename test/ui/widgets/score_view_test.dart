@@ -662,6 +662,7 @@ void main() {
         WidgetTester tester, {
         required int? tick,
         required ScoreDisplayMode mode,
+        Duration image = Duration.zero,
       }) =>
           tester.pumpWidget(
             MaterialApp(
@@ -678,6 +679,7 @@ void main() {
                 ),
               ),
             ),
+            duration: image,
           );
 
       double pixels(WidgetTester tester, Axis axe) => tester
@@ -712,6 +714,24 @@ void main() {
         // Le curseur est dans la fenetre, pas au bord.
         final Size canvas = tester.getSize(find.byKey(ScoreView.canvasKey));
         expect(decalage, lessThan(canvas.width));
+      });
+
+      testWidgets(
+          'le curseur qui bouge a chaque image ne bloque pas la '
+          'fenetre', (WidgetTester tester) async {
+        // Pendant une prise, le curseur avance a chaque image : chaque image
+        // redemande le defilement. Il doit quand meme arriver.
+        await poserLong(tester, tick: null, mode: ScoreDisplayMode.systems);
+        final int dernier = long().notes.last.onsetTicks;
+        for (int i = 0; i < 40; i++) {
+          await poserLong(
+            tester,
+            tick: dernier + i,
+            mode: ScoreDisplayMode.systems,
+            image: const Duration(milliseconds: 16),
+          );
+        }
+        expect(pixels(tester, Axis.vertical), greaterThan(0));
       });
 
       testWidgets('rien ne bouge tant que le curseur est visible',
