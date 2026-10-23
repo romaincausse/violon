@@ -38,6 +38,30 @@ class Smufl {
   /// du bas, soit deux pas sous la ligne du milieu.
   static const int gClefLineStep = -2;
 
+  /// Les lettres des nuances (K9) : p, m, f. Un "mf" s'ecrit m puis f, comme
+  /// le graveur les assemble.
+  static const String dynamicPiano = '\uE520';
+  static const String dynamicMezzo = '\uE521';
+  static const String dynamicForte = '\uE522';
+
+  /// Les glyphes d'une nuance, ou `null` si elle n'est pas faite de p, m, f.
+  static String? dynamicFor(String mark) {
+    final StringBuffer b = StringBuffer();
+    for (final String c in mark.split('')) {
+      switch (c) {
+        case 'p':
+          b.write(dynamicPiano);
+        case 'm':
+          b.write(dynamicMezzo);
+        case 'f':
+          b.write(dynamicForte);
+        default:
+          return null;
+      }
+    }
+    return b.isEmpty ? null : b.toString();
+  }
+
   static const String noteheadWhole = '\uE0A2';
   static const String noteheadHalf = '\uE0A3';
   static const String noteheadBlack = '\uE0A4';

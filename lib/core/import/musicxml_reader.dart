@@ -254,6 +254,7 @@ class MusicXmlReader {
           _lireAttributs(e, numero);
         case 'direction':
           _lireTempo(e);
+          _lireNuance(e);
         case 'sound':
           _tempoDuSon(e);
         case 'backup':
@@ -312,6 +313,54 @@ class MusicXmlReader {
 
   /// Le tempo ecrit : l'attribut `sound/@tempo` s'il existe, sinon le
   /// metronome imprime. Seul le premier compte, c'est le tempo du morceau.
+  /// La nuance ou le soufflet ecrit avant la prochaine note (K9).
+  String? _nuanceEnAttente;
+  String? _souffletEnAttente;
+
+  static const Set<String> _nuances = <String>{
+    'ppp',
+    'pp',
+    'p',
+    'mp',
+    'mf',
+    'f',
+    'ff',
+    'fff',
+  };
+
+  /// Une nuance, un soufflet, ou les mots qui en tiennent lieu : ils
+  /// s'attachent a la note qui suit. Un sforzando est un accent, pas une
+  /// nuance : il est ignore.
+  void _lireNuance(XmlElement direction) {
+    for (final XmlElement type in direction.childrenNamed('direction-type')) {
+      for (final XmlElement d in type.childrenNamed('dynamics')) {
+        for (final XmlElement n in d.children) {
+          if (_nuances.contains(n.name)) {
+            _nuanceEnAttente = n.name;
+          }
+        }
+      }
+      for (final XmlElement w in type.childrenNamed('wedge')) {
+        switch (w.attributes['type']) {
+          case 'crescendo':
+            _souffletEnAttente = 'cresc';
+          case 'diminuendo':
+            _souffletEnAttente = 'dim';
+          case 'stop':
+            _souffletEnAttente ??= 'fin';
+        }
+      }
+      for (final XmlElement mots in type.childrenNamed('words')) {
+        final String t = mots.text.toLowerCase();
+        if (t.startsWith('cresc')) {
+          _souffletEnAttente = 'cresc';
+        } else if (t.startsWith('dim') || t.startsWith('decresc')) {
+          _souffletEnAttente = 'dim';
+        }
+      }
+    }
+  }
+
   void _lireTempo(XmlElement direction) {
     if (_tempo != null) {
       return;
@@ -450,8 +499,12 @@ class MusicXmlReader {
         durationTicks: ticks,
         measure: numero,
         fingering: _doigte(note),
+        dynamicMark: _nuanceEnAttente,
+        hairpin: _souffletEnAttente,
       ),
     );
+    _nuanceEnAttente = null;
+    _souffletEnAttente = null;
     _lireLiaisons(note, id);
     return apres;
   }
