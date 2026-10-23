@@ -68,10 +68,11 @@ class DailySessionPlanner {
     required TakeHistory history,
     required HomeworkList homework,
     List<Exercise>? catalog,
+    int startPalier = 1,
   }) {
     final List<Exercise> exos = catalog ?? ExerciseCatalog.all;
     return DailySessionPlan(
-      warmup: _gammePour(passage, exos),
+      warmup: _gammePour(passage, exos, startPalier),
       choices: _choix(passage, workKey, history, homework),
     );
   }
@@ -79,7 +80,15 @@ class DailySessionPlanner {
   /// Une gamme (pas un arpege), dans la tonalite ou la plus proche sur le
   /// cycle des quintes, au palier le plus bas : on s'echauffe, on ne se
   /// depasse pas.
-  static ScaleExercise _gammePour(Passage passage, List<Exercise> exos) {
+  ///
+  /// **Sauf s'il joue depuis trois ans** (K1) : une octave l'ennuierait, il
+  /// s'echauffe sur deux.
+  static ScaleExercise _gammePour(
+    Passage passage,
+    List<Exercise> exos,
+    int startPalier,
+  ) {
+    final int vise = startPalier >= _deuxOctaves ? _deuxOctaves : 1;
     final List<ScaleExercise> gammes = <ScaleExercise>[
       for (final Exercise e in exos)
         if (e is ScaleExercise && e.id.startsWith('gamme-')) e,
@@ -88,9 +97,9 @@ class DailySessionPlanner {
     ScaleExercise? meilleure;
     int ecart = 1 << 30;
     for (final ScaleExercise g in gammes) {
-      final int d = tonalite == null
-          ? g.palier
-          : (g.keyFifths - tonalite).abs() * 10 + g.palier;
+      final int d =
+          (tonalite == null ? 0 : (g.keyFifths - tonalite).abs() * 10) +
+              (g.palier - vise).abs();
       if (d < ecart) {
         ecart = d;
         meilleure = g;
@@ -98,6 +107,9 @@ class DailySessionPlanner {
     }
     return meilleure ?? (exos.whereType<ScaleExercise>().first);
   }
+
+  /// Le palier des gammes sur deux octaves.
+  static const int _deuxOctaves = 4;
 
   static List<WorkChoice> _choix(
     Passage passage,

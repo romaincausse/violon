@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:violon/core/exercises/exercise.dart';
 import 'package:violon/core/exercises/exercise_catalog.dart';
 import 'package:violon/core/exercises/exercise_progress.dart';
+import 'package:violon/core/exercises/starting_level.dart';
 
 /// Les exercices du premier palier, ceux qu'on ouvre en premier.
 List<Exercise> get _palier1 => ExerciseCatalog.ofPalier(1);
@@ -18,6 +19,53 @@ void _acquerir(ExerciseProgress progres, int palier) {
 }
 
 void main() {
+  group('le niveau de depart (K1)', () {
+    test('les paliers d en dessous sont ouverts, la tache part du sien', () {
+      final ExerciseProgress progres = ExerciseProgress(startPalier: 5);
+      expect(progres.palierOuvert, 5);
+      expect(progres.palierEstOuvert(1), isTrue);
+      expect(progres.palierEstOuvert(6), isFalse);
+      expect(progres.prochaineTache?.palier, 5);
+      expect(progres.acquis, 0, reason: 'ouvrir n est pas acquerir');
+    });
+
+    test('rien ne se ferme : un exercice d en dessous se joue et compte', () {
+      final ExerciseProgress progres = ExerciseProgress(startPalier: 4);
+      _acquerir(progres, 1);
+      expect(progres.acquis, ExerciseCatalog.ofPalier(1).length);
+      expect(progres.prochaineTache?.palier, 4);
+      _acquerir(progres, 4);
+      expect(progres.palierOuvert, 5);
+    });
+
+    test('tout acquis au-dessus : les paliers d en dessous reviennent', () {
+      final ExerciseProgress progres = ExerciseProgress(startPalier: 6);
+      _acquerir(progres, 6);
+      expect(progres.prochaineTache?.palier, 1);
+    });
+
+    test('changer de niveau change la tache, pas les records', () {
+      final ExerciseProgress progres = ExerciseProgress();
+      _acquerir(progres, 1);
+      final int acquis = progres.acquis;
+      progres.startPalier = 3;
+      expect(progres.prochaineTache?.palier, 3);
+      progres.startPalier = 1;
+      expect(progres.prochaineTache?.palier, 2);
+      expect(progres.acquis, acquis);
+    });
+
+    test('chaque reponse ouvre un palier, et les paliers se relisent', () {
+      expect(
+        StartingLevel.all.map((StartingLevel n) => n.palier),
+        <int>[1, 3, 4, 5],
+      );
+      expect(StartingLevel.of(5).label, '4 ans ou plus');
+      expect(StartingLevel.of(6).label, '4 ans ou plus');
+      expect(StartingLevel.of(2).label, 'Je commence');
+    });
+  });
+
   group('ExerciseProgress', () {
     test('rien joue : le premier palier est ouvert, pas le deuxieme', () {
       final ExerciseProgress progres = ExerciseProgress();

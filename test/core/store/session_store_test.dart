@@ -94,6 +94,19 @@ void main() {
       );
     });
 
+    test('le niveau de depart se relit, et un niveau aberrant s oublie', () {
+      expect(
+        RememberedSession.decode(
+          const RememberedSession(startPalier: 5).encode(),
+        ).startPalier,
+        5,
+      );
+      expect(RememberedSession.decode('{"depart": 0}').startPalier, isNull);
+      expect(RememberedSession.decode('{"depart": "5"}').startPalier, isNull);
+      expect(const RememberedSession(startPalier: 3).isEmpty, isFalse);
+      expect(RememberedSession.vide.startPalier, isNull);
+    });
+
     test('un diapason aberrant est refuse', () {
       // Une valeur folle relue en silence rendrait toute la justesse fausse,
       // et l'enfant serait declare faux partout sans qu'on sache pourquoi.

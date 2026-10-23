@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/exercises/exercise.dart';
 import '../../core/exercises/exercise_catalog.dart';
 import '../../core/exercises/exercise_progress.dart';
+import '../../core/exercises/starting_level.dart';
 
 /// Les deux facons d'aborder un exercice.
 ///
@@ -55,10 +56,26 @@ class ExerciseChoice {
 /// **La progression guide, elle ne verrouille pas** (ADR-011). Un palier non
 /// ouvert porte un cadenas, et reste jouable : si le professeur a donne la
 /// gamme de si bemol cette semaine, l'application n'a pas a la refuser.
-class ExercisesScreen extends StatelessWidget {
-  const ExercisesScreen({required this.progress, super.key});
+class ExercisesScreen extends StatefulWidget {
+  const ExercisesScreen({
+    required this.progress,
+    this.levelAsked = true,
+    this.onStartPalier,
+    super.key,
+  });
 
   final ExerciseProgress progress;
+
+  /// Faux tant que l'enfant n'a pas dit depuis combien d'annees il joue : la
+  /// question s'affiche alors en tete (K1).
+  final bool levelAsked;
+
+  /// Le niveau de depart choisi, a ranger.
+  final ValueChanged<int>? onStartPalier;
+
+  static const Key niveauKey = Key('niveau-de-depart');
+  static const Key changerNiveauKey = Key('niveau-changer');
+  static Key niveauChoixKey(int palier) => Key('niveau-$palier');
 
   /// La carte de la prochaine tache, pour les tests.
   static const Key prochaineTacheKey = Key('prochaine-tache');
@@ -76,6 +93,25 @@ class ExercisesScreen extends StatelessWidget {
   static Key palierKey(int numero) => Key('palier-$numero');
 
   @override
+  State<ExercisesScreen> createState() => _ExercisesScreenState();
+}
+
+class _ExercisesScreenState extends State<ExercisesScreen> {
+  late bool _demande = widget.levelAsked;
+  bool _changer = false;
+
+  ExerciseProgress get progress => widget.progress;
+
+  void _niveau(StartingLevel n) {
+    setState(() {
+      progress.startPalier = n.palier;
+      _demande = true;
+      _changer = false;
+    });
+    widget.onStartPalier?.call(n.palier);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final Exercise? tache = progress.prochaineTache;
@@ -86,9 +122,17 @@ class ExercisesScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: <Widget>[
+            if (!_demande || _changer) ...<Widget>[
+              _Niveau(
+                key: ExercisesScreen.niveauKey,
+                actuel: _demande ? progress.startPalier : null,
+                onChoisi: _niveau,
+              ),
+              const SizedBox(height: 8),
+            ],
             if (tache != null)
               _ProchaineTache(
-                key: prochaineTacheKey,
+                key: ExercisesScreen.prochaineTacheKey,
                 exercise: tache,
                 progress: progress,
                 onChoisir: () => _choisir(context, tache),
@@ -102,22 +146,39 @@ class ExercisesScreen extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 8),
-            Text(
-              '${progress.acquis} exercice${progress.acquis > 1 ? "s" : ""} '
-              'acquis sur ${ExerciseCatalog.all.length}',
-              style: theme.textTheme.bodySmall,
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    '${progress.acquis} exercice'
+                    '${progress.acquis > 1 ? "s" : ""} '
+                    'acquis sur ${ExerciseCatalog.all.length}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                // Le professeur peut corriger la reponse : rien ne se perd,
+                // seule la prochaine tache change.
+                if (_demande && !_changer)
+                  TextButton(
+                    key: ExercisesScreen.changerNiveauKey,
+                    onPressed: () => setState(() => _changer = true),
+                    child: Text(
+                      'Niveau : ${StartingLevel.of(progress.startPalier).label}',
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
             for (final Palier palier in ExerciseCatalog.paliers) ...<Widget>[
               _EnTetePalier(
-                key: palierKey(palier.numero),
+                key: ExercisesScreen.palierKey(palier.numero),
                 palier: palier,
                 progress: progress,
               ),
               for (final Exercise exercise
                   in ExerciseCatalog.ofPalier(palier.numero))
                 _TuileExercice(
-                  key: tileKey(exercise.id),
+                  key: ExercisesScreen.tileKey(exercise.id),
                   exercise: exercise,
                   best: progress.bestFor(exercise.id),
                   acquis: progress.estAcquis(exercise),
@@ -148,6 +209,57 @@ class ExercisesScreen extends StatelessWidget {
       return;
     }
     navigator.pop(choix);
+  }
+}
+
+/// Depuis combien d'annees il joue : la question du niveau de depart (K1).
+class _Niveau extends StatelessWidget {
+  const _Niveau({required this.actuel, required this.onChoisi, super.key});
+
+  /// Le palier deja choisi, quand on le change ; `null` a la premiere
+  /// ouverture.
+  final int? actuel;
+  final ValueChanged<StartingLevel> onChoisi;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              'Depuis combien d annees joues-tu ?',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Pour commencer au bon palier. Rien n est ferme : tout le '
+              'catalogue reste jouable, et ton professeur peut changer la '
+              'reponse.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: <Widget>[
+                for (final StartingLevel n in StartingLevel.all)
+                  ChoiceChip(
+                    key: ExercisesScreen.niveauChoixKey(n.palier),
+                    label: Text(n.label),
+                    selected: actuel != null &&
+                        StartingLevel.of(actuel!).palier == n.palier,
+                    onSelected: (_) => onChoisi(n),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -233,7 +345,9 @@ class _EnTetePalier extends StatelessWidget {
                   style: theme.textTheme.titleMedium,
                 ),
                 Text(
-                  ouvert && reste > 0
+                  // Sous le niveau de depart, ce qui reste n'est pas un
+                  // manque : c'est derriere lui (K1).
+                  ouvert && reste > 0 && palier.numero >= progress.startPalier
                       ? '${palier.intention} - il en reste $reste'
                       : palier.intention,
                   style: theme.textTheme.bodySmall,

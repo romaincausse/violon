@@ -514,6 +514,40 @@ void main() {
       );
     });
 
+    testWidgets('le niveau de depart se demande une fois, et se range', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester);
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(HomeShell.exercicesKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ExercisesScreen.niveauChoixKey(4)));
+      await tester.pumpAndSettle();
+      expect(memoireFactice.current.startPalier, 4);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(
+        find.text('A travailler : ${ExerciseCatalog.ofPalier(4).first.titre}'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('le niveau relu ne redemande rien', (
+      WidgetTester tester,
+    ) async {
+      await poser(tester, memoire: const RememberedSession(startPalier: 3));
+      await tester.tap(find.text('Repertoire'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('A travailler : ${ExerciseCatalog.ofPalier(3).first.titre}'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(HomeShell.exercicesKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(ExercisesScreen.niveauKey), findsNothing);
+    });
+
     testWidgets('choisir un exercice le range pour la prochaine fois', (
       WidgetTester tester,
     ) async {

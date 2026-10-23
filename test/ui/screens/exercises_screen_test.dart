@@ -13,6 +13,8 @@ Future<ExerciseChoice? Function()> ouvrir(
   WidgetTester tester, {
   ExerciseProgress? progress,
   Size taille = const Size(400, 800),
+  bool levelAsked = true,
+  ValueChanged<int>? onStartPalier,
 }) async {
   ExerciseChoice? choix;
   await tester.binding.setSurfaceSize(taille);
@@ -27,8 +29,11 @@ Future<ExerciseChoice? Function()> ouvrir(
               onPressed: () async {
                 choix = await Navigator.of(context).push<ExerciseChoice>(
                   MaterialPageRoute<ExerciseChoice>(
-                    builder: (BuildContext c) =>
-                        ExercisesScreen(progress: progres),
+                    builder: (BuildContext c) => ExercisesScreen(
+                      progress: progres,
+                      levelAsked: levelAsked,
+                      onStartPalier: onStartPalier,
+                    ),
                   ),
                 );
               },
@@ -54,6 +59,51 @@ Future<void> atteindre(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  group('le niveau de depart (K1)', () {
+    testWidgets(
+        'la premiere fois, la question ; la reponse change la tache et se '
+        'range', (WidgetTester tester) async {
+      int? range;
+      await ouvrir(tester,
+          levelAsked: false, onStartPalier: (int p) => range = p);
+      expect(find.byKey(ExercisesScreen.niveauKey), findsOneWidget);
+      expect(find.text('Depuis combien d annees joues-tu ?'), findsOneWidget);
+      await tester.tap(find.byKey(ExercisesScreen.niveauChoixKey(5)));
+      await tester.pumpAndSettle();
+      expect(range, 5);
+      expect(find.byKey(ExercisesScreen.niveauKey), findsNothing);
+      expect(find.textContaining('il en reste'), findsNothing,
+          reason: 'les paliers d en dessous ne sont pas des manques');
+      expect(
+        find.descendant(
+          of: find.byKey(ExercisesScreen.prochaineTacheKey),
+          matching: find.text(ExerciseCatalog.ofPalier(5).first.titre),
+        ),
+        findsOneWidget,
+      );
+      // Le professeur peut corriger : la question revient, la reponse
+      // d'avant cochee.
+      await tester.tap(find.text('Niveau : 4 ans ou plus'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ChoiceChip>(find.byKey(ExercisesScreen.niveauChoixKey(5)))
+            .selected,
+        isTrue,
+      );
+      await tester.tap(find.byKey(ExercisesScreen.niveauChoixKey(1)));
+      await tester.pumpAndSettle();
+      expect(range, 1);
+      expect(find.text('Niveau : Je commence'), findsOneWidget);
+    });
+
+    testWidgets('deja repondu : pas de question', (WidgetTester tester) async {
+      await ouvrir(tester);
+      expect(find.byKey(ExercisesScreen.niveauKey), findsNothing);
+      expect(find.byKey(ExercisesScreen.changerNiveauKey), findsOneWidget);
+    });
+  });
+
   group('ExercisesScreen', () {
     testWidgets('la prochaine tache est en tete, avant le catalogue', (
       WidgetTester tester,

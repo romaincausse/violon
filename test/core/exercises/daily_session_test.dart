@@ -63,6 +63,23 @@ void main() {
       expect(p.warmup.keyFifths, 2);
     });
 
+    test('depuis trois ans, l echauffement passe a deux octaves (K1)', () {
+      DailySessionPlan plan(int depart, int quintes) =>
+          DailySessionPlanner.plan(
+            passage: morceau(keyFifths: quintes),
+            workKey: 'x',
+            history: TakeHistory.vide,
+            homework: HomeworkList.vide,
+            startPalier: depart,
+          );
+      expect(plan(1, 1).warmup.id, 'gamme-sol-majeur-1');
+      expect(plan(3, 1).warmup.id, 'gamme-sol-majeur-1');
+      expect(plan(4, 1).warmup.id, 'gamme-sol-majeur-2');
+      expect(plan(5, 1).warmup.id, 'gamme-sol-majeur-2');
+      // La tonalite passe avant : re majeur n'existe que sur une octave.
+      expect(plan(5, 2).warmup.id, 'gamme-re-majeur-1');
+    });
+
     test('sans tonalite proche, la plus proche sur le cycle des quintes', () {
       // Mi bemol majeur (-3) : si bemol (-2) est la plus proche du catalogue.
       final Passage p = morceau(keyFifths: -3);
