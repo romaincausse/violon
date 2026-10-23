@@ -51,9 +51,9 @@ void main() {
   });
 
   test('sans tonalite connue, la marge large pour tous', () {
-    expect(juge(sol, 15, tonalite: null).scoreFor('sol'), 100);
-    expect(
-        juge(sol, 28, tonalite: null).verdictFor('sol'), TuningVerdict.inTune);
+    // Le si : le sol fait vibrer la corde de sol, il a sa propre marge (K10).
+    expect(juge(si, 15, tonalite: null).scoreFor('si'), 100);
+    expect(juge(si, 28, tonalite: null).verdictFor('si'), TuningVerdict.inTune);
   });
 
   test('les gammes portent leur armure, et donc leur tonalite', () {
