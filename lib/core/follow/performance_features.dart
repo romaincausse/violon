@@ -83,11 +83,15 @@ class PerformanceFeatures {
     int frameSize = 2048,
     int hopSize = 1024,
     double a4 = PitchUtils.defaultA4,
-  }) =>
-      FeatureExtractor(
-        sampleRate: sampleRate,
-        frameSize: frameSize,
-        hopSize: hopSize,
-        a4: a4,
-      ).addSamples(samples);
+    bool bowChanges = true,
+  }) {
+    final FeatureExtractor e = FeatureExtractor(
+      sampleRate: sampleRate,
+      frameSize: frameSize,
+      hopSize: hopSize,
+      a4: a4,
+      bowChanges: bowChanges,
+    );
+    return <FeatureFrame>[...e.addSamples(samples), ...e.finish()];
+  }
 }

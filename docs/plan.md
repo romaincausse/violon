@@ -56,7 +56,7 @@ trois semaines qui se voient qu'un banc d'essai muet.
 | 2 | Les outils de tous les jours | 10 | 0 | L'application sert avant meme de jouer un morceau |
 | 3 | Les gammes et les exercices | 5 | 0 | Utile **tous les jours**, sans rien preparer |
 | 4 | Le son | 3 | 0 | Le bourdon, l'exercice de justesse le plus efficace |
-| 5 | La preuve | 5 | 2 | On sait si le suiveur tient : pas encore (ADR-019) |
+| 5 | La preuve | 6 | 2 | Le suiveur tient a 92 % de la mesure ; pas encore le critere |
 | 6 | Le suivi | 7 | 0 | L'application ne perd plus le fil |
 | 7 | La note | 10 | 0 | Justesse et rythme, par mesure |
 | 8 | Quoi rejouer | 6 | 0 | La boucle de travail se ferme |
@@ -1255,7 +1255,8 @@ batir quarante soirees dessus sans l'avoir prouve en couterait bien plus.
 | ~~P1~~ | ~~Banc d'essai : vraies prises, annotation independante~~ | **Must** | ★★ | fait, 8 prises sur 12 |
 | ~~P2~~ | ~~Alignement hors ligne (hauteurs + attaques)~~ | **Must** | ★★ | fait |
 | ~~P3~~ | ~~Verdict chiffre et ADR~~ | **Must** | ★★★ | fait : non tenu (ADR-019) |
-| P4 | Le coup d'archet : compter les notes repetees | **Must** | ★★★ | 2 |
+| ~~P4~~ | ~~Le coup d'archet : compter les notes repetees~~ | **Must** | ★★★ | fait : 92 % et 76 % |
+| P5 | La note ajoutee : un etat a cout borne | **Must** | ★★ | 2 |
 
 **Critere de sortie :** sur dix prises reelles, dont au moins trois avec arret
 et reprise de mesure, l'alignement place **95 % des notes dans la bonne
@@ -1332,6 +1333,28 @@ pas ce verdict.
 indice d'attaque : le creux d'energie sur une fenetre courte, que les images
 du banc montrent a chaque changement d'archet. Puis repasser le banc, en
 rapportant que la reference partage desormais cet indice.
+
+**Fait** (`BowChangeDetector`, et la reprise conditionnee a l'arret dans
+`FollowModel`). Sur les huit prises : **92 % dans la bonne mesure, 76 % sur
+la bonne note** (73 et 51 avant). La seance de Firework passe de 47 a 95 %,
+et son suivi en direct de "perdu" a 86 %. Un recul en plein jeu coute
+desormais plus cher qu'un recul apres un archet leve, qui reste le cas
+nominal : la prise 06, ou l'enfant revient au debut de la phrase, garde ses
+97 %. Le direct attend une quarantaine de millisecondes de plus, le temps de
+voir l'energie remonter apres un creux.
+
+**Le critere n'est pas tenu**, et le chiffre n'est plus independant : la
+reference compte elle aussi les coups d'archet par les creux d'energie.
+
+### P5 - La note ajoutee
+
+Ce que P4 a laisse : dans la prise lente de Firework, un si glisse par
+habitude au milieu de la mesure 12 fait croire a l'aligneur qu'il est a la
+mesure 8, et il recule de quatre mesures pour l'expliquer. Une note etrangere
+coute au modele autant de trames qu'elle dure ; un saut, un prix fixe. Il
+faut un etat "note etrangere" a cout borne, **sans** y faire passer les
+fausses notes jouees a leur place, que l'application doit continuer de juger.
+Un test de synthese le decrit (`reprise_sans_arret_test.dart`, en attente).
 
 ### P2 - Alignement hors ligne
 

@@ -886,3 +886,33 @@ faute comptee a part.
    les melodies qui changent de hauteur, il tient. Sur une piece a notes
    repetees comme Firework, la mesure designee a retravailler peut etre
    fausse : c'est ce que P4 doit corriger.
+
+**Apres P4, le meme jour.** Deux changements, mesures sur le meme banc :
+
+1. **Le coup d'archet** (`BowChangeDetector`) : l'extracteur voit aussi les
+   creux d'energie de plus de 3 dB sur 23 ms, de part et d'autre. Deux
+   attaques a moins de 80 ms l'une de l'autre n'en font qu'une.
+2. **Un recul en plein jeu coute plus cher qu'un recul apres un arret.** Un
+   silence ne compte comme arret que s'il dure un quart de seconde : le creux
+   d'un changement d'archet ne doit pas ouvrir les reprises lointaines.
+
+| | Bonne mesure | Bonne note |
+|---|---|---|
+| Avant (verdict) | 73 % | 51 % |
+| Apres P4 | 92 % | 76 % |
+| Critere | 95 % | 90 % |
+
+La seance de Firework passe de 47 % a 95 % des notes dans la bonne mesure,
+et son suivi en direct de "perdu" a 86 %. **Le critere n'est toujours pas
+tenu**, et ce chiffre n'est plus independant : la reference compte elle aussi
+les coups d'archet par les creux d'energie.
+
+**Ce qui reste : la note ajoutee.** Dans la prise lente de Firework, l'enfant
+glisse un si au milieu de la mesure 12, par habitude des mesures 4 et 8.
+L'aligneur prefere croire qu'il joue la mesure 8 : il recule de quatre
+mesures plus tot, puis saute en avant a la fin. La cause est dans le modele :
+une note etrangere coute autant de trames qu'elle dure, un saut coute un prix
+fixe. Un etat "note etrangere" a cout borne la corrigerait, a condition de ne
+pas y faire passer les fausses notes jouees a leur place, que l'application
+doit continuer de juger. C'est le lot P5 ; un test de synthese le decrit et
+attend.

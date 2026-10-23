@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import '../audio/bow_change_detector.dart';
 import '../audio/onset_detector.dart';
 import '../audio/pitch_estimate.dart';
 import '../audio/yin_detector.dart';
@@ -34,8 +35,26 @@ class FeatureExtractor {
     this.frameSize = 2048,
     this.hopSize = 1024,
     this.a4 = PitchUtils.defaultA4,
+    this.bowChanges = true,
   })  : _yin = YinDetector(sampleRate: sampleRate),
-        _attaques = OnsetDetector(sampleRate: sampleRate);
+        _attaques = OnsetDetector(sampleRate: sampleRate),
+        _creux = BowChangeDetector(sampleRate: sampleRate);
+
+  /// Voir aussi les changements d'archet par le creux d'energie (lot P4).
+  ///
+  /// Le flux spectral seul ne compte pas les notes repetees a la meme
+  /// hauteur (ADR-019). Le drapeau n'existe que pour mesurer l'apport des
+  /// creux sur le banc ; l'application les voit toujours.
+  final bool bowChanges;
+
+  final BowChangeDetector _creux;
+
+  /// Deux attaques plus proches que ca sont le meme coup d'archet, vu par les
+  /// deux detecteurs : la plus ancienne compte, l'autre est oubliee. Sinon
+  /// l'aligneur avancerait de deux notes pour une.
+  static const int fusionMs = 80;
+
+  int? _derniereAttaqueMs;
 
   final int sampleRate;
   final int frameSize;
@@ -70,6 +89,13 @@ class FeatureExtractor {
     bool analysePitch = true,
   }) {
     _attaquesEnAttente.addAll(_attaques.addSamples(samples));
+    if (bowChanges) {
+      _attaquesEnAttente.addAll(_creux.addSamples(samples));
+      // Les deux detecteurs ne tranchent pas au meme rythme : un creux se
+      // confirme apres une attaque plus recente du flux spectral.
+      _attaquesEnAttente
+          .sort((Onset a, Onset b) => a.timestampMs.compareTo(b.timestampMs));
+    }
     _tampon.addAll(samples);
 
     final List<FeatureFrame> trames = <FeatureFrame>[];
@@ -77,14 +103,24 @@ class FeatureExtractor {
     while (_prochaine + frameSize <= _debutTampon + _tampon.length) {
       final int debut = _prochaine;
       final int timeMs = debut * 1000 ~/ sampleRate;
+      // Une trame attend que tous les creux qui la precedent soient
+      // tranches : sinon une prise donnee par paquets ne rendrait pas les
+      // memes trames que la meme prise donnee d'un coup.
+      if (bowChanges && _creux.decidedUntilMs < timeMs) {
+        break;
+      }
 
       // Une attaque marque la premiere trame qui commence apres elle, et une
       // seule : l'aligneur avancerait deux fois sinon.
       bool onset = false;
       while (_attaquesEnAttente.isNotEmpty &&
           _attaquesEnAttente.first.timestampMs <= timeMs) {
-        onset = true;
-        _attaquesEnAttente.removeAt(0);
+        final int t = _attaquesEnAttente.removeAt(0).timestampMs;
+        final int? derniere = _derniereAttaqueMs;
+        if (derniere == null || t - derniere >= fusionMs) {
+          onset = true;
+          _derniereAttaqueMs = t;
+        }
       }
 
       final int decalage = debut - _debutTampon;
@@ -120,9 +156,19 @@ class FeatureExtractor {
     return trames;
   }
 
+  /// La prise est finie : rend les trames que l'attente des creux retenait
+  /// encore. Une prise analysee d'un coup se termine par la ; une prise en
+  /// direct n'en a pas besoin, l'archet pose suffit a la terminer.
+  List<FeatureFrame> finish({bool analysePitch = true}) {
+    _creux.finish();
+    return addSamples(Float32List(0), analysePitch: analysePitch);
+  }
+
   /// Oublie tout : a appeler entre deux prises. Le temps repart de zero.
   void reset() {
     _attaques.reset();
+    _creux.reset();
+    _derniereAttaqueMs = null;
     _tampon.clear();
     _debutTampon = 0;
     _prochaine = 0;

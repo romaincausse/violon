@@ -85,9 +85,23 @@ class OfflineAligner {
     Float64List precedent = _modele.start(frames[0]);
     Float64List courant = Float64List(nEtats);
 
+    // Depuis quand c'est calme, a la trame qui precede : c'est ce qui dit si
+    // une reprise suit un vrai arret.
+    int? calmeDepuisMs = frames[0].rms < PerformanceFeatures.silenceRms
+        ? frames[0].timeMs
+        : null;
     for (int t = 1; t < t0; t++) {
+      final int? depuis = calmeDepuisMs;
       _modele.step(precedent, courant, frames[t],
-          retour: retour, base: t * nEtats);
+          retour: retour,
+          base: t * nEtats,
+          afterStop: depuis != null &&
+              frames[t].timeMs - depuis >= FollowModel.minStopMs);
+      if (frames[t].rms < PerformanceFeatures.silenceRms) {
+        calmeDepuisMs ??= frames[t].timeMs;
+      } else {
+        calmeDepuisMs = null;
+      }
       final Float64List echange = precedent;
       precedent = courant;
       courant = echange;

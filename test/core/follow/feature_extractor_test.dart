@@ -34,7 +34,8 @@ void main() {
       sortie.addAll(e.addSamples(Float32List.sublistView(signal, i, i + n)));
       i += n;
     }
-    return sortie;
+    // La fin de prise rend ce que l'attente des creux d'archet retenait.
+    return sortie..addAll(e.finish());
   }
 
   test('le decoupage du flux ne change aucune trame', () {
@@ -62,8 +63,10 @@ void main() {
   test('une trame sautee garde sa place, son energie et son attaque', () {
     final FeatureExtractor e = FeatureExtractor();
     final List<FeatureFrame> pleines = PerformanceFeatures.extract(signal);
-    final List<FeatureFrame> sautees =
-        e.addSamples(signal, analysePitch: false);
+    final List<FeatureFrame> sautees = <FeatureFrame>[
+      ...e.addSamples(signal, analysePitch: false),
+      ...e.finish(analysePitch: false),
+    ];
     expect(sautees.length, pleines.length);
     for (int i = 0; i < pleines.length; i++) {
       expect(sautees[i].timeMs, pleines[i].timeMs);
@@ -78,7 +81,10 @@ void main() {
     final FeatureExtractor e = FeatureExtractor();
     e.addSamples(signal);
     e.reset();
-    final List<FeatureFrame> f = e.addSamples(signal);
+    final List<FeatureFrame> f = <FeatureFrame>[
+      ...e.addSamples(signal),
+      ...e.finish(),
+    ];
     expect(f.first.timeMs, 0);
     expect(f.map(decrire).toList(),
         PerformanceFeatures.extract(signal).map(decrire).toList());
