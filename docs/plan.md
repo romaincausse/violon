@@ -2386,7 +2386,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
 | K8 | Les liaisons respectees | | ★★ | 2 |
 | K9 | Les nuances | | ★ | 3 |
-| K10 | La resonance | **Must** | ★★★ | 2 |
+| ~~K10~~ | ~~La resonance~~ | **Must** | ★★★ | fait |
 | ~~K11~~ | ~~Le travail lent, d'office~~ | **Must** | ★★★ | fait |
 | K12 | Le modele avant l'essai | | ★★ | 1 |
 | K13 | Le vibrato | | ★★ | 2 |
@@ -2503,6 +2503,21 @@ elles sont justes, la corde a vide vibre et le violon sonne. Un retour qui
 porte ce nom : *"Ton re ne fait pas vibrer la corde de re."* C'est ainsi qu'un
 professeur apprend a ecouter sa justesse, plutot que de la regarder sur un
 ecran.
+
+**Fait** (`Resonance`, `ToleranceBand.resonant`). Sol, re, la, mi et leurs
+octaves, places par la main -- les cordes a vide elles-memes disent l'accord,
+pas la main, et gardent leur marge --, ont leur propre marge, avec ou sans
+tonalite : la note sur cent n'est pleine qu'a 8 cents. **Le verdict de
+couleur garde la marge de la quinte, 25 cents**, et c'est le banc qui l'a
+decide : sur les 157 sol, re, la et mi doigtes des prises 01 a 08, l'enfant
+joue en moyenne quinze cents sous ses propres cordes a vide (mediane de
+l'ecart 18 cents, contre 23 pour les autres notes). A 20 cents, 43 % de ces
+notes passeraient au rouge ; a 25, 33 %. Le message porte le nom : dans le
+bilan d'une prise, la raison d'une mesure dont la justesse pese le plus
+devient *"ton re ne fait pas vibrer la corde de re"* quand une note de
+resonance en sort ; dans Progres, la carte de la main gauche dit *"Ton re ne
+fait pas vibrer la corde de re : il tombe bas"* quand l'ecart dure (dix cents
+de mediane, six notes, deux prises).
 
 ### Le travail
 

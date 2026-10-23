@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/scoring/finger_diagnosis.dart';
+import '../../core/scoring/resonance.dart';
 import '../../core/store/document_saver.dart';
 import '../../core/store/progress.dart';
 import '../../core/store/take_history.dart';
@@ -37,6 +38,7 @@ class ProgressScreen extends StatelessWidget {
   static const Key joursKey = Key('jours-joues');
   static const Key mainKey = Key('diagnostic-de-la-main');
   static const Key cordeKey = Key('diagnostic-de-la-corde');
+  static const Key resonanceKey = Key('diagnostic-de-la-resonance');
   static Key courbeKey(String key) => Key('courbe-$key');
 
   @override
@@ -76,10 +78,13 @@ class ProgressScreen extends StatelessWidget {
                     icon: const Icon(Icons.school_outlined),
                     label: const Text('Ma semaine, pour le professeur'),
                   ),
-                  if (FingerDiagnosis.of(history) case final FingerDiagnosis d
-                      when d.main != null || d.mainString != null) ...<Widget>[
+                  if ((FingerDiagnosis.of(history), Resonance.of(history))
+                      case (final FingerDiagnosis d, final ResonanceFinding? r)
+                      when d.main != null ||
+                          d.mainString != null ||
+                          r != null) ...<Widget>[
                     const SizedBox(height: 16),
-                    _Main(trouve: d.main, corde: d.mainString),
+                    _Main(trouve: d.main, corde: d.mainString, resonance: r),
                   ],
                   if (detailed) ...<Widget>[
                     const SizedBox(height: 16),
@@ -264,9 +269,16 @@ class _Trace extends CustomPainter {
 /// **Un seul doigt a la fois**, le plus net : *voila ta prochaine tache*, pas
 /// la liste de tout ce qui derive.
 class _Main extends StatelessWidget {
-  const _Main({required this.trouve, required this.corde});
+  const _Main({
+    required this.trouve,
+    required this.corde,
+    required this.resonance,
+  });
 
   final FingerFinding? trouve;
+
+  /// La corde a vide que la main fait taire (K10), s'il y en a une.
+  final ResonanceFinding? resonance;
 
   /// La corde ou la main est decalee (L3), s'il y en a une.
   final StringFinding? corde;
@@ -276,6 +288,7 @@ class _Main extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final FingerFinding? t = trouve;
     final StringFinding? c = corde;
+    final ResonanceFinding? r = resonance;
     return Card(
       key: ProgressScreen.mainKey,
       child: Padding(
@@ -300,6 +313,15 @@ class _Main extends StatelessWidget {
                 '${c.flat ? 'bas' : 'haut'} de '
                 '${c.medianCents.abs().round()} cents en general.',
                 key: ProgressScreen.cordeKey,
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+            if (r != null) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                '${r.sentence} Ecoute la corde a vide : juste, elle vibre '
+                'toute seule.',
+                key: ProgressScreen.resonanceKey,
                 style: theme.textTheme.bodyMedium,
               ),
             ],

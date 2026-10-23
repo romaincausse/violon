@@ -3,6 +3,7 @@ import '../music/pitch_utils.dart';
 import '../music/passage.dart';
 import '../music/score_note.dart';
 import '../play/harmonizer.dart';
+import 'resonance.dart';
 
 /// Ce que l'application a a dire d'une note, pendant qu'elle est jouee.
 ///
@@ -106,7 +107,14 @@ class LiveTuning {
   /// la tierce majeure, de vingt-et-un. Juger la tonique, la quarte et la
   /// quinte avec la marge d'une tierce laissait passer des notes que tout
   /// professeur aurait reprises.
+  ///
+  /// **Une note qui fait vibrer une corde a vide se juge plus serre encore**
+  /// (K10), avec ou sans tonalite : juste, le violon sonne ; a quelques cents,
+  /// la corde se tait.
   ToleranceBand bandFor(ScoreNote note) {
+    if (Resonance.judged(note.midi)) {
+      return ToleranceBand.resonant;
+    }
     final ({int tonic, bool minor})? t = tonality;
     if (t == null) {
       return ToleranceBand.imperfect;
@@ -305,6 +313,18 @@ class LiveTuning {
 /// La marge d'une note selon son degre (lot I3) : jusqu'ou elle vaut cent,
 /// et jusqu'ou elle est dite juste.
 enum ToleranceBand {
+  /// Sol, re, la, mi places par la main (K10) : la corde a vide du meme nom
+  /// vibre ou se tait.
+  ///
+  /// **Plus serree pour la note, pas pour la couleur.** La note sur cent
+  /// n'est pleine qu'a huit cents ; le verdict garde la marge de la quinte.
+  /// Sur le banc -- 157 sol, re, la et mi doigtes des prises 01 a 08 --,
+  /// l'enfant joue quinze cents sous ses cordes a vide en moyenne : a vingt
+  /// cents, 43 % passeraient au rouge, contre 33 % a vingt-cinq, et une
+  /// partition rouge partout est une regression. C'est la main qu'il faut
+  /// corriger, et le diagnostic le dit ([Resonance.of]).
+  resonant(8, 25),
+
   /// Tonique, quarte, quinte : deux cents d'un systeme a l'autre.
   perfect(10, 25),
 

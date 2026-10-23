@@ -113,4 +113,31 @@ void main() {
       'Sur la corde de mi, tu es haut de 16 cents en general.',
     );
   });
+
+  testWidgets('une note qui fait taire sa corde a vide est nommee (K10)', (
+    WidgetTester tester,
+  ) async {
+    NoteTrace n(int midi, double c) =>
+        NoteTrace(midi: midi, measure: 1, cents: c);
+    // Le re du 3e doigt sur la corde de la, bas d'une prise a l'autre ; le
+    // reste juste.
+    await poser(
+      tester,
+      TakeHistory.vide
+          .withTake(prise(30, notes: <NoteTrace>[
+            for (int k = 0; k < 3; k++) n(74, -14),
+            n(71, 2),
+            n(73, -1),
+          ]))
+          .withTake(prise(5, notes: <NoteTrace>[
+            for (int k = 0; k < 3; k++) n(74, -12),
+            n(71, 0),
+          ])),
+    );
+    expect(
+      tester.widget<Text>(find.byKey(ProgressScreen.resonanceKey)).data,
+      'Ton re ne fait pas vibrer la corde de re : il tombe bas. Ecoute la '
+      'corde a vide : juste, elle vibre toute seule.',
+    );
+  });
 }

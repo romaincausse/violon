@@ -17,10 +17,12 @@ import '../../core/music/passage.dart';
 import '../../core/play/count_in.dart';
 import '../../core/music/pitch_utils.dart';
 import '../../core/music/score_note.dart';
+import '../../core/scoring/finger_diagnosis.dart';
 import '../../core/scoring/live_tuning.dart';
 import '../../core/scoring/note_ladder.dart';
 import '../../core/scoring/measure_scores.dart';
 import '../../core/scoring/played_passage.dart';
+import '../../core/scoring/resonance.dart';
 import '../../core/scoring/tuning_trace.dart';
 import '../../core/scoring/rhythm_judge.dart';
 import '../../core/scoring/string_drift_monitor.dart';
@@ -1024,7 +1026,7 @@ class _SessionScreenState extends State<SessionScreen>
       ];
 
   /// La raison d'une tache, dite simplement et sans reproche.
-  static String? _raison(MeasureReport m) => switch (m.mainWeakness) {
+  String? _raison(MeasureReport m) => switch (m.mainWeakness) {
         Weakness.stops => 'tu t y arretes',
         Weakness.restarts => 'tu y reviens souvent',
         Weakness.hesitations => 'tu hesites avant une note',
@@ -1032,9 +1034,19 @@ class _SessionScreenState extends State<SessionScreen>
         Weakness.slowing =>
           'tu y ralentis de ${(100 * (1 - m.tempoRatio!)).round()} %',
         Weakness.rhythm => 'le rythme',
-        Weakness.tuning => 'la justesse',
+        Weakness.tuning => _resonance(m.measure) ?? 'la justesse',
         null => null,
       };
+
+  /// La corde a vide que la mesure fait taire (K10), dite par son nom, ou
+  /// `null`.
+  String? _resonance(int mesure) {
+    final ViolinString? s = Resonance.silencedIn(
+      widget.passage.notes.where((ScoreNote n) => n.measure == mesure),
+      _tuning,
+    );
+    return s == null ? null : resonanceReason(s);
+  }
 
   void _changerDeMode() {
     setState(() {
