@@ -49,7 +49,7 @@ lib/
 test/                  miroir de lib/, 675 tests
 assets/fonts/          Bravura (SIL OFL), livree non modifiee
 tool/                  script Verovio -- mort-ne, voir Etat
-docs/                  plan, decisions, journal, navigation, professeur
+docs/                  guide, plan, decisions, journal, navigation, professeur
 ```
 
 Quatre regles structurantes, detaillees dans `CLAUDE.md` :
@@ -74,6 +74,7 @@ make apk
 
 | Fichier | Contenu |
 |---------|---------|
+| `docs/guide-utilisation.html` | **le guide d'utilisation**, pour l'eleve et ses parents : une page a ouvrir dans un navigateur, ou a imprimer |
 | `docs/plan.md` | **le plan** : onze jalons, une ligne = une PR, trie par ROI |
 | `docs/decisions.md` | les treize ADR : pourquoi Flutter, pourquoi ce sens de suivi, pourquoi pas de backend, quel moteur de son |
 | `docs/journal.md` | les trois retournements du projet, et les tensions ouvertes |

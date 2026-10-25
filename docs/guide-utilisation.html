@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Violon – guide d'utilisation</title>
+<!-- Une seule page, sans rien a charger : elle se lit hors ligne, comme
+     l'application, et s'imprime telle quelle. -->
+<style>
+  :root {
+    --fond: #faf8f4;
+    --papier: #ffffff;
+    --encre: #1f1d1a;
+    --doux: #5d5850;
+    --trait: #e3ddd2;
+    --accent: #6d2440;
+    --juste: #2e7d32;
+    --bas: #1565c0;
+    --haut: #e65100;
+    --encart: #f3eee5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #181715;
+      --papier: #211f1c;
+      --encre: #ece8e1;
+      --doux: #b3ab9f;
+      --trait: #3a362f;
+      --accent: #e39ab6;
+      --juste: #7cc47f;
+      --bas: #7fb2ec;
+      --haut: #f3a26b;
+      --encart: #2a2723;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--fond);
+    color: var(--encre);
+    font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; }
+  h2 {
+    font-size: 1.4rem; margin: 3rem 0 .75rem; padding-top: 1rem;
+    border-top: 1px solid var(--trait);
+  }
+  h3 { font-size: 1.1rem; margin: 1.75rem 0 .5rem; }
+  p, li { max-width: 40rem; }
+  a { color: var(--accent); }
+  .chapeau { font-size: 1.15rem; color: var(--doux); margin: 0 0 1.5rem; }
+  nav {
+    background: var(--papier); border: 1px solid var(--trait);
+    border-radius: 12px; padding: .75rem 1.25rem; margin: 1.5rem 0;
+  }
+  nav ol { margin: .25rem 0; padding-left: 1.25rem; columns: 2 14rem; }
+  nav li { margin: .15rem 0; }
+  table {
+    width: 100%; border-collapse: collapse; margin: .75rem 0 1rem;
+    background: var(--papier); font-size: .95rem;
+  }
+  th, td {
+    text-align: left; vertical-align: top; padding: .5rem .6rem;
+    border: 1px solid var(--trait);
+  }
+  th { background: var(--encart); font-weight: 600; }
+  .tableau { overflow-x: auto; }
+  .encart {
+    background: var(--encart); border-left: 4px solid var(--accent);
+    border-radius: 6px; padding: .75rem 1rem; margin: 1rem 0;
+  }
+  .encart p { margin: .25rem 0; }
+  .ecran {
+    display: inline-block; padding: 0 .4rem; border: 1px solid var(--trait);
+    border-radius: 6px; background: var(--papier); font-weight: 600;
+    white-space: nowrap;
+  }
+  .juste { color: var(--juste); font-weight: 600; }
+  .bas { color: var(--bas); font-weight: 600; }
+  .haut { color: var(--haut); font-weight: 600; }
+  ol.etapes > li { margin: .5rem 0; }
+  footer { color: var(--doux); font-size: .9rem; margin-top: 3rem; }
+  @media print {
+    body { background: #fff; color: #000; font-size: 12pt; }
+    nav { break-after: page; }
+    h2 { break-after: avoid; }
+    table, .encart { break-inside: avoid; }
+    a { color: #000; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Violon – guide d'utilisation</h1>
+<p class="chapeau">L'application écoute l'élève jouer sur sa partition papier,
+le suit note après note, et lui dit quelle mesure retravailler — une seule à la
+fois. Le téléphone n'est pas un pupitre : c'est un professeur qui écoute.</p>
+
+<nav aria-label="Sommaire">
+  <strong>Sommaire</strong>
+  <ol>
+    <li><a href="#avant">Avant de jouer</a></li>
+    <li><a href="#onglets">Les quatre onglets</a></li>
+    <li><a href="#seance">Ma séance du jour</a></li>
+    <li><a href="#jouer">Jouer un passage</a></li>
+    <li><a href="#bilan">Lire le bilan</a></li>
+    <li><a href="#boucle">La boucle de travail</a></li>
+    <li><a href="#repertoire">Le répertoire</a></li>
+    <li><a href="#gammes">Gammes et exercices</a></li>
+    <li><a href="#progres">Progrès</a></li>
+    <li><a href="#outils">Outils et jeux</a></li>
+    <li><a href="#adultes">Pour les parents et le professeur</a></li>
+    <li><a href="#limites">Ce qu'elle ne fait pas</a></li>
+  </ol>
+</nav>
+
+<h2 id="avant">1. Avant de jouer</h2>
+<p>Trois gestes, la première fois et à chaque séance.</p>
+<ol class="etapes">
+  <li><strong>Poser le téléphone</strong> sur le pupitre, à côté de la
+  partition, à environ 70 cm du violon. Le micro écoute de là ; inutile de le
+  rapprocher.</li>
+  <li><strong>Autoriser le micro</strong> quand le téléphone le demande. Sans
+  lui, l'application ne peut rien entendre ni noter.</li>
+  <li><strong>Accorder</strong> : <span class="ecran">Outils › Accorder</span>,
+  ou l'icône de réglage en haut de l'écran Jouer. Joue chaque corde à vide ; la
+  jauge dit si elle est trop basse ou trop haute, et les quintes entre deux
+  cordes s'affichent <span class="juste">juste</span>,
+  <span class="haut">large</span> ou <span class="bas">étroite</span>.</li>
+</ol>
+<div class="encart">
+  <p><strong>L'accord compte pour la note.</strong> La justesse est jugée par
+  rapport au <em>la</em> de ton violon, pas à une référence absolue. Si le
+  violon est accordé un peu haut, l'accordeur propose
+  <span class="ecran">Adopter 442 Hz</span> (par exemple) : c'est ce <em>la</em>
+  qui servira de référence ensuite.</p>
+</div>
+<p>Un doute sur le micro ? <span class="ecran">Outils › Est-ce qu'elle m'entend ?</span>
+montre ce qu'il capte.</p>
+
+<h2 id="onglets">2. Les quatre onglets</h2>
+<p>L'application s'ouvre toujours sur le travail en cours : pas d'accueil, le
+violon est déjà en main.</p>
+<div class="tableau">
+<table>
+  <thead><tr><th>Onglet</th><th>Ce qu'on y fait</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Jouer</strong></td><td>Jouer le passage en cours et lire
+      le bilan. C'est l'écran de neuf ouvertures sur dix.</td></tr>
+    <tr><td><strong>Répertoire</strong></td><td>Les devoirs de la semaine, les
+      gammes et exercices, les morceaux importés, et changer de passage.</td></tr>
+    <tr><td><strong>Progrès</strong></td><td>Ce qui a été joué aujourd'hui, la
+      semaine résumée pour le professeur, ce que fait la main gauche.</td></tr>
+    <tr><td><strong>Outils</strong></td><td>Accorder, le bourdon, le métronome,
+      les jeux, le solfège, le concert, et quelques réglages.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="seance">3. Ma séance du jour</h2>
+<p>Le bandeau <span class="ecran">Ma séance du jour</span> en haut de l'écran
+Jouer enchaîne trois étapes, et finit toujours en musique.</p>
+<ol class="etapes">
+  <li><strong>Échauffement</strong> : une minute de cordes à vide — un archet
+  entier, lent, le son égal — puis une gamme dans la tonalité du morceau, trois
+  minutes au plus. Le bouton <span class="ecran">Fait</span> passe à la
+  suite.</li>
+  <li><strong>Travail</strong> : la boucle sur les mesures choisies (le devoir
+  du professeur, ou la mesure qui a coincé la dernière fois), six essais, et on
+  termine sur une réussite.</li>
+  <li><strong>Musique</strong> : le morceau entier, avec l'accompagnement.</li>
+</ol>
+<p>Au départ, <span class="ecran">Commencer</span> propose le travail du jour
+et permet de <span class="ecran">Commencer par le travail</span> (la gamme vient
+après). Les trois pastilles du bandeau montrent où on en est ; le menu
+<span class="ecran">⋮</span> permet de passer une étape ou d'arrêter la séance.
+À la fin, une phrase résume la soirée.</p>
+
+<h2 id="jouer">4. Jouer un passage</h2>
+<h3>Deux façons de jouer</h3>
+<div class="tableau">
+<table>
+  <thead><tr><th></th><th>À mon tempo (par défaut)</th><th>Au métronome</th></tr></thead>
+  <tbody>
+    <tr><td>Qui mène</td><td>L'élève. L'application le suit.</td>
+      <td>L'horloge. Le curseur avance au tempo choisi.</td></tr>
+    <tr><td>Départ</td><td>Quand il veut : il suffit de jouer.</td>
+      <td>Après une mesure de décompte.</td></tr>
+    <tr><td>Arrêts, reprises</td><td>Normaux : elle le retrouve où il
+      reprend.</td><td>Le curseur continue sans lui.</td></tr>
+    <tr><td>Fin</td><td>Seule, quand il pose l'archet après la dernière
+      note.</td><td>À la fin du passage.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Le lien <span class="ecran">Jouer au métronome</span> /
+<span class="ecran">Jouer à mon tempo</span> sous le titre passe de l'un à
+l'autre. Pendant qu'elle note, l'application n'émet aucun son : au métronome,
+la pulsation est une barre qui bat à l'écran ; à son tempo, un pouls visuel bat
+au tempo qu'il tient vraiment.</p>
+
+<h3>Choisir quoi jouer</h3>
+<p>L'icône <span class="ecran">Changer de passage</span> en haut à droite, ou
+l'onglet Répertoire. Le choix des mesures et le tempo (par exemple
+<span class="ecran">66 bpm</span>) se règlent sous le titre.</p>
+
+<h3>Trois affichages</h3>
+<p>L'icône d'affichage en haut passe de l'un à l'autre :</p>
+<ul>
+  <li><strong>Découverte</strong> — il déchiffre : pas de partition à l'écran,
+  seulement le ruban de justesse et les cases des mesures. Il lit son
+  papier.</li>
+  <li><strong>Par cœur</strong> — il connaît le passage : la partition à
+  l'écran, le curseur et les notes en couleur. On peut zoomer à deux doigts,
+  passer à une ligne qui défile, ou en <span class="ecran">Plein écran</span>.</li>
+  <li><strong>Pupitre</strong> — trois choses en grand, lisibles à 70 cm : où
+  il en est, comment ça va, et le bouton.</li>
+</ul>
+
+<h3>Pendant qu'il joue</h3>
+<ul>
+  <li><strong>Les notes</strong> prennent une couleur :
+  <span class="juste">vert</span> juste, <span class="bas">bleu</span> trop bas,
+  <span class="haut">orange</span> trop haut. Jamais de rouge : la couleur dit
+  dans quel sens corriger, pas qu'il y a faute.</li>
+  <li><strong>Le ruban</strong> trace la hauteur jouée en direct : au milieu,
+  c'est juste.</li>
+  <li><strong>Les cases des mesures</strong> se remplissent à mesure qu'il
+  joue ; plus elle est pleine, mieux la mesure a tenu. Elles se lisent du coin
+  de l'œil, les yeux sur le papier.</li>
+</ul>
+<p>Si l'application ne sait plus où il en est, elle le dit, et le retrouve dès
+qu'il rejoue.</p>
+
+<h2 id="bilan">5. Lire le bilan</h2>
+<p>À la fin d'une prise, quelques lignes sous les cases des mesures :</p>
+<div class="tableau">
+<table>
+  <thead><tr><th>Ligne</th><th>Ce qu'elle dit</th></tr></thead>
+  <tbody>
+    <tr><td><em>Tempo +5 depuis tout à l'heure.</em></td><td>Une première fois,
+      quand il y en a une : un record, un tempo qui monte. Elle passe devant les
+      chiffres.</td></tr>
+    <tr><td><em>Justesse 94 – Rythme 73</em></td><td>Deux notes sur 100.</td></tr>
+    <tr><td><em>Tempo tenu : 70 à la noire</em></td><td>Le tempo qu'il a
+      vraiment joué.</td></tr>
+    <tr><td><em>À retravailler : mesure 7 – …</em></td><td><strong>Une seule
+      mesure</strong>, et pourquoi. Ou <em>Tout tient.</em></td></tr>
+    <tr><td><em>Ton mi a baissé : réaccorde.</em></td><td>Une corde s'est
+      désaccordée en jouant.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Les raisons possibles d'une mesure à retravailler : il s'y arrête, il y
+revient souvent, il hésite avant une note, une note y passe trop vite, il y
+ralentit, le rythme, la justesse — dite par la corde quand une note qui devrait
+la faire vibrer tombe à côté (<em>ton ré ne fait pas vibrer la corde de ré</em>)
+—, une liaison qui se casse (<em>la liaison se casse sur le fa#</em>), une
+nuance qu'on n'entend pas (<em>on n'entend pas le forte</em>).</p>
+
+<div class="encart">
+  <p><strong>Jouer lent n'est pas une faute.</strong> Le rythme est jugé au
+  tempo qu'il tient, pas à celui de la partition.</p>
+</div>
+<div class="tableau">
+<table>
+  <thead><tr><th>Ce qui est joué</th><th>Ce que dit l'application</th></tr></thead>
+  <tbody>
+    <tr><td>Tout à 74 au lieu de 92, rythme impeccable</td><td>Tempo tenu :
+      74. Pas une faute.</td></tr>
+    <tr><td>Une noire jouée comme une croche</td><td>Faute de rythme.</td></tr>
+    <tr><td>Deux secondes d'arrêt avant une note</td><td>Une hésitation, comptée
+      à part.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>En dessous du bilan :</p>
+<ul>
+  <li><span class="ecran">Travailler la mesure 7</span> ouvre la boucle sur la
+  mesure désignée.</li>
+  <li>Après deux prises, <span class="ecran">Avant</span> et
+  <span class="ecran">Après</span> font réentendre la première et la dernière.
+  Elles ne sont gardées que le temps de la séance.</li>
+  <li>À côté du bouton <span class="ecran">Jouer le passage</span> : la boucle
+  (choisir ses mesures soi-même) et l'accompagnement.</li>
+</ul>
+
+<h2 id="boucle">6. La boucle de travail</h2>
+<p>Quelques mesures, encore et encore, et le tempo qui monte quand ça tient.</p>
+<ul>
+  <li><strong>Lent d'abord</strong> : elle part à 70 % du tempo visé (celui du
+  devoir, sinon celui de la partition), ou deux crans sous ce qu'il tient déjà
+  s'il va plus vite.</li>
+  <li><strong>Un essai réussi</strong> : jusqu'au bout, sans s'arrêter,
+  justesse 85 et rythme 80 au moins, au tempo visé à 5 % près.</li>
+  <li><strong>Deux réussites de suite</strong> : le tempo monte de 6. Les deux
+  points sous <span class="ecran">Vise 64 (noire)</span> comptent les
+  réussites.</li>
+  <li><span class="ecran">Écouter d'abord</span> fait entendre les mesures au
+  piano, au tempo de l'essai, puis le micro s'ouvre ;
+  <span class="ecran">Réécouter</span> les rejoue en cours de route.</li>
+  <li>Sur un échec, <span class="ecran">Arrêter</span> propose
+  <em>une dernière fois</em> au tempo qui tenait : on termine sur une
+  réussite.</li>
+</ul>
+<p>Une erreur ne remet jamais rien à zéro : le meilleur tempo reste acquis.</p>
+
+<h2 id="repertoire">7. Le répertoire</h2>
+<h3>Les devoirs de la semaine</h3>
+<p>En haut de l'onglet : chaque devoir, son tempo visé et où il en est
+(<em>Vise 82 – tu en es à 57</em>), et le mot du professeur. Ce mot s'affiche
+aussi au-dessus de la partition quand on joue ce passage. La croix retire un
+devoir.</p>
+<p>Pour poser un devoir : choisir le passage, puis
+<span class="ecran">Donner ce passage en devoir</span>, régler le tempo visé,
+écrire un mot si on veut, <span class="ecran">Poser le devoir</span>.</p>
+
+<h3>Les morceaux</h3>
+<p><span class="ecran">Importer un morceau</span> lit une partition au format
+MusicXML (<code>.musicxml</code> ou <code>.mxl</code>), celui qu'exportent
+MuseScore et la plupart des logiciels de partition. Les notes, les mesures,
+l'armure, le tempo, les doigtés, les liaisons et les nuances sont repris.
+Ensuite, choisir les mesures avec le curseur et
+<span class="ecran">Travailler ces mesures</span>. La corbeille retire le
+morceau sans toucher au fichier.</p>
+<p><span class="ecran">Saisir un passage</span> permet d'entrer quelques
+mesures à la main, note par note.</p>
+
+<h2 id="gammes">8. Gammes et exercices</h2>
+<p><span class="ecran">Répertoire › Gammes et exercices</span>. La carte du
+haut donne <strong>la prochaine tâche</strong> ; le catalogue complet est en
+dessous, en neuf paliers tirés des méthodes classiques (Ševčík, Schradieck,
+Hřímalý) :</p>
+<div class="tableau">
+<table>
+  <thead><tr><th>Palier</th><th>Ce qu'on y travaille</th></tr></thead>
+  <tbody>
+    <tr><td>1. La main se pose</td><td>Un seul écartement des doigts, sur les
+      quatre cordes.</td></tr>
+    <tr><td>2. Les autres écartements</td><td>Le demi-ton change de place.</td></tr>
+    <tr><td>3. Une octave</td><td>Les premières gammes.</td></tr>
+    <tr><td>4. Deux octaves</td><td>La gamme traverse les quatre cordes.</td></tr>
+    <tr><td>5. Les arpèges</td><td>Des sauts, sans gamme pour guider
+      l'oreille.</td></tr>
+    <tr><td>6. Le mineur</td><td>Harmonique et mélodique.</td></tr>
+    <tr><td>7. La troisième position</td><td>Les mêmes doigts, une tierce plus
+      haut.</td></tr>
+    <tr><td>8. Les démanchés</td><td>De la première à la troisième et retour :
+      la note d'arrivée compte, le glissé non.</td></tr>
+    <tr><td>9. Trois octaves</td><td>La gamme et l'arpège de sol, jusqu'en
+      sixième position.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>À la première ouverture, une question —
+<span class="ecran">Depuis combien d'années joues-tu ?</span> — fait commencer
+au bon palier. Le bouton <span class="ecran">Niveau : …</span> permet de la
+changer. Un palier à cadenas reste jouable : le cadenas dit où en est la
+progression, il ne ferme rien.</p>
+<p>En choisissant un exercice, trois façons de le jouer :</p>
+<ul>
+  <li><strong>Travailler</strong> : avec le bourdon et le métronome. Rien
+  n'est noté.</li>
+  <li><strong>Le passer</strong> : en silence, noté. C'est ce qui fait avancer
+  la progression : un exercice est acquis quand il est joué proprement au tempo
+  visé.</li>
+  <li><strong>Note à note</strong> (motifs de doigts) : on n'avance que sur la
+  bonne note, et l'aide dit quelle corde et quel doigt.</li>
+</ul>
+
+<h2 id="progres">9. Progrès</h2>
+<ul>
+  <li><strong>Aujourd'hui</strong> : le nombre de prises, les minutes
+  d'archet, les jours joués dans le mois, les nouveaux records.</li>
+  <li><span class="ecran">Ma semaine, pour le professeur</span> : ce qui a
+  monté et ce qui résiste encore, à <span class="ecran">Copier pour
+  l'envoyer</span> ou à <span class="ecran">Enregistrer</span> dans un
+  fichier.</li>
+  <li><strong>Ta main gauche</strong> : ce qui se répète d'une prise à
+  l'autre, dit comme un professeur — <em>ton 2<sup>e</sup> doigt haut tombe
+  bas, avance-le un peu vers le chevalet</em>, une corde où la main est
+  décalée, une corde à vide que la main fait taire.</li>
+</ul>
+
+<h2 id="outils">10. Outils et jeux</h2>
+<div class="tableau">
+<table>
+  <thead><tr><th>Outil</th><th>À quoi il sert</th></tr></thead>
+  <tbody>
+    <tr><td>Accorder</td><td>Les quatre cordes et les quintes.</td></tr>
+    <tr><td>Jouer librement</td><td>Elle écoute, elle ne note rien ; on peut
+      se réécouter.</td></tr>
+    <tr><td>Jeux</td><td>Cinq jeux, un record chacun (ci-dessous).</td></tr>
+    <tr><td>Concert</td><td>Enregistrer une prise pour l'envoyer à quelqu'un,
+      ou la garder dans un fichier. C'est la seule chose que l'application
+      enregistre, et elle ne la garde pas elle-même.</td></tr>
+    <tr><td>Lire les notes</td><td>Une note sur la portée : il la joue.</td></tr>
+    <tr><td>Dictée</td><td>Elle joue une mesure ; il la rejoue d'oreille.</td></tr>
+    <tr><td>Bourdon</td><td>Une note tenue, pour jouer juste par-dessus.</td></tr>
+    <tr><td>Métronome</td><td>Celui qui fait du bruit, pour travailler hors
+      notation.</td></tr>
+  </tbody>
+</table>
+</div>
+<h3>Les jeux</h3>
+<div class="tableau">
+<table>
+  <thead><tr><th>Jeu</th><th>Le principe</th><th>Le record</th></tr></thead>
+  <tbody>
+    <tr><td>L'écho</td><td>Elle joue un motif, il le rejoue ; le motif
+      s'allonge d'une note à chaque réussite.</td><td>Le plus long motif.</td></tr>
+    <tr><td>Tiens la note</td><td>Une note du morceau, juste à 10 cents près,
+      le plus longtemps possible ; le son de chaque archet est jugé
+      aussi.</td><td>La plus longue tenue juste.</td></tr>
+    <tr><td>Cordes à vide</td><td>Un archet entier, lent : seul le son compte,
+      égal du début à la fin.</td><td>Le plus long archet égal.</td></tr>
+    <tr><td>Le vibrato</td><td>Deux, trois ou quatre oscillations par temps sur
+      un pouls qu'on voit, ou libre.</td><td>La plus longue note vibrée
+      régulièrement.</td></tr>
+    <tr><td>Le tempo caché</td><td>Quatre clics, puis le silence : il continue
+      seul huit temps.</td><td>Un score sur 100.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Un record ne baisse jamais.</p>
+
+<h3>L'accompagnement</h3>
+<p>L'icône de piano à côté de <span class="ecran">Jouer le passage</span>. On
+choisit ce qu'elle joue et avec quel instrument, et
+<span class="ecran">En boucle</span> pour que le passage recommence sans arrêt.
+Pendant l'accompagnement, elle joue et ne note rien.
+<span class="ecran">Elle me suit</span> (l'accompagnement suit le tempo de
+l'élève) ne marche qu'avec un casque filaire : un casque Bluetooth a trop de
+retard.</p>
+
+<h2 id="adultes">11. Pour les parents et le professeur</h2>
+<p>Dans <span class="ecran">Outils</span>, sous <em>Pour les grands</em> :</p>
+<ul>
+  <li><strong>Mode leçon</strong> : le bilan donne le détail chiffré (les
+  notes hors de leur marge, en cents ; les reprises et arrêts par mesure), la
+  boucle propose de chercher le <em>point de rupture</em> (le tempo monte
+  jusqu'à ce que ça casse, puis redescend), et Progrès montre les courbes de
+  tempo jour après jour. À la maison, mieux vaut le laisser éteint : l'enfant
+  voit une tâche, pas une liste.</li>
+  <li><strong>Est-ce qu'elle m'entend ?</strong> : vérifier le micro.</li>
+  <li><strong>Latence</strong> : mesurer, une fois et au calme, le retard du
+  son du téléphone, pour que l'accompagnement tombe en même temps que le
+  violon.</li>
+</ul>
+<p>Le professeur pose le travail par les devoirs (tempo visé et un mot), et lit
+la semaine dans <span class="ecran">Progrès › Ma semaine</span>.</p>
+
+<h2 id="limites">12. Ce qu'elle ne fait pas</h2>
+<ul>
+  <li><strong>Elle émet ou elle écoute, jamais les deux.</strong> Pendant
+  qu'elle note, aucun son : un clic ou un accompagnement rentrerait dans le
+  micro. Le métronome y est visuel.</li>
+  <li><strong>Rien n'est enregistré</strong>, sauf la prise du mode Concert,
+  qu'on envoie ou qu'on range soi-même. Avant / Après s'effacent en quittant.</li>
+  <li><strong>Tout reste sur le téléphone</strong> : pas de compte, pas de
+  serveur, pas d'Internet.</li>
+  <li><strong>Elle ne juge pas</strong> la posture, la tenue d'archet ni le
+  phrasé : c'est le travail du professeur.</li>
+  <li><strong>Une seule ligne de notes</strong> : une double corde est réduite
+  à sa note aiguë, et l'import le signale. Les triolets sont bien suivis et
+  notés, mais pas encore dessinés correctement sur la portée.</li>
+</ul>
+
+<footer>Guide de l'application Violon, version du 25 octobre 2026.</footer>
+</main>
+</body>
+</html>
