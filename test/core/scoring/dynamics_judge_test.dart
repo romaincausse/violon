@@ -102,4 +102,11 @@ void main() {
     });
     expect(juger(p, <double>[-26, -26, -26, -26, -31, -31, -31, -31]), isEmpty);
   });
+
+  test('une nuance se dit en toutes lettres : f se lirait fa', () {
+    expect(DynamicsJudge.nameOf('f'), 'forte');
+    expect(DynamicsJudge.nameOf('mp'), 'mezzo piano');
+    expect(DynamicsJudge.nameOf('pp'), 'pianissimo');
+    expect(DynamicsJudge.nameOf('sfz'), 'sfz');
+  });
 }

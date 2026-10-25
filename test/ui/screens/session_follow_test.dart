@@ -5,6 +5,7 @@ import 'package:violon/core/audio/fake_pitch_source.dart';
 import 'package:violon/core/audio/pitch_estimate.dart';
 import 'package:violon/core/audio/pitch_source.dart';
 import 'package:violon/core/audio/take_player.dart';
+import 'package:violon/core/exercises/work_loop.dart';
 import 'package:violon/core/follow/performance_features.dart';
 import 'package:violon/core/music/note_value.dart';
 import 'package:violon/core/music/passage.dart';
@@ -52,6 +53,7 @@ void main() {
     TakePlayerFactory? liseur,
     bool lecon = false,
     List<String> Function(TakeRecord)? firstsOf,
+    void Function(BarSelection, int)? boucler,
   }) async {
     t = 0;
     await tester.pumpWidget(
@@ -67,6 +69,7 @@ void main() {
           clock: () => DateTime(2026, 10, 2, 18),
           takePlayerFactory: liseur,
           lesson: lecon,
+          onLoop: boucler,
           pitchSourceFactory: () async =>
               micro = FakePitchSource(const <PitchEstimate>[]),
         ),
@@ -368,5 +371,61 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('bilan-score')));
     expect(score.data, startsWith('Justesse'));
     expect(score.style?.fontSize, lessThan(16));
+  });
+
+  testWidgets(
+      'un bilan long ne deborde pas : il defile, le bouton reste la, '
+      'dans les trois profils et les deux orientations',
+      (WidgetTester tester) async {
+    // Le cas du S22 : deux prises (avant / apres), une premiere fois, une
+    // tache avec sa raison, le detail du mode lecon et le bouton pour
+    // travailler la mesure. Sur un petit ecran, la colonne debordait.
+    await tester.binding.setSurfaceSize(const Size(360, 520));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final FakeTakePlayer liseur = FakeTakePlayer();
+    await poser(
+      tester,
+      liseur: () => liseur,
+      lecon: true,
+      garder: (TakeRecord _) {},
+      firstsOf: (TakeRecord r) => <String>['Tempo +5 depuis tout a l heure.'],
+      boucler: (BarSelection s, int p) {},
+    );
+    Future<void> unePrise() async {
+      await demarrer(tester);
+      await jouer(tester, null, 5);
+      for (final int m in <int>[62, 64, 66, 67, 69]) {
+        // Un arret avant le fa# : la mesure 1 devient la tache.
+        if (m == 66) {
+          await jouer(tester, null, 60);
+        }
+        await jouer(tester, m, 26, cents: m == 64 ? 45 : 0);
+      }
+      await jouer(tester, null, 90);
+      await tester.pump(const Duration(milliseconds: 60));
+    }
+
+    await unePrise();
+    await unePrise();
+    expect(find.byKey(SessionScreen.avantKey), findsOneWidget);
+    expect(find.byKey(SessionScreen.travaillerKey), findsOneWidget);
+    expect(find.text('Travailler la mesure 1'), findsOneWidget,
+        reason: 'une mesure : la, pas les');
+    for (final Size ecran in <Size>[
+      const Size(360, 520),
+      const Size(740, 360),
+    ]) {
+      await tester.binding.setSurfaceSize(ecran);
+      await tester.pump();
+      for (int profil = 0; profil < 3; profil++) {
+        final String ou = 'profil $profil, ${ecran.width}x${ecran.height}';
+        expect(tester.takeException(), isNull, reason: ou);
+        // Le bouton de la prise reste atteignable, sans defiler.
+        expect(find.text('Jouer le passage').hitTestable(), findsOneWidget,
+            reason: ou);
+        await tester.tap(find.byKey(SessionScreen.profilKey));
+        await tester.pump();
+      }
+    }
   });
 }

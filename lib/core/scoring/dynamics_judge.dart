@@ -72,6 +72,20 @@ class DynamicsJudge {
     'fff': 7,
   };
 
+  /// Le nom d'une nuance, en toutes lettres : "f" se lirait comme la note
+  /// fa, et un enfant ne sait pas forcement ce que "mp" abrege.
+  static String nameOf(String mark) => switch (mark) {
+        'ppp' => 'pianississimo',
+        'pp' => 'pianissimo',
+        'p' => 'piano',
+        'mp' => 'mezzo piano',
+        'mf' => 'mezzo forte',
+        'f' => 'forte',
+        'ff' => 'fortissimo',
+        'fff' => 'fortississimo',
+        _ => mark,
+      };
+
   /// Ce que la prise a fait de chaque nuance qu'elle a jouee.
   static List<DynamicsFinding> judge({
     required Passage passage,
