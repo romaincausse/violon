@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -1056,7 +1057,7 @@ class _SessionScreenState extends State<SessionScreen>
   static String _nuance(DynamicsFinding d) => switch (d.mark) {
         'cresc' => 'le crescendo ne monte pas',
         'dim' => 'le diminuendo ne descend pas',
-        final String n => 'le $n ne s entend pas : '
+        final String n => 'on n entend pas le ${DynamicsJudge.nameOf(n)} : '
             '${d.louder ? 'plus fort' : 'plus doux'} qu avant',
       };
 
@@ -1257,29 +1258,24 @@ class _SessionScreenState extends State<SessionScreen>
     // Le profil pupitre ne montre que trois choses, en grand : ou il en est,
     // comment ca va, et le bouton. Rien a chercher, rien a lire.
     if (_profil == DisplayProfile.pupitre) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Spacer(),
+      return _empilement(
+        retour: <Widget>[
           TuningRibbon(trace: _trace, height: 96),
           const SizedBox(height: 20),
           _mesures(hauteur: 72),
-          const Spacer(),
-          _Bandeau(
-            etat: _mic,
-            bilan: _bilan(),
-            derive: _derive,
-            attend: _attendLePremierSon,
-            cherche: _cherche,
-          ),
           const SizedBox(height: 20),
-          _bouton(),
         ],
+        ecartDuBouton: 20,
+        centrerLeRetour: true,
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
+    // **Le bilan cede la place, le bouton jamais.** Apres deux prises, un
+    // bilan de cinq lignes, l'avant / apres et la mesure a travailler ne
+    // tenaient plus sur le S22 : la colonne debordait de cinquante-quatre
+    // points et le bouton passait sous la barre du bas. Le bilan defile
+    // donc quand il n'a plus la place, et la partition prend ce qui reste.
+    return _empilement(
+      haut: <Widget>[
         _entete(),
         if (_consigne() case final Widget c) c,
         // Douze points, pas quarante-quatre : chaque point pris ici l'est a
@@ -1289,28 +1285,81 @@ class _SessionScreenState extends State<SessionScreen>
         // laisse jouer au sien (ADR-009).
         if (!_suit) _metronome() else _pouls(),
         if (_choixDuMode() case final Widget choix) choix,
-        // En decouverte, la partition a l'ecran serait une seconde partition
-        // a suivre, en plus petit que celle du pupitre. Elle encombre.
-        if (_profil == DisplayProfile.parCoeur)
-          Expanded(child: _partition(orientation))
-        else if (_profil == DisplayProfile.decouverte)
-          Expanded(child: _echelle())
-        else
-          const Spacer(),
+      ],
+      // En decouverte, la partition a l'ecran serait une seconde partition a
+      // suivre, en plus petit que celle du pupitre. Elle encombre.
+      milieu: _profil == DisplayProfile.parCoeur
+          ? _partition(orientation)
+          : _profil == DisplayProfile.decouverte
+              ? _echelle()
+              : null,
+      // La partition ne descend pas sous le tiers de l'ecran : c'est elle
+      // qu'il vient regarder. L'echelle, elle, peut disparaitre.
+      milieuMinimal: _profil == DisplayProfile.parCoeur ? 1 / 3 : 0,
+      retour: <Widget>[
         const SizedBox(height: 8),
         TuningRibbon(trace: _trace),
         const SizedBox(height: 6),
         _mesures(),
         const SizedBox(height: 8),
-        _Bandeau(
-          etat: _mic,
-          bilan: _bilan(),
-          derive: _derive,
-          attend: _attendLePremierSon,
-          cherche: _cherche,
+      ],
+      ecartDuBouton: 16,
+    );
+  }
+
+  /// Une colonne ou **le bilan cede la place, et le bouton jamais.**
+  ///
+  /// Apres deux prises, un bilan de cinq lignes, l'avant / apres et la mesure
+  /// a travailler ne tenaient plus sur le S22 : la colonne debordait de
+  /// cinquante-quatre points et le bouton passait sous la barre du bas. Le
+  /// bilan defile donc quand il n'a plus la place ; le milieu -- partition ou
+  /// echelle -- prend ce qui reste.
+  Widget _empilement({
+    required List<Widget> retour,
+    required double ecartDuBouton,
+    List<Widget> haut = const <Widget>[],
+    Widget? milieu,
+    double milieuMinimal = 0,
+    bool centrerLeRetour = false,
+  }) {
+    Widget colonne(List<Widget> enfants) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: enfants,
+        );
+    return CustomMultiChildLayout(
+      delegate: _MiseEnPagePortrait(
+        milieuMinimal: milieuMinimal,
+        centrerLeRetour: centrerLeRetour,
+      ),
+      children: <Widget>[
+        LayoutId(id: _Zone.haut, child: colonne(haut)),
+        LayoutId(id: _Zone.milieu, child: milieu ?? const SizedBox.shrink()),
+        // Le retour et le bilan defilent ensemble, ancres en bas : quand la
+        // place manque, c'est le bilan qu'on voit, le ruban passe dessus.
+        LayoutId(
+          id: _Zone.bas,
+          child: SingleChildScrollView(
+            reverse: true,
+            child: colonne(<Widget>[
+              ...retour,
+              _Bandeau(
+                etat: _mic,
+                bilan: _bilan(),
+                derive: _derive,
+                attend: _attendLePremierSon,
+                cherche: _cherche,
+              ),
+            ]),
+          ),
         ),
-        const SizedBox(height: 16),
-        _bouton(),
+        LayoutId(
+          id: _Zone.bouton,
+          child: Padding(
+            padding: EdgeInsets.only(top: ecartDuBouton),
+            child: _bouton(),
+          ),
+        ),
       ],
     );
   }
@@ -1322,24 +1371,15 @@ class _SessionScreenState extends State<SessionScreen>
   /// systemes, ce qui est justement l'interet de tourner l'ecran.
   Widget _enPaysage(Orientation orientation) {
     if (_profil == DisplayProfile.pupitre) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Spacer(),
+      return _empilement(
+        retour: <Widget>[
           TuningRibbon(trace: _trace, height: 64),
           const SizedBox(height: 12),
           _mesures(hauteur: 48),
-          const Spacer(),
-          _Bandeau(
-            etat: _mic,
-            bilan: _bilan(),
-            derive: _derive,
-            attend: _attendLePremierSon,
-            cherche: _cherche,
-          ),
           const SizedBox(height: 12),
-          _bouton(),
         ],
+        ecartDuBouton: 12,
+        centrerLeRetour: true,
       );
     }
     return Row(
@@ -1685,7 +1725,9 @@ class _SessionScreenState extends State<SessionScreen>
               bilan!.pulse ?? widget.passage.pulseBpm,
             ),
             icon: const Icon(Icons.repeat),
-            label: Text('Travailler les $proposee'),
+            label: Text(
+              'Travailler ${proposee.length == 1 ? 'la' : 'les'} $proposee',
+            ),
           ),
           const SizedBox(height: 8),
           _rangeeDuBouton(jouer, accompagner, boucler),
@@ -1891,6 +1933,59 @@ class _Bilan {
 
   /// Le bilan vient d'une prise suivie : il dit aussi quand tout tient.
   final bool suivi;
+}
+
+/// Les zones de l'ecran Jouer en portrait.
+enum _Zone { haut, milieu, bas, bouton }
+
+/// L'empilement de l'ecran Jouer : le haut et le bouton a leur taille, le
+/// retour (ruban et mesures) au-dessus du bilan, le milieu dans ce qui reste
+/// -- ou, au pupitre, le retour centre dans la place libre.
+///
+/// **Une colonne ne sait pas faire ca.** Le bilan doit prendre toute sa
+/// hauteur quand elle est libre, et defiler quand elle ne l'est pas ; dans
+/// une colonne, un enfant souple partage la place a parts fixes avec la
+/// partition, ce qui la reduirait meme quand tout tient.
+class _MiseEnPagePortrait extends MultiChildLayoutDelegate {
+  _MiseEnPagePortrait({
+    required this.milieuMinimal,
+    required this.centrerLeRetour,
+  });
+
+  /// La part de la hauteur gardee au milieu quoi qu'il arrive.
+  final double milieuMinimal;
+
+  /// Au pupitre, rien au milieu : le retour s'y centre.
+  final bool centrerLeRetour;
+
+  @override
+  void performLayout(Size size) {
+    final double w = size.width;
+    BoxConstraints auPlus(double h) =>
+        BoxConstraints(minWidth: w, maxWidth: w, maxHeight: math.max(0, h));
+    final double haut = layoutChild(_Zone.haut, auPlus(size.height)).height;
+    final double bouton =
+        layoutChild(_Zone.bouton, auPlus(size.height - haut)).height;
+    final double reste = size.height - haut - bouton;
+    final double bas = layoutChild(
+      _Zone.bas,
+      auPlus(reste - size.height * milieuMinimal),
+    ).height;
+    final double milieu = math.max(0, reste - bas);
+    layoutChild(_Zone.milieu, BoxConstraints.tight(Size(w, milieu)));
+    positionChild(_Zone.haut, Offset.zero);
+    positionChild(_Zone.milieu, Offset(0, haut));
+    positionChild(
+      _Zone.bas,
+      Offset(0, haut + (centrerLeRetour ? milieu / 2 : milieu)),
+    );
+    positionChild(_Zone.bouton, Offset(0, size.height - bouton));
+  }
+
+  @override
+  bool shouldRelayout(_MiseEnPagePortrait old) =>
+      old.milieuMinimal != milieuMinimal ||
+      old.centrerLeRetour != centrerLeRetour;
 }
 
 /// Une ligne discrete sous la portee : le bilan quand le passage est fini, la
