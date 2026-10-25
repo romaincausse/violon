@@ -5,6 +5,7 @@ import 'package:violon/core/music/passage.dart';
 import 'package:violon/core/music/passage_builder.dart';
 import 'package:violon/core/music/pitch_utils.dart';
 import 'package:violon/core/music/score_note.dart';
+import 'package:violon/core/scoring/dynamics_judge.dart';
 import 'package:violon/core/scoring/live_tuning.dart';
 import 'package:violon/core/scoring/rhythm_judge.dart';
 import 'package:violon/core/scoring/take_report.dart';
@@ -116,6 +117,34 @@ void main() {
     expect(r.nextTask!.measure, 3);
     expect(r.nextTask!.mainWeakness, Weakness.slurs);
     expect(r.nextTask!.brokenSlurs.first, p.notes[9]);
+  });
+
+  test('une nuance qui ne s entend pas pese, a sa mesure (K9)', () {
+    final List<PlayedEvent> e = <PlayedEvent>[];
+    jouer(e, 0, 15, 0);
+    final TakeReport r = TakeReport.of(
+      p,
+      RhythmJudge.fromEvents(p, e),
+      juste(),
+      dynamics: <DynamicsFinding>[
+        DynamicsFinding(
+          at: p.notes[4],
+          mark: 'mp',
+          louder: false,
+          measuredDb: -0.3,
+        ),
+        DynamicsFinding(
+          at: p.notes[12],
+          mark: 'f',
+          louder: true,
+          measuredDb: 5,
+        ),
+      ],
+    );
+    expect(r.nextTask!.measure, 2);
+    expect(r.nextTask!.mainWeakness, Weakness.dynamics);
+    expect(r.byMeasure(4)!.missedDynamics, isEmpty,
+        reason: 'le f s entend : rien a retravailler');
   });
 
   test('ce qui n a pas ete joue n est pas une tache', () {

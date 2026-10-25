@@ -142,6 +142,32 @@ void main() {
           p.passage.notes.map((ScoreNote n) => n.fingering));
     });
 
+    test('les nuances et les soufflets s attachent a la note qui suit (K9)',
+        () {
+      String nuance(String n) => '<direction><direction-type><dynamics><$n/>'
+          '</dynamics></direction-type></direction>';
+      String soufflet(String t) => '<direction><direction-type>'
+          '<wedge type="$t"/></direction-type></direction>';
+      const String cresc = '<direction><direction-type>'
+          '<words>cresc. poco a poco</words></direction-type></direction>';
+      final ImportedPiece p = MusicXmlReader.read(
+        partition(
+          '<measure number="1">$sixHuit${nuance('mf')}${note('D4', 3)}'
+          '${soufflet('crescendo')}${note('E4', 3)}</measure>'
+          '<measure number="2">${note('F#4', 3)}${soufflet('stop')}'
+          '${nuance('sfz')}${note('G4', 3)}</measure>'
+          '<measure number="3">$cresc${note('A4', 6)}</measure>',
+        ),
+      );
+      expect(p.passage.notes.map((ScoreNote n) => n.dynamicMark),
+          <String?>['mf', null, null, null, null]);
+      expect(p.passage.notes.map((ScoreNote n) => n.hairpin),
+          <String?>[null, 'cresc', null, 'fin', 'cresc']);
+      final ImportedPiece relu = ImportedPiece.fromJson(p.toJson())!;
+      expect(relu.passage.notes.first.dynamicMark, 'mf');
+      expect(relu.passage.notes[1].hairpin, 'cresc');
+    });
+
     test('une seconde voix et une petite note sont ignorees, et dites', () {
       final ImportedPiece p = MusicXmlReader.read(
         partition(

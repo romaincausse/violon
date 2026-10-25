@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../music/meter.dart';
 import '../music/passage.dart';
+import 'dynamic_marks.dart';
 import 'fingering_marks.dart';
 import 'staff_geometry.dart';
 import 'staff_layout.dart';
@@ -238,7 +239,17 @@ class SystemMetrics {
           2.0 + StemsAndBeams.standardLengthSpaces,
         ) +
         1.5;
-    return SystemMetrics(topSpaces: plusHaut, bottomSpaces: bas);
+    // Les nuances (K9) se posent sous tout : la reserve du bas les couvre.
+    double plusBas = bas;
+    for (final StaffSystem s in layout.systems) {
+      for (final double y in DynamicMarks.place(s.layout).values) {
+        plusBas = math.max(
+          plusBas,
+          y + DynamicMarks.heightSpaces / 2 + DynamicMarks.gapSpaces,
+        );
+      }
+    }
+    return SystemMetrics(topSpaces: plusHaut, bottomSpaces: plusBas);
   }
 
   final double topSpaces;

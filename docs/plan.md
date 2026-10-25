@@ -2385,7 +2385,7 @@ passe d'abord sur les prises du banc, comme le suiveur (jalon 5).
 | ~~K6~~ | ~~Gammes et arpeges sur trois octaves~~ | | ★★ | fait |
 | ~~K7~~ | ~~Le son file~~ | **Must** | ★★★ | fait |
 | ~~K8~~ | ~~Les liaisons respectees~~ | | ★★ | fait |
-| K9 | Les nuances | | ★ | 3 |
+| ~~K9~~ | ~~Les nuances~~ | | ★ | fait |
 | ~~K10~~ | ~~La resonance~~ | **Must** | ★★★ | fait |
 | ~~K11~~ | ~~Le travail lent, d'office~~ | **Must** | ★★★ | fait |
 | ~~K12~~ | ~~Le modele avant l'essai~~ | | ★★ | fait |
@@ -2555,6 +2555,21 @@ MusicXML, et comparer les passages **entre eux** : un micro a soixante-dix
 centimetres ne donne pas de decibels absolus, mais il dit si le forte de la
 mesure 9 est plus fort que le piano de la mesure 5. Le plus fragile du jalon :
 en dernier.
+
+**Fait** (`DynamicsJudge`, `DynamicMarks`). L'import lit les nuances (de ppp a
+fff ; un sforzando est un accent), les soufflets et les mots qui en tiennent
+lieu ("cresc. poco a poco"), les garde avec le morceau, et les grave sous la
+portee avec les lettres de la police musicale -- "cresc." et "dim." en
+italique, le soufflet dessine attendra. Le juge compare, autour de chaque
+changement, la phrase qui precede et celle qui suit (quatre mesures au plus),
+et pour un soufflet son dernier tiers au premier : une nuance s'entend a
+partir de 2 dB dans le bon sens. **Banc** : les transcriptions n'avaient pas
+de nuances, la photo de Firework si (mf, mp a la mesure 5, mf a la 13). A la
+seance (prise 07), le mp sonne 3,3 dB sous le mf et le mf de la 13 4,5 dB
+au-dessus : les deux s'entendent. Dechiffree tres lentement (prise 08), le mp
+ne s'entend pas (0,3 dB), le mf de la 13 si (5,4). C'est peu -- deux prises,
+trois nuances --, d'ou un poids juste assez fort pour faire une tache quand le
+reste tient : *"le mp ne s'entend pas : plus doux qu'avant"*.
 
 ### La justesse
 

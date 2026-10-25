@@ -173,6 +173,8 @@ Map<String, Object?> passageToJson(Passage p) => <String, Object?>{
             'measure': n.measure,
             if (n.fingering != null) 'fingering': n.fingering,
             if (n.slurred) 'slur': true,
+            if (n.dynamicMark != null) 'nuance': n.dynamicMark,
+            if (n.hairpin != null) 'soufflet': n.hairpin,
           },
       ],
     };
@@ -215,6 +217,8 @@ Passage? passageFromJson(Object? json) {
         measure: mesure,
         fingering: doigte is String ? doigte : null,
         slurred: b['slur'] == true,
+        dynamicMark: b['nuance'] is String ? b['nuance'] as String : null,
+        hairpin: b['soufflet'] is String ? b['soufflet'] as String : null,
       ),
     );
   }

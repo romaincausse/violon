@@ -6,6 +6,7 @@ import '../music/pitch_utils.dart';
 import '../music/score_note.dart';
 import '../scoring/live_tuning.dart';
 import '../scoring/rhythm_judge.dart';
+import '../scoring/dynamics_judge.dart';
 import '../scoring/slur_judge.dart';
 import '../scoring/take_report.dart';
 import '../store/take_history.dart';
@@ -240,8 +241,18 @@ class TakeFollower {
     final RhythmJudge? r = rhythm;
     return r == null
         ? null
-        : TakeReport.of(passage, r, tuning, brokenSlurs: brokenSlurs);
+        : TakeReport.of(
+            passage,
+            r,
+            tuning,
+            brokenSlurs: brokenSlurs,
+            dynamics: dynamics,
+          );
   }
+
+  /// Ce que la prise a fait des nuances ecrites (K9), une fois [rescore]
+  /// passe.
+  List<DynamicsFinding> dynamics = const <DynamicsFinding>[];
 
   /// Les notes liees ou l'archet a change (K8), une fois [rescore] passe.
   List<ScoreNote> brokenSlurs = const <ScoreNote>[];
@@ -266,6 +277,11 @@ class TakeFollower {
     brokenSlurs = SlurJudge.broken(
       passage: passage,
       slurredInto: slurredInto,
+      alignment: a,
+      frames: _trames,
+    );
+    dynamics = DynamicsJudge.judge(
+      passage: passage,
       alignment: a,
       frames: _trames,
     );

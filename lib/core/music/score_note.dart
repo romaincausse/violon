@@ -13,6 +13,8 @@ class ScoreNote {
     this.fingering,
     this.bowing,
     this.slurred = false,
+    this.dynamicMark,
+    this.hairpin,
   });
 
   /// Identifiant stable, aligne sur l'id du glyphe dans le SVG Verovio.
@@ -38,6 +40,14 @@ class ScoreNote {
   /// Liee a la precedente : le meme archet, pas d'attaque (K8).
   final bool slurred;
 
+  /// La nuance ecrite a cette note, "p" a "ff" (K9), ou `null` : elle dure
+  /// jusqu'a la suivante.
+  final String? dynamicMark;
+
+  /// Un soufflet qui commence ici, "cresc" ou "dim", ou qui finit ici,
+  /// "fin" (K9).
+  final String? hairpin;
+
   int get offsetTicks => onsetTicks + durationTicks;
 
   ScoreNote copyWith({
@@ -49,6 +59,8 @@ class ScoreNote {
     String? fingering,
     String? bowing,
     bool? slurred,
+    String? dynamicMark,
+    String? hairpin,
   }) {
     return ScoreNote(
       id: id ?? this.id,
@@ -59,6 +71,8 @@ class ScoreNote {
       fingering: fingering ?? this.fingering,
       bowing: bowing ?? this.bowing,
       slurred: slurred ?? this.slurred,
+      dynamicMark: dynamicMark ?? this.dynamicMark,
+      hairpin: hairpin ?? this.hairpin,
     );
   }
 
